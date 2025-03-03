@@ -14,6 +14,11 @@ type User struct {
 	Username     UserName               `json:"username" gorm:"unique;not null;index"`
 	Permission   consts.PermissionGroup `json:"permission" gorm:"type:bigint;default:0"`
 }
+type ExtendedUserDetails struct {
+	User
+	Permissions   []consts.PermissionName                     `json:"permissions"`
+	PermissionMap map[consts.PermissionName]consts.Permission `json:"permissionMap"`
+}
 type UserName string
 type UserRepository struct{}
 

@@ -10,6 +10,9 @@ type Permission uint64
 // PermissionGroup is a type to represent a group of permissions
 type PermissionGroup Permission
 
+type UintString string
+type PermissionName string
+
 const (
 	// Permission to login
 	PermissionLogin Permission = 1 << iota
@@ -74,4 +77,21 @@ func (p *PermissionGroup) Scan(value interface{}) error {
 
 func (p *PermissionGroup) Value() (driver.Value, error) {
 	return int64(*p), nil
+}
+
+type PermissionMap map[PermissionName]Permission
+
+func GetPermissionMap() PermissionMap {
+	permissionMap := PermissionMap{}
+	permissionMap[PermissionName("PermissionApproveRejectCampaign")] = PermissionApproveRejectCampaign
+	return permissionMap
+}
+func (p *PermissionGroup) GetPermissions(permMap PermissionMap) []PermissionName {
+	permissions := []PermissionName{}
+	for pName, pInt := range permMap {
+		if p.HasPermission(pInt) {
+			permissions = append(permissions, pName)
+		}
+	}
+	return permissions
 }

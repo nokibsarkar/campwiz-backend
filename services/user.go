@@ -28,10 +28,25 @@ func (u *UserService) GetUserByID_(conn *gorm.DB, id database.IDType) (*database
 
 }
 func (u *UserService) GetUserByID(id database.IDType) (*database.User, error) {
+	user_repo := database.NewUserRepository()
 	conn, close := database.GetDB()
 	defer close()
-	return u.GetUserByID_(conn, id)
-
+	return user_repo.FindByID(conn, id)
+}
+func (u *UserService) GetExtendedDetails(id database.IDType) (*database.ExtendedUserDetails, error) {
+	user_repo := database.NewUserRepository()
+	conn, close := database.GetDB()
+	defer close()
+	user, err := user_repo.FindByID(conn, id)
+	if err != nil {
+		return nil, err
+	}
+	details := &database.ExtendedUserDetails{
+		User:          *user,
+		PermissionMap: consts.GetPermissionMap(),
+		Permissions:   user.Permission.GetPermissions(consts.GetPermissionMap()),
+	}
+	return details, nil
 }
 func (u *UserService) GetUserByUsername(conn *gorm.DB, username database.UserName) (*database.User, error) {
 	userFilter := &database.User{Username: username}

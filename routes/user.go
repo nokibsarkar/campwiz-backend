@@ -11,18 +11,19 @@ import (
 func ListUsers(c *gin.Context) {
 	// ...
 }
+
 func GetMe(c *gin.Context, session *cache.Session) {
 	// ...
 	userID := session.UserID
 	user_services := services.NewUserService()
-	user, err := user_services.GetUserByID(userID)
+	user, err := user_services.GetExtendedDetails(userID)
 	if err != nil {
 		c.JSON(403, ResponseError{
 			Detail: err.Error(),
 		})
 		return
 	}
-	c.JSON(200, ResponseSingle[*database.User]{user})
+	c.JSON(200, ResponseSingle[*database.ExtendedUserDetails]{user})
 }
 func GetUser(c *gin.Context) {
 	// ...

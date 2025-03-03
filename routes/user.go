@@ -1,6 +1,8 @@
 package routes
 
 import (
+	"nokib/campwiz/database"
+	"nokib/campwiz/database/cache"
 	"nokib/campwiz/services"
 
 	"github.com/gin-gonic/gin"
@@ -9,8 +11,18 @@ import (
 func ListUsers(c *gin.Context) {
 	// ...
 }
-func GetMe(c *gin.Context) {
+func GetMe(c *gin.Context, session *cache.Session) {
 	// ...
+	userID := session.UserID
+	user_services := services.NewUserService()
+	user, err := user_services.GetUserByID(userID)
+	if err != nil {
+		c.JSON(403, ResponseError{
+			Detail: err.Error(),
+		})
+		return
+	}
+	c.JSON(200, ResponseSingle[*database.User]{user})
 }
 func GetUser(c *gin.Context) {
 	// ...
@@ -51,7 +63,7 @@ func Logout(c *gin.Context) {
 func NewUserRoutes(parent *gin.RouterGroup) {
 	r := parent.Group("/user")
 	r.GET("/", ListUsers)
-	r.GET("/me", GetMe)
+	r.GET("/me", WithSession(GetMe))
 	r.GET("/:id", GetUser)
 	r.POST("/:id", UpdateUser)
 	r.GET("/translation/:language", GetTranslation)

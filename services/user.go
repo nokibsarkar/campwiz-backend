@@ -16,7 +16,7 @@ func NewUserService() *UserService {
 	return &UserService{}
 }
 
-func (u *UserService) GetUserByID(conn *gorm.DB, id database.IDType) (*database.User, error) {
+func (u *UserService) GetUserByID_(conn *gorm.DB, id database.IDType) (*database.User, error) {
 	userFilter := &database.User{UserID: id}
 	user := &database.User{}
 	result := conn.First(user, userFilter)
@@ -25,6 +25,12 @@ func (u *UserService) GetUserByID(conn *gorm.DB, id database.IDType) (*database.
 		return nil, result.Error
 	}
 	return user, nil
+
+}
+func (u *UserService) GetUserByID(id database.IDType) (*database.User, error) {
+	conn, close := database.GetDB()
+	defer close()
+	return u.GetUserByID_(conn, id)
 
 }
 func (u *UserService) GetUserByUsername(conn *gorm.DB, username database.UserName) (*database.User, error) {

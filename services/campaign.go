@@ -24,14 +24,19 @@ func NewCampaignService() *CampaignService {
 }
 
 func (service *CampaignService) CreateCampaign(campaignRequest *CampaignCreateRequest) (*database.Campaign, error) {
-	// Create a new campaign
+	// if endDate.Before(time.Now()) {
+	// 	return nil, fmt.Errorf("End date should be in the future")
+	// }
+	if campaignRequest.StartDate.After(campaignRequest.EndDate) {
+		return nil, fmt.Errorf("Start date should be before end date")
+	}
 	campaign := &database.Campaign{
 		CampaignID: idgenerator.GenerateID("c"),
 		CampaignWithWriteableFields: database.CampaignWithWriteableFields{
 			Name:        campaignRequest.Name,
 			Description: campaignRequest.Description,
-			StartDate:   campaignRequest.StartDate,
-			EndDate:     campaignRequest.EndDate,
+			StartDate:   campaignRequest.StartDate.UTC(),
+			EndDate:     campaignRequest.EndDate.UTC(),
 			Language:    campaignRequest.Language,
 			Rules:       campaignRequest.Rules,
 			Image:       campaignRequest.Image,

@@ -5,6 +5,7 @@ import (
 	"nokib/campwiz/database"
 	"nokib/campwiz/database/cache"
 	"nokib/campwiz/services"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -65,12 +66,21 @@ func CreateCampaign(c *gin.Context, sess *cache.Session) {
 		return
 	}
 	createRequest.CreatedByID = sess.UserID
+	// Create a new campaign
+	endDate := createRequest.EndDate
+	startDate := createRequest.StartDate
+	//make the start date 00:00:00 of the day
+	createRequest.StartDate = time.Date(startDate.Year(), startDate.Month(), startDate.Day(), 0, 0, 0, 0, time.UTC)
+	// make the end date 23:59:59 of the day
+	createRequest.EndDate = time.Date(endDate.Year(), endDate.Month(), endDate.Day(), 23, 59, 59, 0, time.UTC)
+
 	camapign_service := services.NewCampaignService()
 	campaign, err := camapign_service.CreateCampaign(createRequest)
 	if err != nil {
 		c.JSON(400, ResponseError{Detail: "Failed to create campaign : " + err.Error()})
 		return
 	}
+
 	c.JSON(200, ResponseSingle[*database.Campaign]{Data: campaign})
 }
 

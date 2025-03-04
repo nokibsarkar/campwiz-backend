@@ -1302,27 +1302,6 @@ const docTemplate = `{
         "services.CampaignCreateRequest": {
             "type": "object",
             "properties": {
-                "allowCreations": {
-                    "type": "boolean"
-                },
-                "allowExpansions": {
-                    "type": "boolean"
-                },
-                "allowJuryToParticipate": {
-                    "type": "boolean"
-                },
-                "allowMultipleJudgement": {
-                    "type": "boolean"
-                },
-                "allowedMediaTypes": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/database.MediaType"
-                    }
-                },
-                "blacklist": {
-                    "type": "string"
-                },
                 "coordinators": {
                     "type": "array",
                     "items": {
@@ -1341,33 +1320,6 @@ const docTemplate = `{
                 "language": {
                     "$ref": "#/definitions/consts.Language"
                 },
-                "maximumSubmissionOfSameArticle": {
-                    "type": "integer"
-                },
-                "minimumAddedBytes": {
-                    "type": "integer"
-                },
-                "minimumAddedWords": {
-                    "type": "integer"
-                },
-                "minimumDurationMilliseconds": {
-                    "type": "integer"
-                },
-                "minimumHeight": {
-                    "type": "integer"
-                },
-                "minimumResolution": {
-                    "type": "integer"
-                },
-                "minimumTotalBytes": {
-                    "type": "integer"
-                },
-                "minimumTotalWords": {
-                    "type": "integer"
-                },
-                "minimumWidth": {
-                    "type": "integer"
-                },
                 "name": {
                     "type": "string"
                 },
@@ -1385,9 +1337,6 @@ const docTemplate = `{
                 },
                 "rules": {
                     "type": "string"
-                },
-                "secretBallot": {
-                    "type": "boolean"
                 },
                 "startDate": {
                     "type": "string"

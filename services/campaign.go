@@ -14,7 +14,6 @@ type CampaignCreateRequest struct {
 	CreatedByID  database.IDType     `json:"-"`
 	Coordinators []database.UserName `json:"coordinators"`
 	Organizers   []database.UserName `json:"organizers"`
-	database.RoundRestrictions
 }
 type CampaignUpdateRequest struct {
 	CampaignCreateRequest

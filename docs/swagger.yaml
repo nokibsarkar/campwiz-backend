@@ -502,20 +502,6 @@ definitions:
     type: object
   services.CampaignCreateRequest:
     properties:
-      allowCreations:
-        type: boolean
-      allowExpansions:
-        type: boolean
-      allowJuryToParticipate:
-        type: boolean
-      allowMultipleJudgement:
-        type: boolean
-      allowedMediaTypes:
-        items:
-          $ref: '#/definitions/database.MediaType'
-        type: array
-      blacklist:
-        type: string
       coordinators:
         items:
           type: string
@@ -528,24 +514,6 @@ definitions:
         type: string
       language:
         $ref: '#/definitions/consts.Language'
-      maximumSubmissionOfSameArticle:
-        type: integer
-      minimumAddedBytes:
-        type: integer
-      minimumAddedWords:
-        type: integer
-      minimumDurationMilliseconds:
-        type: integer
-      minimumHeight:
-        type: integer
-      minimumResolution:
-        type: integer
-      minimumTotalBytes:
-        type: integer
-      minimumTotalWords:
-        type: integer
-      minimumWidth:
-        type: integer
       name:
         type: string
       organizers:
@@ -558,8 +526,6 @@ definitions:
         type: array
       rules:
         type: string
-      secretBallot:
-        type: boolean
       startDate:
         type: string
     type: object

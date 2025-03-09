@@ -38,7 +38,12 @@ func (o *OAuth2Service) Init(callback string) string {
 	// state := url.QueryEscape(callback)
 	return OAuth2Config.AuthCodeURL(callback)
 }
-func (o *OAuth2Service) GetToken(code string) (*oauth2.Token, error) {
+func (o *OAuth2Service) GetToken(code string, redirectURL string) (*oauth2.Token, error) {
+	previousRedirectURL := OAuth2Config.RedirectURL
+	defer func() {
+		OAuth2Config.RedirectURL = previousRedirectURL
+	}()
+	OAuth2Config.RedirectURL = redirectURL
 	token, err := OAuth2Config.Exchange(context.Background(), code)
 	if err != nil {
 		return nil, err
@@ -57,11 +62,11 @@ groups
 rights
 */
 type WikipediaProfileBasic struct {
-	CentralID string            `json:"sub"`
-	Name      database.UserName `json:"username"`
-	Rights    []string          `json:"rights"`
-	Blocked   bool              `json:"blocked"`
-	Groups    []string          `json:"groups"`
+	CentralID string                         `json:"sub"`
+	Name      database.WikimediaUsernameType `json:"username"`
+	Rights    []string                       `json:"rights"`
+	Blocked   bool                           `json:"blocked"`
+	Groups    []string                       `json:"groups"`
 }
 type WikipediaProfile struct {
 	WikipediaProfileBasic

@@ -79,6 +79,7 @@ func InitDB(testing bool) {
 	db := conn.Begin()
 	// set character set to utf8mb4
 	db.Exec("ALTER DATABASE campwiz CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci;")
+	db.AutoMigrate(&Project{})
 	db.AutoMigrate(&User{})
 	db.AutoMigrate(&Campaign{})
 	db.AutoMigrate(&Round{})

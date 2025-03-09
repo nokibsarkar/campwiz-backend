@@ -268,6 +268,85 @@ const docTemplate = `{
                 }
             }
         },
+        "/project/": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create a new project",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "Create a new project",
+                "parameters": [
+                    {
+                        "description": "The project request",
+                        "name": "projectRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/database.ProjectRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.ResponseSingle-database_Project"
+                        }
+                    }
+                }
+            }
+        },
+        "/project/{projectId}": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Update a project",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "Update a project",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The project ID",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "The project request",
+                        "name": "projectRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/database.ProjectRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.ResponseSingle-database_Project"
+                        }
+                    }
+                }
+            }
+        },
         "/round/": {
             "get": {
                 "description": "get all rounds",
@@ -483,6 +562,33 @@ const docTemplate = `{
             }
         },
         "/round/{roundId}": {
+            "get": {
+                "description": "Get a round",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Round"
+                ],
+                "summary": "Get a round",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The round ID",
+                        "name": "roundId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.ResponseSingle-database_Round"
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "Update the details of a round",
                 "produces": [
@@ -567,6 +673,35 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/routes.ResponseList-database_Submission"
+                        }
+                    }
+                }
+            }
+        },
+        "/submission/{id}": {
+            "get": {
+                "description": "get a submission",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Submission"
+                ],
+                "summary": "Get a submission",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Submission ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/database.Submission"
                         }
                     }
                 }
@@ -732,8 +867,60 @@ const docTemplate = `{
                 "Zulu"
             ]
         },
+        "consts.PermissionGroup": {
+            "type": "integer",
+            "enum": [
+                1,
+                2,
+                4,
+                8,
+                16,
+                32,
+                64,
+                128,
+                256,
+                512,
+                1024,
+                2048,
+                4096,
+                8192,
+                16384,
+                32768,
+                65536,
+                131072,
+                262144,
+                524288,
+                0,
+                1,
+                327681,
+                258177,
+                262017,
+                262137
+            ],
+            "x-enum-comments": {
+                "PermissionGroupADMIN": "access other projects",
+                "PermissionGroupCoordinator": "see the evaluation results of the evaluations they have done",
+                "PermissionGroupJury": "see the evaluation results of the evaluations they have done",
+                "PermissionGroupLead": "delete a campaign"
+            },
+            "x-enum-varnames": [
+                "PermissionGroupBanned",
+                "PermissionGroupUSER",
+                "PermissionGroupJury",
+                "PermissionGroupCoordinator",
+                "PermissionGroupLead",
+                "PermissionGroupADMIN"
+            ]
+        },
         "database.Campaign": {
             "type": "object",
+            "required": [
+                "endDate",
+                "language",
+                "name",
+                "projectId",
+                "startDate"
+            ],
             "properties": {
                 "campaignId": {
                     "type": "string"
@@ -754,10 +941,16 @@ const docTemplate = `{
                 "image": {
                     "type": "string"
                 },
+                "isPublic": {
+                    "type": "boolean"
+                },
                 "language": {
                     "$ref": "#/definitions/consts.Language"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "projectId": {
                     "type": "string"
                 },
                 "roles": {
@@ -854,6 +1047,56 @@ const docTemplate = `{
                 "MediaTypePDF"
             ]
         },
+        "database.Project": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "createdById": {
+                    "type": "string"
+                },
+                "logoUrl": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "projectId": {
+                    "type": "string"
+                },
+                "url": {
+                    "description": "The URL of the project's website",
+                    "type": "string"
+                }
+            }
+        },
+        "database.ProjectRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "logoUrl": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "projectId": {
+                    "type": "string"
+                },
+                "projectLeads": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
         "database.Role": {
             "type": "object",
             "properties": {
@@ -863,10 +1106,19 @@ const docTemplate = `{
                 "isAllowed": {
                     "type": "boolean"
                 },
+                "permission": {
+                    "$ref": "#/definitions/consts.PermissionGroup"
+                },
+                "projectId": {
+                    "type": "string"
+                },
                 "roleId": {
                     "type": "string"
                 },
                 "roundId": {
+                    "type": "string"
+                },
+                "targetProjectId": {
                     "type": "string"
                 },
                 "totalAssigned": {
@@ -889,29 +1141,23 @@ const docTemplate = `{
         "database.RoleType": {
             "type": "string",
             "enum": [
-                "jury",
                 "admin",
-                "participant",
+                "projectLead",
                 "coordinator",
-                "organizer"
+                "jury",
+                "participant"
             ],
             "x-enum-varnames": [
-                "RoleTypeJury",
                 "RoleTypeAdmin",
-                "RoleTypeParticipant",
+                "RoleTypeProjectLead",
                 "RoleTypeCoordinator",
-                "RoleTypeOrganizer"
+                "RoleTypeJury",
+                "RoleTypeParticipant"
             ]
         },
         "database.Round": {
             "type": "object",
             "properties": {
-                "allowCreations": {
-                    "type": "boolean"
-                },
-                "allowExpansions": {
-                    "type": "boolean"
-                },
                 "allowJuryToParticipate": {
                     "type": "boolean"
                 },
@@ -923,6 +1169,33 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/database.MediaType"
                     }
+                },
+                "articleAllowCreations": {
+                    "type": "boolean"
+                },
+                "articleAllowExpansions": {
+                    "type": "boolean"
+                },
+                "articleMaximumSubmissionOfSameArticle": {
+                    "type": "integer"
+                },
+                "articleMinimumAddedBytes": {
+                    "type": "integer"
+                },
+                "articleMinimumAddedWords": {
+                    "type": "integer"
+                },
+                "articleMinimumTotalBytes": {
+                    "type": "integer"
+                },
+                "articleMinimumTotalWords": {
+                    "type": "integer"
+                },
+                "audioMinimumDurationMilliseconds": {
+                    "type": "integer"
+                },
+                "audioMinimumSizeBytes": {
+                    "type": "integer"
                 },
                 "blacklist": {
                     "type": "string"
@@ -945,6 +1218,12 @@ const docTemplate = `{
                 "endDate": {
                     "type": "string"
                 },
+                "imageMinimumResolution": {
+                    "type": "integer"
+                },
+                "imageMinimumSizeBytes": {
+                    "type": "integer"
+                },
                 "isOpen": {
                     "type": "boolean"
                 },
@@ -954,34 +1233,10 @@ const docTemplate = `{
                 "latestTaskId": {
                     "type": "string"
                 },
-                "maximumSubmissionOfSameArticle": {
-                    "type": "integer"
-                },
-                "minimumAddedBytes": {
-                    "type": "integer"
-                },
-                "minimumAddedWords": {
-                    "type": "integer"
-                },
-                "minimumDurationMilliseconds": {
-                    "type": "integer"
-                },
-                "minimumHeight": {
-                    "type": "integer"
-                },
-                "minimumResolution": {
-                    "type": "integer"
-                },
-                "minimumTotalBytes": {
-                    "type": "integer"
-                },
-                "minimumTotalWords": {
-                    "type": "integer"
-                },
-                "minimumWidth": {
-                    "type": "integer"
-                },
                 "name": {
+                    "type": "string"
+                },
+                "projectId": {
                     "type": "string"
                 },
                 "roles": {
@@ -1010,6 +1265,15 @@ const docTemplate = `{
                 },
                 "type": {
                     "$ref": "#/definitions/database.EvaluationType"
+                },
+                "videoMinimumDurationMilliseconds": {
+                    "type": "integer"
+                },
+                "videoMinimumResolution": {
+                    "type": "integer"
+                },
+                "videoMinimumSizeBytes": {
+                    "type": "integer"
                 }
             }
         },
@@ -1055,7 +1319,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "createdAtServer": {
-                    "description": "Campaign          *Campaign  ` + "`" + `json:\"-\" gorm:\"foreignKey:CampaignID\"` + "`" + `",
                     "type": "string"
                 },
                 "creditHTML": {
@@ -1067,12 +1330,18 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
+                "distributionTaskId": {
+                    "type": "string"
+                },
                 "duration": {
                     "description": "in milliseconds",
                     "type": "integer"
                 },
                 "height": {
                     "type": "integer"
+                },
+                "importTaskId": {
+                    "type": "string"
                 },
                 "license": {
                     "type": "string"
@@ -1086,15 +1355,15 @@ const docTemplate = `{
                         "type": "integer"
                     }
                 },
-                "pageid": {
-                    "type": "string"
-                },
                 "participantId": {
                     "type": "string"
                 },
                 "size": {
                     "description": "in bytes",
                     "type": "integer"
+                },
+                "submissionId": {
+                    "type": "string"
                 },
                 "submittedAt": {
                     "type": "string"
@@ -1275,6 +1544,14 @@ const docTemplate = `{
                 }
             }
         },
+        "routes.ResponseSingle-database_Project": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/database.Project"
+                }
+            }
+        },
         "routes.ResponseSingle-database_Round": {
             "type": "object",
             "properties": {
@@ -1301,6 +1578,13 @@ const docTemplate = `{
         },
         "services.CampaignCreateRequest": {
             "type": "object",
+            "required": [
+                "endDate",
+                "language",
+                "name",
+                "projectId",
+                "startDate"
+            ],
             "properties": {
                 "coordinators": {
                     "type": "array",
@@ -1317,6 +1601,9 @@ const docTemplate = `{
                 "image": {
                     "type": "string"
                 },
+                "isPublic": {
+                    "type": "boolean"
+                },
                 "language": {
                     "$ref": "#/definitions/consts.Language"
                 },
@@ -1329,11 +1616,8 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
-                "roles": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/database.Role"
-                    }
+                "projectId": {
+                    "type": "string"
                 },
                 "rules": {
                     "type": "string"
@@ -1389,12 +1673,6 @@ const docTemplate = `{
         "services.RoundRequest": {
             "type": "object",
             "properties": {
-                "allowCreations": {
-                    "type": "boolean"
-                },
-                "allowExpansions": {
-                    "type": "boolean"
-                },
                 "allowJuryToParticipate": {
                     "type": "boolean"
                 },
@@ -1406,6 +1684,33 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/database.MediaType"
                     }
+                },
+                "articleAllowCreations": {
+                    "type": "boolean"
+                },
+                "articleAllowExpansions": {
+                    "type": "boolean"
+                },
+                "articleMaximumSubmissionOfSameArticle": {
+                    "type": "integer"
+                },
+                "articleMinimumAddedBytes": {
+                    "type": "integer"
+                },
+                "articleMinimumAddedWords": {
+                    "type": "integer"
+                },
+                "articleMinimumTotalBytes": {
+                    "type": "integer"
+                },
+                "articleMinimumTotalWords": {
+                    "type": "integer"
+                },
+                "audioMinimumDurationMilliseconds": {
+                    "type": "integer"
+                },
+                "audioMinimumSizeBytes": {
+                    "type": "integer"
                 },
                 "blacklist": {
                     "type": "string"
@@ -1422,6 +1727,12 @@ const docTemplate = `{
                 "endDate": {
                     "type": "string"
                 },
+                "imageMinimumResolution": {
+                    "type": "integer"
+                },
+                "imageMinimumSizeBytes": {
+                    "type": "integer"
+                },
                 "isOpen": {
                     "type": "boolean"
                 },
@@ -1433,33 +1744,6 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
-                },
-                "maximumSubmissionOfSameArticle": {
-                    "type": "integer"
-                },
-                "minimumAddedBytes": {
-                    "type": "integer"
-                },
-                "minimumAddedWords": {
-                    "type": "integer"
-                },
-                "minimumDurationMilliseconds": {
-                    "type": "integer"
-                },
-                "minimumHeight": {
-                    "type": "integer"
-                },
-                "minimumResolution": {
-                    "type": "integer"
-                },
-                "minimumTotalBytes": {
-                    "type": "integer"
-                },
-                "minimumTotalWords": {
-                    "type": "integer"
-                },
-                "minimumWidth": {
-                    "type": "integer"
                 },
                 "name": {
                     "type": "string"
@@ -1475,6 +1759,15 @@ const docTemplate = `{
                 },
                 "type": {
                     "$ref": "#/definitions/database.EvaluationType"
+                },
+                "videoMinimumDurationMilliseconds": {
+                    "type": "integer"
+                },
+                "videoMinimumResolution": {
+                    "type": "integer"
+                },
+                "videoMinimumSizeBytes": {
+                    "type": "integer"
                 }
             }
         },

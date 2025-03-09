@@ -42,22 +42,26 @@ type MediaSubmission struct {
 	AudioVideoSubmission
 }
 type Submission struct {
-	SubmissionID IDType `json:"pageid" gorm:"primaryKey"`
+	SubmissionID IDType `json:"submissionId" gorm:"primaryKey"`
 	Name         string `json:"title"`
 	CampaignID   IDType `json:"campaignId" gorm:"null;index;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	URL          string `json:"url"`
 	// The Actual Author in the Wikimedia
-	Author UserName `json:"author"`
+	Author WikimediaUsernameType `json:"author"`
 	// The User who submitted the article on behalf of the participant
-	SubmittedByID  IDType    `json:"submittedById" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	ParticipantID  IDType    `json:"participantId" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	CurrentRoundID IDType    `json:"currentRoundId" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	SubmittedAt    time.Time `json:"submittedAt" gorm:"type:datetime"`
-	Participant    User      `json:"-" gorm:"foreignKey:ParticipantID"`
-	Submitter      User      `json:"-" gorm:"foreignKey:SubmittedByID"`
-	// Campaign          *Campaign  `json:"-" gorm:"foreignKey:CampaignID"`
-	CreatedAtExternal *time.Time `json:"createdAtServer"`
-	CurrentRound      *Round     `json:"-" gorm:"foreignKey:CurrentRoundID"`
+	SubmittedByID      IDType     `json:"submittedById" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	ParticipantID      IDType     `json:"participantId" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	CurrentRoundID     IDType     `json:"currentRoundId" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	SubmittedAt        time.Time  `json:"submittedAt" gorm:"type:datetime"`
+	Participant        User       `json:"-" gorm:"foreignKey:ParticipantID"`
+	Submitter          User       `json:"-" gorm:"foreignKey:SubmittedByID"`
+	Campaign           *Campaign  `json:"-"`
+	CreatedAtExternal  *time.Time `json:"createdAtServer"`
+	CurrentRound       *Round     `json:"-" gorm:"foreignKey:CurrentRoundID"`
+	DistributionTaskID IDType     `json:"distributionTaskId" gorm:"null"`
+	ImportTaskID       IDType     `json:"importTaskId" gorm:"null"`
+	DistributionTask   *Task      `json:"-" gorm:"foreignKey:DistributionTaskID"`
+	ImportTask         *Task      `json:"-" gorm:"foreignKey:ImportTaskID"`
 	MediaSubmission
 }
 type SubmissionSelectID struct {

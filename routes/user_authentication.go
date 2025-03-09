@@ -29,8 +29,13 @@ func HandleOAuth2Callback(c *gin.Context) {
 	if state == "" || strings.HasPrefix(state, "/user/login") {
 		state = "/"
 	}
+	baseURL := consts.Config.Server.BaseURL
+	baseURLRaw, ok := c.GetQuery("baseURL")
+	if ok {
+		baseURL = baseURLRaw
+	}
 	oauth2_service := services.NewOAuth2Service()
-	accessToken, err := oauth2_service.GetToken(code)
+	accessToken, err := oauth2_service.GetToken(code, baseURL+consts.Config.Auth.OAuth2.RedirectPath)
 	if err != nil {
 		c.JSON(400, ResponseError{
 			Detail: err.Error(),

@@ -11,7 +11,7 @@ import (
 type User struct {
 	UserID       IDType                 `json:"id" gorm:"primaryKey"`
 	RegisteredAt time.Time              `json:"registeredAt"`
-	Username     UserName               `json:"username" gorm:"unique;not null;index"`
+	Username     WikimediaUsernameType  `json:"username" gorm:"unique;not null;index"`
 	Permission   consts.PermissionGroup `json:"permission" gorm:"type:bigint;default:0"`
 }
 type ExtendedUserDetails struct {
@@ -19,15 +19,14 @@ type ExtendedUserDetails struct {
 	Permissions   []consts.PermissionName                     `json:"permissions"`
 	PermissionMap map[consts.PermissionName]consts.Permission `json:"permissionMap"`
 }
-type UserName string
 type UserRepository struct{}
 
 func NewUserRepository() *UserRepository {
 	return &UserRepository{}
 }
-func (u *UserRepository) FetchExistingUsernames(conn *gorm.DB, usernames []UserName) (map[UserName]IDType, error) {
+func (u *UserRepository) FetchExistingUsernames(conn *gorm.DB, usernames []WikimediaUsernameType) (map[WikimediaUsernameType]IDType, error) {
 	type APIUser struct {
-		Username UserName
+		Username WikimediaUsernameType
 		UserID   IDType
 	}
 	exists := []APIUser{}
@@ -36,15 +35,15 @@ func (u *UserRepository) FetchExistingUsernames(conn *gorm.DB, usernames []UserN
 	if res.Error != nil {
 		return nil, res.Error
 	}
-	userName2IDMap := map[UserName]IDType{}
+	userName2IDMap := map[WikimediaUsernameType]IDType{}
 	for _, u := range exists {
 		userName2IDMap[u.Username] = u.UserID
 	}
 	return userName2IDMap, nil
 
 }
-func (u *UserRepository) EnsureExists(tx *gorm.DB, usernameToRandomIdMap map[UserName]IDType) (map[UserName]IDType, error) {
-	usernames := []UserName{}
+func (u *UserRepository) EnsureExists(tx *gorm.DB, usernameToRandomIdMap map[WikimediaUsernameType]IDType) (map[WikimediaUsernameType]IDType, error) {
+	usernames := []WikimediaUsernameType{}
 	if len(usernameToRandomIdMap) == 0 {
 		return usernameToRandomIdMap, nil
 	}
@@ -63,7 +62,7 @@ func (u *UserRepository) EnsureExists(tx *gorm.DB, usernameToRandomIdMap map[Use
 	if len(usernameToRandomIdMap) == 0 {
 		return userName2Id, nil
 	}
-	nonExistentUsers := make([]UserName, 0, len(usernameToRandomIdMap))
+	nonExistentUsers := make([]WikimediaUsernameType, 0, len(usernameToRandomIdMap))
 	for nonExistingUsername := range usernameToRandomIdMap {
 		nonExistentUsers = append(nonExistentUsers, nonExistingUsername)
 	}

@@ -59,8 +59,30 @@ func CreateLateDraftSubmission(c *gin.Context) {
 func GetDraftSubmission(c *gin.Context) {
 	// ...
 }
+
+// GetSubmission godoc
+// @Summary Get a submission
+// @Description get a submission
+// @Produce  json
+// @Success 200 {object} database.Submission
+// @Router /submission/{id} [get]
+// @Param id path string true "Submission ID"
+// @Tags Submission
+// @Error 400 {object} ResponseError
+// @Error 404 {object} ResponseError
 func GetSubmission(c *gin.Context) {
-	// ...
+	id := c.Param("submissionId")
+	submission_service := services.NewSubmissionService()
+	submission, err := submission_service.GetSubmission(database.IDType(id))
+	if err != nil {
+		c.JSON(404, ResponseError{
+			Detail: "Submission not found",
+		})
+		return
+	}
+	c.JSON(200, ResponseSingle[*database.Submission]{
+		Data: submission,
+	})
 }
 func DeleteSubmission(c *gin.Context) {
 	// ...
@@ -84,10 +106,12 @@ func NewSubmissionRoutes(parent *gin.RouterGroup) {
 	r.POST("/draft", CreateDraftSubmission)
 	r.POST("/draft/late", CreateLateDraftSubmission)
 	r.GET("/draft/:id", GetDraftSubmission)
-	r.GET("/:id", GetSubmission)
+
 	r.DELETE("/:id", DeleteSubmission)
-	r.GET("/:id/judge", GetEvaluation)
+
+	r.GET("/:submissionId", GetSubmission)
+	// r.GET("/:submissionId/judge", GetEvaluation)
 	r.POST("/", CreateSubmission)
 	r.POST("/late", CreateLateSubmission)
-	r.POST("/:id/judge", EvaluateSubmission)
+	r.POST("/:submissionId/judge", EvaluateSubmission)
 }

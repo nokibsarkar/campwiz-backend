@@ -86,7 +86,7 @@ func (b *TaskRunner) importImagws(conn *gorm.DB, task *database.Task) (successCo
 		}
 		successCount += len(images)
 		task.SuccessCount = successCount
-		participants := map[database.UserName]database.IDType{}
+		participants := map[database.WikimediaUsernameType]database.IDType{}
 		for _, image := range images {
 			participants[image.UploaderUsername] = idgenerator.GenerateID("u")
 		}
@@ -174,8 +174,8 @@ func (b *TaskRunner) distributeEvaluations(tx *gorm.DB, task *database.Task) (su
 	}
 	jury_repo := database.NewRoleRepository()
 	filter := &database.RoleFilter{
-		RoundID:    round.RoundID,
-		CampaignID: round.CampaignID,
+		RoundID:    &round.RoundID,
+		CampaignID: &round.CampaignID,
 	}
 	j := database.RoleTypeJury
 	filter.Type = &j

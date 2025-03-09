@@ -104,6 +104,49 @@ definitions:
     - Xhosa
     - Yoruba
     - Zulu
+  consts.PermissionGroup:
+    enum:
+    - 1
+    - 2
+    - 4
+    - 8
+    - 16
+    - 32
+    - 64
+    - 128
+    - 256
+    - 512
+    - 1024
+    - 2048
+    - 4096
+    - 8192
+    - 16384
+    - 32768
+    - 65536
+    - 131072
+    - 262144
+    - 524288
+    - 0
+    - 1
+    - 327681
+    - 258177
+    - 262017
+    - 262137
+    type: integer
+    x-enum-comments:
+      PermissionGroupADMIN: access other projects
+      PermissionGroupCoordinator: see the evaluation results of the evaluations they
+        have done
+      PermissionGroupJury: see the evaluation results of the evaluations they have
+        done
+      PermissionGroupLead: delete a campaign
+    x-enum-varnames:
+    - PermissionGroupBanned
+    - PermissionGroupUSER
+    - PermissionGroupJury
+    - PermissionGroupCoordinator
+    - PermissionGroupLead
+    - PermissionGroupADMIN
   database.Campaign:
     properties:
       campaignId:
@@ -119,9 +162,13 @@ definitions:
         type: string
       image:
         type: string
+      isPublic:
+        type: boolean
       language:
         $ref: '#/definitions/consts.Language'
       name:
+        type: string
+      projectId:
         type: string
       roles:
         items:
@@ -131,6 +178,12 @@ definitions:
         type: string
       startDate:
         type: string
+    required:
+    - endDate
+    - language
+    - name
+    - projectId
+    - startDate
     type: object
   database.Evaluation:
     properties:
@@ -194,15 +247,54 @@ definitions:
     - MediaTypeAudio
     - MediaTypeVideo
     - MediaTypePDF
+  database.Project:
+    properties:
+      createdAt:
+        type: string
+      createdById:
+        type: string
+      logoUrl:
+        type: string
+      name:
+        type: string
+      projectId:
+        type: string
+      url:
+        description: The URL of the project's website
+        type: string
+    type: object
+  database.ProjectRequest:
+    properties:
+      logoUrl:
+        type: string
+      name:
+        type: string
+      projectId:
+        type: string
+      projectLeads:
+        items:
+          type: string
+        type: array
+      url:
+        type: string
+    required:
+    - name
+    type: object
   database.Role:
     properties:
       campaignId:
         type: string
       isAllowed:
         type: boolean
+      permission:
+        $ref: '#/definitions/consts.PermissionGroup'
+      projectId:
+        type: string
       roleId:
         type: string
       roundId:
+        type: string
+      targetProjectId:
         type: string
       totalAssigned:
         type: integer
@@ -217,24 +309,20 @@ definitions:
     type: object
   database.RoleType:
     enum:
-    - jury
     - admin
-    - participant
+    - projectLead
     - coordinator
-    - organizer
+    - jury
+    - participant
     type: string
     x-enum-varnames:
-    - RoleTypeJury
     - RoleTypeAdmin
-    - RoleTypeParticipant
+    - RoleTypeProjectLead
     - RoleTypeCoordinator
-    - RoleTypeOrganizer
+    - RoleTypeJury
+    - RoleTypeParticipant
   database.Round:
     properties:
-      allowCreations:
-        type: boolean
-      allowExpansions:
-        type: boolean
       allowJuryToParticipate:
         type: boolean
       allowMultipleJudgement:
@@ -243,6 +331,24 @@ definitions:
         items:
           $ref: '#/definitions/database.MediaType'
         type: array
+      articleAllowCreations:
+        type: boolean
+      articleAllowExpansions:
+        type: boolean
+      articleMaximumSubmissionOfSameArticle:
+        type: integer
+      articleMinimumAddedBytes:
+        type: integer
+      articleMinimumAddedWords:
+        type: integer
+      articleMinimumTotalBytes:
+        type: integer
+      articleMinimumTotalWords:
+        type: integer
+      audioMinimumDurationMilliseconds:
+        type: integer
+      audioMinimumSizeBytes:
+        type: integer
       blacklist:
         type: string
       campaignId:
@@ -257,31 +363,19 @@ definitions:
         type: string
       endDate:
         type: string
+      imageMinimumResolution:
+        type: integer
+      imageMinimumSizeBytes:
+        type: integer
       isOpen:
         type: boolean
       isPublic:
         type: boolean
       latestTaskId:
         type: string
-      maximumSubmissionOfSameArticle:
-        type: integer
-      minimumAddedBytes:
-        type: integer
-      minimumAddedWords:
-        type: integer
-      minimumDurationMilliseconds:
-        type: integer
-      minimumHeight:
-        type: integer
-      minimumResolution:
-        type: integer
-      minimumTotalBytes:
-        type: integer
-      minimumTotalWords:
-        type: integer
-      minimumWidth:
-        type: integer
       name:
+        type: string
+      projectId:
         type: string
       roles:
         items:
@@ -301,6 +395,12 @@ definitions:
         type: integer
       type:
         $ref: '#/definitions/database.EvaluationType'
+      videoMinimumDurationMilliseconds:
+        type: integer
+      videoMinimumResolution:
+        type: integer
+      videoMinimumSizeBytes:
+        type: integer
     type: object
   database.RoundStatus:
     enum:
@@ -337,7 +437,6 @@ definitions:
       campaignId:
         type: string
       createdAtServer:
-        description: Campaign          *Campaign  `json:"-" gorm:"foreignKey:CampaignID"`
         type: string
       creditHTML:
         type: string
@@ -345,11 +444,15 @@ definitions:
         type: string
       description:
         type: string
+      distributionTaskId:
+        type: string
       duration:
         description: in milliseconds
         type: integer
       height:
         type: integer
+      importTaskId:
+        type: string
       license:
         type: string
       mediatype:
@@ -358,13 +461,13 @@ definitions:
         items:
           type: integer
         type: array
-      pageid:
-        type: string
       participantId:
         type: string
       size:
         description: in bytes
         type: integer
+      submissionId:
+        type: string
       submittedAt:
         type: string
       submittedById:
@@ -485,6 +588,11 @@ definitions:
       data:
         $ref: '#/definitions/database.Evaluation'
     type: object
+  routes.ResponseSingle-database_Project:
+    properties:
+      data:
+        $ref: '#/definitions/database.Project'
+    type: object
   routes.ResponseSingle-database_Round:
     properties:
       data:
@@ -512,6 +620,8 @@ definitions:
         type: string
       image:
         type: string
+      isPublic:
+        type: boolean
       language:
         $ref: '#/definitions/consts.Language'
       name:
@@ -520,14 +630,18 @@ definitions:
         items:
           type: string
         type: array
-      roles:
-        items:
-          $ref: '#/definitions/database.Role'
-        type: array
+      projectId:
+        type: string
       rules:
         type: string
       startDate:
         type: string
+    required:
+    - endDate
+    - language
+    - name
+    - projectId
+    - startDate
     type: object
   services.DistributionRequest:
     properties:
@@ -559,10 +673,6 @@ definitions:
     type: object
   services.RoundRequest:
     properties:
-      allowCreations:
-        type: boolean
-      allowExpansions:
-        type: boolean
       allowJuryToParticipate:
         type: boolean
       allowMultipleJudgement:
@@ -571,6 +681,24 @@ definitions:
         items:
           $ref: '#/definitions/database.MediaType'
         type: array
+      articleAllowCreations:
+        type: boolean
+      articleAllowExpansions:
+        type: boolean
+      articleMaximumSubmissionOfSameArticle:
+        type: integer
+      articleMinimumAddedBytes:
+        type: integer
+      articleMinimumAddedWords:
+        type: integer
+      articleMinimumTotalBytes:
+        type: integer
+      articleMinimumTotalWords:
+        type: integer
+      audioMinimumDurationMilliseconds:
+        type: integer
+      audioMinimumSizeBytes:
+        type: integer
       blacklist:
         type: string
       campaignId:
@@ -581,6 +709,10 @@ definitions:
         type: string
       endDate:
         type: string
+      imageMinimumResolution:
+        type: integer
+      imageMinimumSizeBytes:
+        type: integer
       isOpen:
         type: boolean
       isPublic:
@@ -589,24 +721,6 @@ definitions:
         items:
           type: string
         type: array
-      maximumSubmissionOfSameArticle:
-        type: integer
-      minimumAddedBytes:
-        type: integer
-      minimumAddedWords:
-        type: integer
-      minimumDurationMilliseconds:
-        type: integer
-      minimumHeight:
-        type: integer
-      minimumResolution:
-        type: integer
-      minimumTotalBytes:
-        type: integer
-      minimumTotalWords:
-        type: integer
-      minimumWidth:
-        type: integer
       name:
         type: string
       secretBallot:
@@ -617,6 +731,12 @@ definitions:
         type: string
       type:
         $ref: '#/definitions/database.EvaluationType'
+      videoMinimumDurationMilliseconds:
+        type: integer
+      videoMinimumResolution:
+        type: integer
+      videoMinimumSizeBytes:
+        type: integer
     type: object
   services.TaskResponse:
     properties:
@@ -816,6 +936,55 @@ paths:
       summary: Update an evaluation
       tags:
       - Evaluation
+  /project/:
+    post:
+      description: Create a new project
+      parameters:
+      - description: The project request
+        in: body
+        name: projectRequest
+        required: true
+        schema:
+          $ref: '#/definitions/database.ProjectRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.ResponseSingle-database_Project'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a new project
+      tags:
+      - Project
+  /project/{projectId}:
+    post:
+      description: Update a project
+      parameters:
+      - description: The project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: The project request
+        in: body
+        name: projectRequest
+        required: true
+        schema:
+          $ref: '#/definitions/database.ProjectRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.ResponseSingle-database_Project'
+      security:
+      - ApiKeyAuth: []
+      summary: Update a project
+      tags:
+      - Project
   /round/:
     get:
       description: get all rounds
@@ -887,6 +1056,24 @@ paths:
       tags:
       - Round
   /round/{roundId}:
+    get:
+      description: Get a round
+      parameters:
+      - description: The round ID
+        in: path
+        name: roundId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.ResponseSingle-database_Round'
+      summary: Get a round
+      tags:
+      - Round
     post:
       description: Update the details of a round
       parameters:
@@ -1017,6 +1204,25 @@ paths:
           schema:
             $ref: '#/definitions/routes.ResponseList-database_Submission'
       summary: List all submissions
+      tags:
+      - Submission
+  /submission/{id}:
+    get:
+      description: get a submission
+      parameters:
+      - description: Submission ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/database.Submission'
+      summary: Get a submission
       tags:
       - Submission
   /task/{taskId}:

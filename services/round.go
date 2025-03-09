@@ -21,7 +21,7 @@ type RoundRequest struct {
 	CampaignID  database.IDType `json:"campaignId"`
 	CreatedByID database.IDType `json:"-"`
 	database.RoundWritable
-	Juries []database.UserName `json:"jury"`
+	Juries []database.WikimediaUsernameType `json:"jury"`
 }
 
 type DistributionRequest struct {
@@ -75,13 +75,15 @@ func (s *RoundService) CreateRound(request *RoundRequest) (*database.Round, erro
 		return nil, err
 	}
 
-	err = role_service.FetchChangeRoles(tx, database.RoleTypeJury, campaign.CampaignID, round.RoundID, request.Juries)
+	currentRoles, err := role_service.FetchChangeRoles(tx, database.RoleTypeJury, campaign.ProjectID, nil, &campaign.CampaignID, &round.RoundID, request.Juries)
 	if err != nil {
 		tx.Rollback()
 		return nil, err
 	}
-
+	round.Roles = currentRoles
 	tx.Commit()
+	log.Println("Round created with ID: ", round.RoundID)
+	log.Println("Roles: ", currentRoles)
 	return round, nil
 }
 func (s *RoundService) ListAllRounds(filter *database.RoundFilter) ([]database.Round, error) {
@@ -224,8 +226,8 @@ func (r *RoundService) UpdateRoundDetails(roundID database.IDType, req *RoundReq
 	}
 	juryType := database.RoleTypeJury
 	filter := &database.RoleFilter{
-		RoundID:    roundID,
-		CampaignID: round.CampaignID,
+		RoundID:    &roundID,
+		CampaignID: &round.CampaignID,
 		Type:       &juryType,
 	}
 	addedRoles, removedRoles, err := role_service.CalculateRoleDifference(tx, database.RoleTypeJury, filter, req.Juries)

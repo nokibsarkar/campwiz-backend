@@ -19,8 +19,8 @@ func NewTechnicalJudgeService(round *database.Round) *TechnicalJudgeService {
 	return &TechnicalJudgeService{
 		AllowedTypes:      round.AllowedMediaTypes,
 		MinimumUploadDate: round.StartDate,
-		MinimumResolution: uint64(round.MinimumResolution),
-		MinimumSize:       uint64(round.MinimumTotalBytes),
+		MinimumResolution: uint64(round.ImageMinimumResolution),
+		MinimumSize:       uint64(round.ArticleMinimumTotalBytes),
 		Blacklist:         []string{},
 	}
 }

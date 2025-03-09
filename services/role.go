@@ -13,14 +13,14 @@ type RoleService struct{}
 func NewRoleService() *RoleService {
 	return &RoleService{}
 }
-func (r *RoleService) CalculateRoleDifference(tx *gorm.DB, Type database.RoleType, filter *database.RoleFilter, updatedRoleUsernames []database.UserName) (addedRoles []database.Role, removedRoles []database.IDType, err error) {
+func (r *RoleService) CalculateRoleDifference(tx *gorm.DB, Type database.RoleType, filter *database.RoleFilter, updatedRoleUsernames []database.WikimediaUsernameType) (addedRoles []database.Role, removedRoles []database.IDType, err error) {
 	role_repo := database.NewRoleRepository()
 	user_repo := database.NewUserRepository()
 	existingRoles, err := role_repo.ListAllRoles(tx, filter)
 	if err != nil {
 		return nil, nil, err
 	}
-	username2IDMap := map[database.UserName]database.IDType{}
+	username2IDMap := map[database.WikimediaUsernameType]database.IDType{}
 	for _, username := range updatedRoleUsernames {
 		username2IDMap[username] = idgenerator.GenerateID("u")
 	}
@@ -28,7 +28,7 @@ func (r *RoleService) CalculateRoleDifference(tx *gorm.DB, Type database.RoleTyp
 	if err != nil {
 		return nil, nil, err
 	}
-	userId2NameMap := map[database.IDType]database.UserName{}
+	userId2NameMap := map[database.IDType]database.WikimediaUsernameType{}
 	for username := range username2IDMap {
 		userId := username2IDMap[username]
 		userId2NameMap[userId] = username
@@ -56,19 +56,19 @@ func (r *RoleService) CalculateRoleDifference(tx *gorm.DB, Type database.RoleTyp
 	}
 
 	for userId := range userId2NameMap {
-		log.Printf("%v", userId)
 		role, ok := id2RoleMap[userId]
 		if !ok || !role.IsAllowed {
 			// Newly added
 			newRole := database.Role{
-				RoleID:     idgenerator.GenerateID("j"),
-				Type:       Type,
-				UserID:     userId,
-				CampaignID: filter.CampaignID,
-				IsAllowed:  true,
-			}
-			if filter.RoundID != "" {
-				newRole.RoundID = &filter.RoundID
+				RoleID:          idgenerator.GenerateID("j"),
+				Type:            Type,
+				UserID:          userId,
+				ProjectID:       filter.ProjectID,
+				CampaignID:      filter.CampaignID,
+				RoundID:         filter.RoundID,
+				TargetProjectID: filter.TargetProjectID,
+				IsAllowed:       true,
+				Permission:      Type.GetPermission(),
 			}
 			if ok {
 				log.Printf("%s was banned earlier. Unbanning ", role.RoleID)
@@ -85,33 +85,44 @@ func (r *RoleService) CalculateRoleDifference(tx *gorm.DB, Type database.RoleTyp
 	log.Println("Remove ", removedRoles)
 	return addedRoles, removedRoles, nil
 }
-func (service *RoleService) FetchChangeRoles(tx *gorm.DB, roleType database.RoleType, campaignId database.IDType, roundID database.IDType, updatedRoleUsernames []database.UserName) error {
+func (service *RoleService) FetchChangeRoles(tx *gorm.DB, roleType database.RoleType, projectID database.IDType, targetProjectID *database.IDType, campaignId *database.IDType, roundID *database.IDType, updatedRoleUsernames []database.WikimediaUsernameType) ([]database.Role, error) {
 	filter := &database.RoleFilter{
-		CampaignID: campaignId,
-		Type:       &roleType,
+		ProjectID: projectID,
+		Type:      &roleType,
 	}
-	if roundID != "" {
+	if targetProjectID != nil {
+		filter.TargetProjectID = targetProjectID
+	}
+	if campaignId != nil {
+		filter.CampaignID = campaignId
+	}
+	if roundID != nil {
 		filter.RoundID = roundID
 	}
 	addedRoles, removedRoles, err := service.CalculateRoleDifference(tx, roleType, filter, updatedRoleUsernames)
 	if err != nil {
 		log.Println(err)
-		return err
+		return nil, err
 	}
 	if len(addedRoles) > 0 {
 		res := tx.Save(addedRoles)
 		if res.Error != nil {
-			return res.Error
+			log.Println(res.Error)
+			return nil, res.Error
 		}
 	}
 	if len(removedRoles) > 0 {
 		for _, roleID := range removedRoles {
-			log.Println("Banning role: ", roleID)
 			res := tx.Model(&database.Role{RoleID: roleID}).Update("is_allowed", false)
 			if res.Error != nil {
-				return res.Error
+				return nil, res.Error
 			}
 		}
 	}
-	return nil
+	currentRoles := []database.Role{}
+	res := tx.Where(filter).Find(&currentRoles)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	return currentRoles, nil
 }

@@ -19,8 +19,8 @@ type AuthenticationService struct {
 	Config *consts.AuthenticationConfiguration
 }
 type SessionClaims struct {
-	Permission consts.PermissionGroup `json:"permission"`
-	Name       database.UserName      `json:"name"`
+	Permission consts.PermissionGroup         `json:"permission"`
+	Name       database.WikimediaUsernameType `json:"name"`
 	jwt.RegisteredClaims
 }
 

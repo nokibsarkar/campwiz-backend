@@ -24,7 +24,7 @@ type ImageResult struct {
 	Name             string `json:"title"`
 	URL              string
 	SubmittedAt      time.Time
-	UploaderUsername UserName
+	UploaderUsername WikimediaUsernameType
 	Height           uint64
 	Width            uint64
 	Size             uint64
@@ -42,8 +42,8 @@ type Paginator[PageType any] struct {
 	repo *CommonsRepository
 }
 type WikimediaUser struct {
-	Name       UserName  `json:"name"`
-	Registered time.Time `json:"registration"`
+	Name       WikimediaUsernameType `json:"name"`
+	Registered time.Time             `json:"registration"`
 	CentralIds *struct {
 		CentralAuth uint64 `json:"CentralAuth"`
 	} `json:"centralids"`
@@ -59,17 +59,17 @@ type KeyValue struct {
 
 type ImageInfo struct {
 	Info []struct {
-		Timestamp      time.Time    `json:"timestamp"`
-		User           UserName     `json:"user"`
-		Size           uint64       `json:"size"`
-		Width          uint64       `json:"width"`
-		Height         uint64       `json:"height"`
-		Title          string       `json:"canonicaltitle"`
-		URL            string       `json:"url"`
-		DescriptionURL string       `json:"descriptionurl"`
-		MediaType      string       `json:"mediatype"`
-		Duration       float64      `json:"duration"`
-		ExtMetadata    *ExtMetadata `json:"extmetadata"`
+		Timestamp      time.Time             `json:"timestamp"`
+		User           WikimediaUsernameType `json:"user"`
+		Size           uint64                `json:"size"`
+		Width          uint64                `json:"width"`
+		Height         uint64                `json:"height"`
+		Title          string                `json:"canonicaltitle"`
+		URL            string                `json:"url"`
+		DescriptionURL string                `json:"descriptionurl"`
+		MediaType      string                `json:"mediatype"`
+		Duration       float64               `json:"duration"`
+		ExtMetadata    *ExtMetadata          `json:"extmetadata"`
 	} `json:"imageinfo"`
 }
 type Page struct {
@@ -154,7 +154,7 @@ func (c *CommonsRepository) GetImagesFromCommonsCategories(category string) ([]I
 }
 
 // returns images from commons categories
-func (c *CommonsRepository) GeUsersFromUsernames(usernames []UserName) ([]WikimediaUser, error) {
+func (c *CommonsRepository) GeUsersFromUsernames(usernames []WikimediaUsernameType) ([]WikimediaUser, error) {
 	// Get images from commons category
 	// Create batch from commons category
 	paginator := NewPaginator[WikimediaUser](c)

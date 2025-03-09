@@ -8,8 +8,10 @@ import (
 
 // These are the restrictions that are applied to the articles that are submitted to the campaign
 type RoundCommonRestrictions struct {
-	AllowJuryToParticipate bool `json:"allowJuryToParticipate"`
-	AllowMultipleJudgement bool `json:"allowMultipleJudgement"`
+	AllowJuryToParticipate bool   `json:"allowJuryToParticipate"`
+	AllowMultipleJudgement bool   `json:"allowMultipleJudgement"`
+	SecretBallot           bool   `json:"secretBallot"`
+	Blacklist              string `json:"blacklist"`
 }
 type RoundStatus string
 
@@ -37,30 +39,34 @@ const (
 )
 
 // These are the restrictions that are applied to the audio and video that are submitted to the campaign
-type RoundAudioVideoRestrictions struct {
-	MinimumDurationMilliseconds int `json:"minimumDurationMilliseconds" gorm:"default:0"`
+type RoundAudioRestrictions struct {
+	AudioMinimumDurationMilliseconds int `json:"audioMinimumDurationMilliseconds" gorm:"default:0"`
+	AudioMinimumSizeBytes            int `json:"audioMinimumSizeBytes" gorm:"default:0"`
+}
+type RoundVideoRestrictions struct {
+	VideoMinimumDurationMilliseconds int `json:"videoMinimumDurationMilliseconds" gorm:"default:0"`
+	VideoMinimumSizeBytes            int `json:"videoMinimumSizeBytes" gorm:"default:0"`
+	VideoMinimumResolution           int `json:"videoMinimumResolution" gorm:"default:0"`
 }
 
 // These are the restrictions that are applied to the images that are submitted to the campaign
 type RoundImageRestrictions struct {
-	MinimumHeight     int `json:"minimumHeight" gorm:"default:0"`
-	MinimumWidth      int `json:"minimumWidth" gorm:"default:0"`
-	MinimumResolution int `json:"minimumResolution" gorm:"default:0"`
+	ImageMinimumResolution int `json:"imageMinimumResolution" gorm:"default:0"`
+	ImageMinimumSizeBytes  int `json:"imageMinimumSizeBytes" gorm:"default:0"`
 }
 type RoundArticleRestrictions struct {
-	MaximumSubmissionOfSameArticle int    `json:"maximumSubmissionOfSameArticle"`
-	AllowExpansions                bool   `json:"allowExpansions"`
-	AllowCreations                 bool   `json:"allowCreations"`
-	MinimumTotalBytes              int    `json:"minimumTotalBytes"`
-	MinimumTotalWords              int    `json:"minimumTotalWords"`
-	MinimumAddedBytes              int    `json:"minimumAddedBytes"`
-	MinimumAddedWords              int    `json:"minimumAddedWords"`
-	SecretBallot                   bool   `json:"secretBallot"`
-	Blacklist                      string `json:"blacklist"`
+	MaximumSubmissionOfSameArticle int  `json:"articleMaximumSubmissionOfSameArticle"`
+	ArticleAllowExpansions         bool `json:"articleAllowExpansions"`
+	ArticleAllowCreations          bool `json:"articleAllowCreations"`
+	ArticleMinimumTotalBytes       int  `json:"articleMinimumTotalBytes"`
+	ArticleMinimumTotalWords       int  `json:"articleMinimumTotalWords"`
+	ArticleMinimumAddedBytes       int  `json:"articleMinimumAddedBytes"`
+	ArticleMinimumAddedWords       int  `json:"articleMinimumAddedWords"`
 }
 type RoundMediaRestrictions struct {
 	RoundImageRestrictions
-	RoundAudioVideoRestrictions
+	RoundAudioRestrictions
+	RoundVideoRestrictions
 }
 
 // these are the restrictions that are applied to
@@ -86,6 +92,7 @@ type RoundWritable struct {
 type Round struct {
 	RoundID                  IDType      `json:"roundId" gorm:"primaryKey"`
 	CampaignID               IDType      `json:"campaignId" gorm:"index;cascade:OnUpdate,OnDelete"`
+	ProjectID                IDType      `json:"projectId" gorm:"index;cascade:OnUpdate,OnDelete"`
 	CreatedAt                *time.Time  `json:"createdAt" gorm:"-<-:create"`
 	CreatedByID              IDType      `json:"createdById" gorm:"index;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	TotalSubmissions         int         `json:"totalSubmissions" gorm:"default:0"`
@@ -95,6 +102,7 @@ type Round struct {
 	LatestDistributionTaskID *IDType     `json:"latestTaskId" gorm:"default:null"`
 	RoundWritable
 	Roles []Role `json:"roles"`
+	// Project Project `json:"-" gorm:"foreignKey:ProjectID"`
 }
 type RoundFilter struct {
 	CampaignID IDType      `form:"campaignId"`

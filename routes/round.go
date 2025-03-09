@@ -186,12 +186,36 @@ func SimulateDistributeEvaluations(c *gin.Context, sess *cache.Session) {
 	}
 	c.JSON(200, ResponseSingle[*database.Task]{Data: task})
 }
+
+// GetRound godoc
+// @Summary Get a round
+// @Description Get a round
+// @Produce  json
+// @Success 200 {object} ResponseSingle[database.Round]
+// @Router /round/{roundId} [get]
+// @Param roundId path string true "The round ID"
+// @Tags Round
+// @Error 400 {object} ResponseError
+func GetRound(c *gin.Context) {
+	roundId := c.Param("roundId")
+	if roundId == "" {
+		c.JSON(400, ResponseError{Detail: "Invalid request : Round ID is required"})
+	}
+	round_service := services.NewRoundService()
+	round, err := round_service.GetById(database.IDType(roundId))
+	if err != nil {
+		c.JSON(400, ResponseError{Detail: "Failed to get round : " + err.Error()})
+		return
+	}
+	c.JSON(200, ResponseSingle[*database.Round]{Data: round})
+}
 func NewRoundRoutes(parent *gin.RouterGroup) {
 	r := parent.Group("/round")
 	r.GET("/", WithSession(ListAllRounds))
+	r.GET("/:roundId", GetRound)
 	r.POST("/", WithPermission(consts.PermissionCreateCampaign, CreateRound))
 	r.POST("/:roundId", WithPermission(consts.PermissionCreateCampaign, UpdateRoundDetails))
-	r.POST("/import/:roundId/commons", WithPermission(consts.PermissionCreateCampaign, ImportFromCommons))
+	r.POST("/import/:roundId/commons", WithPermission(consts.PermissionLogin, ImportFromCommons))
 	r.POST("/distribute/:roundId", WithPermission(consts.PermissionCreateCampaign, DistributeEvaluations))
 	r.POST("/distribute/:roundId/simulate", WithPermission(consts.PermissionCreateCampaign, SimulateDistributeEvaluations))
 }

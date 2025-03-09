@@ -20,3 +20,13 @@ func (s *SubmissionService) ListAllSubmissions(filter *database.SubmissionListFi
 	}
 	return submissions, nil
 }
+func (s *SubmissionService) GetSubmission(submissionID database.IDType) (*database.Submission, error) {
+	conn, close := database.GetDB()
+	defer close()
+	submission_repo := database.NewSubmissionRepository()
+	submission, err := submission_repo.FindSubmissionByID(conn, submissionID)
+	if err != nil {
+		return nil, err
+	}
+	return submission, nil
+}

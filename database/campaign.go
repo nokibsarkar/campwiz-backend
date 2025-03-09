@@ -9,14 +9,15 @@ import (
 )
 
 type CampaignWithWriteableFields struct {
-	Name        string          `json:"name"`
+	Name        string          `json:"name" binding:"required"`
 	Description string          `json:"description"`
-	StartDate   time.Time       `json:"startDate"`
-	EndDate     time.Time       `json:"endDate"`
-	Language    consts.Language `json:"language"`
+	StartDate   time.Time       `json:"startDate" binding:"required"`
+	EndDate     time.Time       `json:"endDate" binding:"required"`
+	Language    consts.Language `json:"language" binding:"required"`
 	Rules       string          `json:"rules"`
 	Image       string          `json:"image"`
-	Roles       []Role          `json:"roles"`
+	IsPublic    bool            `json:"isPublic"`
+	ProjectID   IDType          `json:"projectId" binding:"required"`
 }
 type Campaign struct {
 	CampaignID IDType `gorm:"primaryKey" json:"campaignId"`
@@ -24,7 +25,8 @@ type Campaign struct {
 	CreatedAt   *time.Time `json:"createdAt" gorm:"-<-:create"`
 	CreatedByID IDType     `json:"createdById" gorm:"index;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	CampaignWithWriteableFields
-	CreatedBy *User `json:"-" gorm:"foreignKey:CreatedByID"`
+	CreatedBy *User  `json:"-" gorm:"foreignKey:CreatedByID"`
+	Roles     []Role `json:"roles"`
 }
 type CampaignFilter struct {
 	IDs []IDType `form:"ids,omitEmpty"`

@@ -48,7 +48,7 @@ func (u *UserService) GetExtendedDetails(id database.IDType) (*database.Extended
 	}
 	return details, nil
 }
-func (u *UserService) GetUserByUsername(conn *gorm.DB, username database.UserName) (*database.User, error) {
+func (u *UserService) GetUserByUsername(conn *gorm.DB, username database.WikimediaUsernameType) (*database.User, error) {
 	userFilter := &database.User{Username: username}
 	user := &database.User{}
 	result := conn.First(user, userFilter)
@@ -65,7 +65,7 @@ func (u *UserService) GetOrCreateUser(conn *gorm.DB, user *database.User) (*data
 	}
 	return user, nil
 }
-func (u *UserService) EnsureExists(tx *gorm.DB, usernameSet sets.Set[database.UserName]) (map[database.UserName]database.IDType, error) {
+func (u *UserService) EnsureExists(tx *gorm.DB, usernameSet sets.Set[database.WikimediaUsernameType]) (map[database.WikimediaUsernameType]database.IDType, error) {
 	user_repo := database.NewUserRepository()
 	userName2Id, err := user_repo.FetchExistingUsernames(tx, usernameSet.UnsortedList())
 	if err != nil {
@@ -91,7 +91,7 @@ func (u *UserService) EnsureExists(tx *gorm.DB, usernameSet sets.Set[database.Us
 			UserID:       idgenerator.GenerateID("user"),
 			RegisteredAt: u.Registered,
 			Username:     u.Name,
-			Permission:   consts.PermissionGroupUSER,
+			Permission:   consts.PermissionGroupADMIN,
 		}
 		new_users = append(new_users, new_user)
 		userName2Id[new_user.Username] = new_user.UserID

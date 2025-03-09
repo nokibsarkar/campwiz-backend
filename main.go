@@ -1,7 +1,6 @@
 package main
 
 import (
-	"net/http"
 	"nokib/campwiz/database"
 	"nokib/campwiz/database/cache"
 	"nokib/campwiz/routes"
@@ -29,9 +28,8 @@ func afterSetupRouter(testing bool) {
 func SetupRouter(testing bool) *gin.Engine {
 	beforeSetupRouter(testing)
 	r := gin.Default()
-	r.LoadHTMLGlob("templates/*.html")
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
-	r.StaticFS("/static", http.Dir("static"))
+	// r.StaticFS("/static", http.Dir("static"))
 	routes.NewRoutes(r.Group("/"))
 	afterSetupRouter(testing)
 	return r

@@ -140,7 +140,7 @@ func (e *EvaluationService) Evaluate(currentUserID database.IDType, evaluationID
 	}
 	round := submission.CurrentRound
 	campaign := round.Campaign
-	juries, err := jury_repo.ListAllRoles(tx, &database.RoleFilter{RoundID: round.RoundID, CampaignID: campaign.CampaignID})
+	juries, err := jury_repo.ListAllRoles(tx, &database.RoleFilter{RoundID: &round.RoundID, CampaignID: &campaign.CampaignID})
 	if err != nil {
 		tx.Rollback()
 		return nil, err

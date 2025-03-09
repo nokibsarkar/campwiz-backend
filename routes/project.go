@@ -16,6 +16,7 @@ import (
 // @Success 200 {object} ResponseSingle[database.Project]
 // @Router /project/ [post]
 // @Param projectRequest body database.ProjectRequest true "The project request"
+// @Param includeProjectLeads query bool false "Include project leads"
 // @Tags Project
 // @Security ApiKeyAuth
 // @Error 400 {object} ResponseError
@@ -28,14 +29,20 @@ func CreateProject(c *gin.Context, sess *cache.Session) {
 		c.JSON(400, ResponseError{Detail: "Invalid request : " + err.Error()})
 		return
 	}
+	q := &ProjectSingleQuery{}
+	err = c.ShouldBindQuery(q)
+	if err != nil {
+		c.JSON(400, ResponseError{Detail: "Invalid request : " + err.Error()})
+		return
+	}
 	projectRequest.CreatedByID = sess.UserID
 	project_service := services.NewProjectService()
-	project, err := project_service.CreateProject(projectRequest)
+	project, err := project_service.CreateProject(projectRequest, q.IncludeProjectLeads)
 	if err != nil {
 		c.JSON(400, ResponseError{Detail: "Error creating project : " + err.Error()})
 		return
 	}
-	c.JSON(200, ResponseSingle[database.Project]{Data: *project})
+	c.JSON(200, ResponseSingle[database.ProjectExtended]{Data: *project})
 }
 
 // UpdateProject godoc
@@ -60,7 +67,7 @@ func UpdateProject(c *gin.Context, sess *cache.Session) {
 	projectRequest := &database.ProjectRequest{}
 	err := c.ShouldBindJSON(projectRequest)
 	if err != nil {
-		c.JSON(400, ResponseError{Detail: "Invalid request : " + err.Error()})
+		c.JSON(400, ResponseError{Detail: "Invalid request: " + err.Error()})
 		return
 	}
 	projectRequest.ProjectID = database.IDType(projectId)
@@ -68,15 +75,56 @@ func UpdateProject(c *gin.Context, sess *cache.Session) {
 	project_service := services.NewProjectService()
 	project, err := project_service.UpdateProject(projectRequest)
 	if err != nil {
-		c.JSON(400, ResponseError{Detail: "Error creating project : " + err.Error()})
+		c.JSON(400, ResponseError{Detail: "Error updating project : " + err.Error()})
 		return
 	}
-	c.JSON(200, ResponseSingle[database.Project]{Data: *project})
+	c.JSON(200, ResponseSingle[database.ProjectExtended]{Data: *project})
+}
+
+// ProjectSingleQuery is a query struct for getting a single project
+type ProjectSingleQuery struct {
+	IncludeProjectLeads bool `form:"includeProjectLeads"`
+}
+
+// GetSingleProject godoc
+// @Summary Get a single project
+// @Description Get a single project
+// @Produce  json
+// @Success 200 {object} ResponseSingle[database.Project]
+// @Router /project/{projectId} [get]
+// @Param projectId path string true "The project ID"
+// @Param includeProjectLeads query bool false "Include project leads"
+// @Tags Project
+// @Security ApiKeyAuth
+// @Error 400 {object} ResponseError
+// @Error 403 {object} ResponseError
+// @Error 404 {object} ResponseError
+func GetSingleProject(c *gin.Context) {
+	projectId := c.Param("projectId")
+	if projectId == "" {
+		c.JSON(400, ResponseError{Detail: "Invalid request : Project ID is required"})
+		return
+	}
+	q := &ProjectSingleQuery{}
+	err := c.ShouldBindQuery(q)
+	if err != nil {
+		c.JSON(400, ResponseError{Detail: "Invalid request : " + err.Error()})
+		return
+	}
+	project_service := services.NewProjectService()
+	project, err := project_service.GetProjectByID(database.IDType(projectId), q.IncludeProjectLeads)
+	if err != nil {
+		c.JSON(400, ResponseError{Detail: "Error getting project : " + err.Error()})
+		return
+	}
+	c.JSON(200, ResponseSingle[database.ProjectExtended]{Data: *project})
 }
 
 func NewProjectRoutes(parent *gin.RouterGroup) *gin.RouterGroup {
 	r := parent.Group("/project")
 	r.POST("/", WithPermission(consts.PermissionCreateCampaign, CreateProject))
-	r.POST("/:projectId", WithPermission(consts.PermissionCreateCampaign, UpdateProject))
+	r.POST("/:projectId", WithPermission(consts.PermissionUpdateProject, UpdateProject))
+	r.GET("/:projectId", GetSingleProject)
+
 	return r
 }

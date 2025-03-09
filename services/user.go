@@ -53,7 +53,6 @@ func (u *UserService) GetUserByUsername(conn *gorm.DB, username database.Wikimed
 	user := &database.User{}
 	result := conn.First(user, userFilter)
 	if result.Error != nil {
-		fmt.Println("Error: ", result.Error)
 		return nil, result.Error
 	}
 	return user, nil

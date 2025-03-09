@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"nokib/campwiz/consts"
 
+	"github.com/go-gorm/caches/v4"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -18,12 +19,18 @@ type CommonFilter struct {
 func GetDB() (db *gorm.DB, close func()) {
 	dsn := consts.Config.Database.Main.DSN
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Warn),
-		// Logger: logger.Default.LogMode(logger.Info),
+		// Logger: logger.Default.LogMode(logger.Warn),
+		Logger: logger.Default.LogMode(logger.Info),
 	})
+
 	if err != nil {
 		panic("failed to connect database")
 	}
+	cachesPlugin := &caches.Caches{Conf: &caches.Config{
+		Easer: true,
+	}}
+	// Use caches plugin
+	db.Use(cachesPlugin)
 	return db, func() {
 		raw_db, err := db.DB()
 		if err != nil {

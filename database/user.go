@@ -13,6 +13,13 @@ type User struct {
 	RegisteredAt time.Time              `json:"registeredAt"`
 	Username     WikimediaUsernameType  `json:"username" gorm:"unique;not null;index"`
 	Permission   consts.PermissionGroup `json:"permission" gorm:"type:bigint;default:0"`
+	// The project this person is leading, because a person can lead only one project
+	// This is a many to one relationship
+	// it can be null because a person can be a user without leading any project
+	// and for most of the users this field will be null
+	LeadingProjectID *IDType `json:"projectId" gorm:"index;null"`
+	// The project this person is leading
+	LeadingProject *Project `json:"project" gorm:"foreignKey:LeadingProjectID;references:ProjectID"`
 }
 type ExtendedUserDetails struct {
 	User
@@ -94,4 +101,9 @@ func (u *UserRepository) FindByID(tx *gorm.DB, userID IDType) (*User, error) {
 	user := &User{}
 	result := tx.Limit(1).Find(user, &User{UserID: userID})
 	return user, result.Error
+}
+func (u *UserRepository) FindProjectLeads(tx *gorm.DB, projectID *IDType) ([]User, error) {
+	users := []User{}
+	result := tx.Find(&users, &User{LeadingProjectID: projectID})
+	return users, result.Error
 }

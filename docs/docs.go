@@ -292,6 +292,12 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/database.ProjectRequest"
                         }
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Include project leads",
+                        "name": "includeProjectLeads",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -305,6 +311,44 @@ const docTemplate = `{
             }
         },
         "/project/{projectId}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get a single project",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "Get a single project",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The project ID",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Include project leads",
+                        "name": "includeProjectLeads",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.ResponseSingle-database_Project"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -1065,6 +1109,12 @@ const docTemplate = `{
                 "projectId": {
                     "type": "string"
                 },
+                "projectLeads": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/database.User"
+                    }
+                },
                 "url": {
                     "description": "The URL of the project's website",
                     "type": "string"
@@ -1467,6 +1517,35 @@ const docTemplate = `{
                 "TaskTypeImportFromCommons",
                 "TaskTypeDistributeEvaluations"
             ]
+        },
+        "database.User": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "permission": {
+                    "$ref": "#/definitions/consts.PermissionGroup"
+                },
+                "project": {
+                    "description": "The project this person is leading",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/database.Project"
+                        }
+                    ]
+                },
+                "projectId": {
+                    "description": "The project this person is leading, because a person can lead only one project\nThis is a many to one relationship\nit can be null because a person can be a user without leading any project\nand for most of the users this field will be null",
+                    "type": "string"
+                },
+                "registeredAt": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
         },
         "routes.ResponseList-database_Campaign": {
             "type": "object",

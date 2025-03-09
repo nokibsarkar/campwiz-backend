@@ -12,9 +12,12 @@ type Project struct {
 	LogoURL   *string `json:"logoUrl" gorm:"null"`
 	// The URL of the project's website
 	Link        *string    `json:"url"`
-	CreatedByID IDType     `json:"createdById" gorm:"index;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	CreatedByID IDType     `json:"createdById" gorm:"index;not null"`
 	CreatedAt   *time.Time `json:"createdAt" gorm:"-<-:create;autoCreateTime"`
-	CreatedBy   *User      `json:"-" gorm:"foreignKey:CreatedByID"`
+}
+type ProjectExtended struct {
+	Project
+	Leads []WikimediaUsernameType `json:"projectLeads"`
 }
 type ProjectRequest struct {
 	ProjectID    IDType                  `json:"projectId"`
@@ -39,6 +42,6 @@ func (r *ProjectRepository) FindProjectByID(tx *gorm.DB, projectID IDType) (*Pro
 	return project, result.Error
 }
 func (r *ProjectRepository) UpdateProject(tx *gorm.DB, project *Project) error {
-	result := tx.Save(project)
+	result := tx.Updates(project)
 	return result.Error
 }

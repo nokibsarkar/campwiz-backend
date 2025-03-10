@@ -29,9 +29,9 @@ type Evaluation struct {
 	VotePassed         *bool       `json:"votePassed" gorm:"null;default:null;"`
 	Comment            string      `json:"comment" gorm:"default:null"`
 	Serial             uint        `json:"serial"`
-	Submission         *Submission `json:"-"`
-	Participant        *User       `json:"-" gorm:"foreignKey:ParticipantID"`
-	Judge              *Role       `json:"-"`
+	Submission         *Submission `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Participant        *User       `json:"-" gorm:"foreignKey:ParticipantID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Judge              *Role       `json:"-" gorm:"foreignKey:JudgeID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	CreatedAt          *time.Time  `json:"createdAt" gorm:"autoCreateTime"`
 	UpdatedAt          *time.Time  `json:"updatedAt" gorm:"autoUpdateTime"`
 	EvaluatedAt        *time.Time  `json:"evaluatedAt" gorm:"type:datetime"`

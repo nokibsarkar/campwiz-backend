@@ -53,15 +53,17 @@ type Submission struct {
 	ParticipantID      IDType     `json:"participantId" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	CurrentRoundID     IDType     `json:"currentRoundId" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	SubmittedAt        time.Time  `json:"submittedAt" gorm:"type:datetime"`
-	Participant        User       `json:"-" gorm:"foreignKey:ParticipantID"`
-	Submitter          User       `json:"-" gorm:"foreignKey:SubmittedByID"`
-	Campaign           *Campaign  `json:"-"`
+	Participant        User       `json:"-" gorm:"foreignKey:ParticipantID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Submitter          User       `json:"-" gorm:"foreignKey:SubmittedByID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Campaign           *Campaign  `json:"-"  gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	CreatedAtExternal  *time.Time `json:"createdAtServer"`
-	CurrentRound       *Round     `json:"-" gorm:"foreignKey:CurrentRoundID"`
+	CurrentRound       *Round     `json:"-" gorm:"foreignKey:CurrentRoundID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	DistributionTaskID IDType     `json:"distributionTaskId" gorm:"null"`
 	ImportTaskID       IDType     `json:"importTaskId" gorm:"null"`
-	DistributionTask   *Task      `json:"-" gorm:"foreignKey:DistributionTaskID"`
-	ImportTask         *Task      `json:"-" gorm:"foreignKey:ImportTaskID"`
+	// The task that was used to distribute the submission to the juries
+	DistributionTask *Task `json:"-" gorm:"foreignKey:DistributionTaskID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
+	// The task that was used to import the submission from the external source
+	ImportTask *Task `json:"-" gorm:"foreignKey:ImportTaskID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
 	MediaSubmission
 }
 type SubmissionSelectID struct {

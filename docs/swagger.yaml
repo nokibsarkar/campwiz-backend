@@ -182,7 +182,6 @@ definitions:
     - endDate
     - language
     - name
-    - projectId
     - startDate
     type: object
   database.Evaluation:
@@ -259,10 +258,6 @@ definitions:
         type: string
       projectId:
         type: string
-      projectLeads:
-        items:
-          $ref: '#/definitions/database.User'
-        type: array
       url:
         description: The URL of the project's website
         type: string
@@ -543,28 +538,6 @@ definitions:
     x-enum-varnames:
     - TaskTypeImportFromCommons
     - TaskTypeDistributeEvaluations
-  database.User:
-    properties:
-      id:
-        type: string
-      permission:
-        $ref: '#/definitions/consts.PermissionGroup'
-      project:
-        allOf:
-        - $ref: '#/definitions/database.Project'
-        description: The project this person is leading
-      projectId:
-        description: |-
-          The project this person is leading, because a person can lead only one project
-          This is a many to one relationship
-          it can be null because a person can be a user without leading any project
-          and for most of the users this field will be null
-        type: string
-      registeredAt:
-        type: string
-      username:
-        type: string
-    type: object
   routes.ResponseList-database_Campaign:
     properties:
       data:
@@ -666,7 +639,6 @@ definitions:
     - endDate
     - language
     - name
-    - projectId
     - startDate
     type: object
   services.DistributionRequest:

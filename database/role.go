@@ -29,10 +29,10 @@ type Role struct {
 	TotalEvaluated  int                    `json:"totalEvaluated"`
 	TotalScore      int                    `json:"totalScore"`
 	Permission      consts.PermissionGroup `json:"permission" gorm:"not null;default:0"`
-	Campaign        *Campaign              `json:"-"`
-	User            *User                  `json:"-"`
-	Round           *Round                 `json:"-"`
-	Project         *Project               `json:"-"`
+	Campaign        *Campaign              `json:"-"  gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	User            *User                  `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Round           *Round                 `json:"-"  gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Project         *Project               `json:"-"  gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }
 type RoleFilter struct {
 	CommonFilter

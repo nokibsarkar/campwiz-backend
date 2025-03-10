@@ -17,16 +17,19 @@ type CampaignWithWriteableFields struct {
 	Rules       string          `json:"rules"`
 	Image       string          `json:"image"`
 	IsPublic    bool            `json:"isPublic"`
-	ProjectID   IDType          `json:"projectId" binding:"required"`
+	ProjectID   IDType          `json:"projectId"`
+	Status      RoundStatus     `json:"status"`
 }
 type Campaign struct {
 	CampaignID IDType `gorm:"primaryKey" json:"campaignId"`
 	// read only
 	CreatedAt   *time.Time `json:"createdAt" gorm:"-<-:create"`
-	CreatedByID IDType     `json:"createdById" gorm:"index;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	CreatedByID IDType     `json:"createdById" gorm:"index"`
 	CampaignWithWriteableFields
-	CreatedBy *User  `json:"-" gorm:"foreignKey:CreatedByID"`
-	Roles     []Role `json:"roles"`
+	CreatedBy *User    `json:"-" gorm:"foreignKey:CreatedByID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
+	Roles     []Role   `json:"roles" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Rounds    []Round  `json:"rounds" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Project   *Project `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }
 type CampaignFilter struct {
 	IDs []IDType `form:"ids,omitEmpty"`

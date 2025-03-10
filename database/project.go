@@ -25,7 +25,8 @@ type ProjectRequest struct {
 	LogoURL      *string                 `json:"logoUrl"`
 	Link         *string                 `json:"url"`
 	CreatedByID  IDType                  `json:"-"`
-	ProjectLeads []WikimediaUsernameType `json:"projectLeads"`
+	ProjectLeads []WikimediaUsernameType `json:"projectLeads"  gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Campaigns    []*Campaign             `json:"-"  gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }
 type ProjectRepository struct{}
 

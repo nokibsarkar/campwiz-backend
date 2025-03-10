@@ -962,7 +962,6 @@ const docTemplate = `{
                 "endDate",
                 "language",
                 "name",
-                "projectId",
                 "startDate"
             ],
             "properties": {
@@ -1108,12 +1107,6 @@ const docTemplate = `{
                 },
                 "projectId": {
                     "type": "string"
-                },
-                "projectLeads": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/database.User"
-                    }
                 },
                 "url": {
                     "description": "The URL of the project's website",
@@ -1518,35 +1511,6 @@ const docTemplate = `{
                 "TaskTypeDistributeEvaluations"
             ]
         },
-        "database.User": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "string"
-                },
-                "permission": {
-                    "$ref": "#/definitions/consts.PermissionGroup"
-                },
-                "project": {
-                    "description": "The project this person is leading",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/database.Project"
-                        }
-                    ]
-                },
-                "projectId": {
-                    "description": "The project this person is leading, because a person can lead only one project\nThis is a many to one relationship\nit can be null because a person can be a user without leading any project\nand for most of the users this field will be null",
-                    "type": "string"
-                },
-                "registeredAt": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
-                }
-            }
-        },
         "routes.ResponseList-database_Campaign": {
             "type": "object",
             "properties": {
@@ -1661,7 +1625,6 @@ const docTemplate = `{
                 "endDate",
                 "language",
                 "name",
-                "projectId",
                 "startDate"
             ],
             "properties": {

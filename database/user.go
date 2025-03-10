@@ -19,7 +19,7 @@ type User struct {
 	// and for most of the users this field will be null
 	LeadingProjectID *IDType `json:"projectId" gorm:"index;null"`
 	// The project this person is leading
-	LeadingProject *Project `json:"project" gorm:"foreignKey:LeadingProjectID;references:ProjectID"`
+	LeadingProject *Project `json:"project" gorm:"foreignKey:LeadingProjectID;references:ProjectID;constraint:OnUpdate:CASCADE,OnDelete:Set Null"`
 }
 type ExtendedUserDetails struct {
 	User

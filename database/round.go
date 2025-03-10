@@ -84,7 +84,7 @@ type RoundWritable struct {
 	IsOpen           bool           `json:"isOpen" gorm:"default:true"`
 	IsPublic         bool           `json:"isPublic" gorm:"default:false"`
 	DependsOnRoundID *string        `json:"dependsOnRoundId" gorm:"default:null"`
-	DependsOnRound   *Round         `json:"-" gorm:"foreignKey:DependsOnRoundID"`
+	DependsOnRound   *Round         `json:"-" gorm:"foreignKey:DependsOnRoundID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	Serial           int            `json:"serial" gorm:"default:0"`
 	Type             EvaluationType `json:"type"`
 	RoundRestrictions
@@ -94,11 +94,11 @@ type Round struct {
 	CampaignID               IDType      `json:"campaignId" gorm:"index;cascade:OnUpdate,OnDelete"`
 	ProjectID                IDType      `json:"projectId" gorm:"index;cascade:OnUpdate,OnDelete"`
 	CreatedAt                *time.Time  `json:"createdAt" gorm:"-<-:create"`
-	CreatedByID              IDType      `json:"createdById" gorm:"index;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	CreatedByID              IDType      `json:"createdById" gorm:"index"`
 	TotalSubmissions         int         `json:"totalSubmissions" gorm:"default:0"`
 	Status                   RoundStatus `json:"status"`
-	Campaign                 *Campaign   `json:"-"`
-	Creator                  *User       `json:"-" gorm:"foreignKey:CreatedByID"`
+	Campaign                 *Campaign   `json:"-"  gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Creator                  *User       `json:"-" gorm:"foreignKey:CreatedByID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
 	LatestDistributionTaskID *IDType     `json:"latestTaskId" gorm:"default:null"`
 	RoundWritable
 	Roles []Role `json:"roles"`

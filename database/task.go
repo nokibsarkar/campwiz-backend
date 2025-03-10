@@ -37,7 +37,7 @@ type Task struct {
 	FailedIds            *datatypes.JSONType[map[string]string] `json:"failedIds"`
 	RemainingCount       int                                    `json:"remainingCount"`
 	CreatedByID          IDType                                 `json:"createdById" gorm:"index;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	Submittor            User                                   `json:"-" gorm:"foreignKey:CreatedByID;references:UserID"`
+	Submittor            User                                   `json:"-" gorm:"foreignKey:CreatedByID;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }
 
 type TaskRepository struct{}

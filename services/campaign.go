@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"nokib/campwiz/consts"
 	"nokib/campwiz/database"
 	idgenerator "nokib/campwiz/services/idGenerator"
 )
@@ -33,6 +34,26 @@ func (service *CampaignService) CreateCampaign(campaignRequest *CampaignCreateRe
 	if campaignRequest.StartDate.After(campaignRequest.EndDate) {
 		return nil, fmt.Errorf("start date should be before end date")
 	}
+	user_repo := database.NewUserRepository()
+	campaign_repo := database.NewCampaignRepository()
+	// user_repo := database.NewUserRepository()
+	role_service := NewRoleService()
+	conn, close := database.GetDB()
+	defer close()
+	tx := conn.Begin()
+	currentUser, err := user_repo.FindByID(tx, campaignRequest.CreatedByID)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	if currentUser.Permission.HasPermission(consts.PermissionCreateCampaign) == false {
+		tx.Rollback()
+		return nil, fmt.Errorf("user does not have permission to create campaign")
+	}
+	if currentUser.LeadingProjectID == nil {
+		tx.Rollback()
+		return nil, fmt.Errorf("user is not leading any project")
+	}
 	campaign := &database.Campaign{
 		CampaignID: idgenerator.GenerateID("c"),
 		CampaignWithWriteableFields: database.CampaignWithWriteableFields{
@@ -43,16 +64,13 @@ func (service *CampaignService) CreateCampaign(campaignRequest *CampaignCreateRe
 			Language:    campaignRequest.Language,
 			Rules:       campaignRequest.Rules,
 			Image:       campaignRequest.Image,
+			ProjectID:   *currentUser.LeadingProjectID,
+			IsPublic:    campaignRequest.IsPublic,
 		},
 		CreatedByID: campaignRequest.CreatedByID,
 	}
-	campaign_repo := database.NewCampaignRepository()
-	// user_repo := database.NewUserRepository()
-	role_service := NewRoleService()
-	conn, close := database.GetDB()
-	defer close()
-	tx := conn.Begin()
-	err := campaign_repo.Create(tx.Preload("Roles"), campaign)
+
+	err = campaign_repo.Create(tx.Preload("Roles"), campaign)
 	if err != nil {
 		tx.Rollback()
 		return nil, err

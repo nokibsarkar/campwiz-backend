@@ -16,9 +16,10 @@ type CampaignWithWriteableFields struct {
 	Language    consts.Language `json:"language" binding:"required"`
 	Rules       string          `json:"rules"`
 	Image       string          `json:"image"`
-	IsPublic    bool            `json:"isPublic"`
-	ProjectID   IDType          `json:"projectId"`
-	Status      RoundStatus     `json:"status"`
+	// Whether the campaign is shown in the public list
+	IsPublic  bool        `json:"isPublic"`
+	ProjectID IDType      `json:"projectId"`
+	Status    RoundStatus `json:"status"`
 }
 type Campaign struct {
 	CampaignID IDType `gorm:"primaryKey" json:"campaignId"`

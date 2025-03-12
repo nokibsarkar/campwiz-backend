@@ -1,6 +1,8 @@
 package services
 
 import (
+	"bytes"
+	"crypto/ecdsa"
 	"errors"
 	"fmt"
 	"log"
@@ -8,12 +10,16 @@ import (
 	"nokib/campwiz/models"
 	"nokib/campwiz/repository/cache"
 	idgenerator "nokib/campwiz/services/idGenerator"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"gorm.io/gorm"
 )
+
+var RSAPrivateKey *ecdsa.PrivateKey
+var RSAPublicKey *ecdsa.PublicKey
 
 type AuthenticationService struct {
 	Config *consts.AuthenticationConfiguration
@@ -22,6 +28,30 @@ type SessionClaims struct {
 	Permission consts.PermissionGroup       `json:"permission"`
 	Name       models.WikimediaUsernameType `json:"name"`
 	jwt.RegisteredClaims
+}
+
+func init() {
+	// Load the RSA keys
+	rsaPrivateFp, err := os.Open(consts.Config.Auth.RSAPrivateKeyPath)
+	if err != nil {
+		log.Panicln("Error: ", err)
+	}
+	rsaPublicFp, err := os.Open(consts.Config.Auth.RSAPublicKeyPath)
+	if err != nil {
+		log.Panicln("Error: ", err)
+	}
+	privateKeyBytes := bytes.NewBuffer(nil)
+	publicBytes := bytes.NewBuffer(nil)
+	rsaPublicFp.WriteTo(publicBytes)
+	rsaPrivateFp.WriteTo(privateKeyBytes)
+	RSAPrivateKey, err = jwt.ParseECPrivateKeyFromPEM(privateKeyBytes.Bytes())
+	if err != nil {
+		log.Panicln("Error parsing private key: ", err)
+	}
+	RSAPublicKey, err = jwt.ParseECPublicKeyFromPEM(publicBytes.Bytes())
+	if err != nil {
+		log.Panicln("Error parsing public key: ", err)
+	}
 }
 
 func NewAuthenticationService() *AuthenticationService {
@@ -59,8 +89,8 @@ func (a *AuthenticationService) NewSession(tx *gorm.DB, tokenMap *SessionClaims)
 		return "", nil, result.Error
 	}
 	tokenMap.ID = string(models.IDType(session.ID))
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, tokenMap)
-	accessToken, err := token.SignedString([]byte(a.Config.Secret))
+	token := jwt.NewWithClaims(jwt.SigningMethodES256, tokenMap)
+	accessToken, err := token.SignedString(RSAPrivateKey)
 	if err != nil {
 		fmt.Println("Error: ", err)
 		return "", nil, err
@@ -78,8 +108,8 @@ func (a *AuthenticationService) NewRefreshToken(tokenMap *SessionClaims) (string
 		Permission: tokenMap.Permission,
 		Name:       tokenMap.Name,
 	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
-	refreshToken, err := token.SignedString([]byte(a.Config.Secret))
+	token := jwt.NewWithClaims(jwt.SigningMethodES256, refreshClaims)
+	refreshToken, err := token.SignedString(RSAPrivateKey)
 	if err != nil {
 		fmt.Println("Error: ", err)
 		return "", err
@@ -139,9 +169,9 @@ func (a *AuthenticationService) Logout(session *cache.Session) error {
 }
 func (a *AuthenticationService) decodeToken(tokenString string) (*SessionClaims, error) {
 	claims := &SessionClaims{}
-	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (any, error) {
 		// Don't forget to validate the alg is what you expect:
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		claims := token.Claims
@@ -153,7 +183,7 @@ func (a *AuthenticationService) decodeToken(tokenString string) (*SessionClaims,
 			return nil, errors.New("invalid issuer")
 		}
 
-		return []byte(a.Config.Secret), nil
+		return RSAPublicKey, nil
 	})
 	if err != nil {
 		return claims, err

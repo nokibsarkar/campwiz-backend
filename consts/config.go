@@ -37,12 +37,14 @@ type OAuth2Configuration struct {
 	APIURL       string `mapstructure:"APIURL"`
 }
 type AuthenticationConfiguration struct {
-	Secret      string              `mapstructure:"Secret"`
-	Expiry      int                 `mapstructure:"Expiry"`
-	Refresh     int                 `mapstructure:"Refresh"`
-	Issuer      string              `mapstructure:"Issuer"`
-	OAuth2      OAuth2Configuration `mapstructure:"OAuth2"`
-	AccessToken string              `mapstructure:"AccessToken"`
+	Secret            string              `mapstructure:"Secret"`
+	Expiry            int                 `mapstructure:"Expiry"`
+	Refresh           int                 `mapstructure:"Refresh"`
+	Issuer            string              `mapstructure:"Issuer"`
+	OAuth2            OAuth2Configuration `mapstructure:"OAuth2"`
+	AccessToken       string              `mapstructure:"AccessToken"`
+	RSAPrivateKeyPath string              `mapstructure:"RSAPrivateKeyPath"`
+	RSAPublicKeyPath  string              `mapstructure:"RSAPublicKeyPath"`
 }
 
 type ApplicationConfiguration struct {

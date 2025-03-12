@@ -85,8 +85,8 @@ type RoundWritable struct {
 	IsPublic         bool           `json:"isPublic" gorm:"default:false"`
 	DependsOnRoundID *string        `json:"dependsOnRoundId" gorm:"default:null"`
 	DependsOnRound   *Round         `json:"-" gorm:"foreignKey:DependsOnRoundID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	Serial           int            `json:"serial" gorm:"default:1"`
-	Quorum           int            `json:"quorum" gorm:"default:0"`
+	Serial           int            `json:"serial" gorm:"default:0"`
+	Quorum           uint8          `json:"quorum" gorm:"default:1"`
 	Type             EvaluationType `json:"type"`
 	RoundRestrictions
 }
@@ -106,10 +106,14 @@ type Round struct {
 	LatestDistributionTaskID  *IDType     `json:"latestTaskId" gorm:"default:null"`
 	RoundWritable
 	Roles []Role `json:"roles"`
-	// Project Project `json:"-" gorm:"foreignKey:ProjectID"`
+	// Project Project `json:"-" gorm:"foreignKey:ProjectID;constraint:OnUpdate:CASCADE,OnDelete:Cascade"`
 }
 type RoundFilter struct {
 	CampaignID IDType      `form:"campaignId"`
 	Status     RoundStatus `form:"status"`
 	CommonFilter
+}
+type RoundResult struct {
+	AverageScore    float64 `json:"averageScore"`
+	SubmissionCount int     `json:"submissionCount"`
 }

@@ -2,6 +2,7 @@ package services
 
 import (
 	"nokib/campwiz/models"
+	"nokib/campwiz/models/types"
 	"nokib/campwiz/repository"
 )
 
@@ -21,7 +22,7 @@ func (s *SubmissionService) ListAllSubmissions(filter *models.SubmissionListFilt
 	}
 	return submissions, nil
 }
-func (s *SubmissionService) GetSubmission(submissionID models.IDType) (*models.Submission, error) {
+func (s *SubmissionService) GetSubmission(submissionID types.SubmissionIDType) (*models.Submission, error) {
 	conn, close := repository.GetDB()
 	defer close()
 	submission_repo := repository.NewSubmissionRepository()

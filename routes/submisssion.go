@@ -2,7 +2,10 @@ package routes
 
 import (
 	"nokib/campwiz/models"
+	"nokib/campwiz/models/types"
 	"nokib/campwiz/services"
+
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
@@ -40,8 +43,8 @@ func ListAllSubmissions(c *gin.Context) {
 	continueToken := ""
 	previousToken := ""
 	if len(submissions) > 0 {
-		continueToken = string(submissions[len(submissions)-1].SubmissionID)
-		previousToken = string(submissions[0].SubmissionID)
+		continueToken = fmt.Sprint(submissions[len(submissions)-1].SubmissionID)
+		previousToken = fmt.Sprint(submissions[0].SubmissionID)
 	}
 	c.JSON(200, ResponseList[models.Submission]{
 		Data:          submissions,
@@ -71,9 +74,9 @@ func GetDraftSubmission(c *gin.Context) {
 // @Error 400 {object} ResponseError
 // @Error 404 {object} ResponseError
 func GetSubmission(c *gin.Context) {
-	id := c.Param("submissionId")
+	idString := c.Param("submissionId")
 	submission_service := services.NewSubmissionService()
-	submission, err := submission_service.GetSubmission(models.IDType(id))
+	submission, err := submission_service.GetSubmission(types.SubmissionIDType(idString))
 	if err != nil {
 		c.JSON(404, ResponseError{
 			Detail: "Submission not found",

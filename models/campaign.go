@@ -19,8 +19,9 @@ type CampaignWithWriteableFields struct {
 	Status    RoundStatus `json:"status"`
 }
 type Campaign struct {
+	// A unique identifier for the campaign, it should be custom defined
 	CampaignID IDType `gorm:"primaryKey" json:"campaignId"`
-	// read only
+	// The time the campaign was created, it would be set automatically
 	CreatedAt   *time.Time `json:"createdAt" gorm:"-<-:create"`
 	CreatedByID IDType     `json:"createdById" gorm:"index"`
 	CampaignWithWriteableFields

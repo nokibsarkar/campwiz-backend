@@ -148,7 +148,7 @@ func (strategy *RoundRobinDistributionStrategyV2) AssignJuries(tx *gorm.DB, roun
 			evaluation := models.Evaluation{
 				SubmissionID:       submission.SubmissionID,
 				EvaluationID:       idgenerator.GenerateID("e"),
-				JudgeID:            jury.RoleID,
+				JudgeID:            &jury.RoleID,
 				ParticipantID:      submission.ParticipantID,
 				DistributionTaskID: strategy.TaskId,
 				Type:               round.Type,

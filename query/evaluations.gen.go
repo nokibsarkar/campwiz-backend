@@ -6,7 +6,6 @@ package query
 
 import (
 	"context"
-	"strings"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -32,10 +31,9 @@ func newEvaluation(db *gorm.DB, opts ...gen.DOOption) evaluation {
 	_evaluation.SubmissionID = field.NewString(tableName, "submission_id")
 	_evaluation.JudgeID = field.NewString(tableName, "judge_id")
 	_evaluation.ParticipantID = field.NewString(tableName, "participant_id")
+	_evaluation.RoundID = field.NewString(tableName, "round_id")
 	_evaluation.Type = field.NewString(tableName, "type")
-	_evaluation.VoteScore = field.NewInt(tableName, "vote_score")
-	_evaluation.VotePosition = field.NewInt(tableName, "vote_position")
-	_evaluation.VotePassed = field.NewBool(tableName, "vote_passed")
+	_evaluation.Score = field.NewFloat64(tableName, "score")
 	_evaluation.Comment = field.NewString(tableName, "comment")
 	_evaluation.Serial = field.NewUint(tableName, "serial")
 	_evaluation.CreatedAt = field.NewTime(tableName, "created_at")
@@ -251,10 +249,9 @@ type evaluation struct {
 	SubmissionID       field.String
 	JudgeID            field.String
 	ParticipantID      field.String
+	RoundID            field.String
 	Type               field.String
-	VoteScore          field.Int
-	VotePosition       field.Int
-	VotePassed         field.Bool
+	Score              field.Float64
 	Comment            field.String
 	Serial             field.Uint
 	CreatedAt          field.Time
@@ -286,10 +283,9 @@ func (e *evaluation) updateTableName(table string) *evaluation {
 	e.SubmissionID = field.NewString(table, "submission_id")
 	e.JudgeID = field.NewString(table, "judge_id")
 	e.ParticipantID = field.NewString(table, "participant_id")
+	e.RoundID = field.NewString(table, "round_id")
 	e.Type = field.NewString(table, "type")
-	e.VoteScore = field.NewInt(table, "vote_score")
-	e.VotePosition = field.NewInt(table, "vote_position")
-	e.VotePassed = field.NewBool(table, "vote_passed")
+	e.Score = field.NewFloat64(table, "score")
 	e.Comment = field.NewString(table, "comment")
 	e.Serial = field.NewUint(table, "serial")
 	e.CreatedAt = field.NewTime(table, "created_at")
@@ -312,15 +308,14 @@ func (e *evaluation) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (e *evaluation) fillFieldMap() {
-	e.fieldMap = make(map[string]field.Expr, 17)
+	e.fieldMap = make(map[string]field.Expr, 16)
 	e.fieldMap["evaluation_id"] = e.EvaluationID
 	e.fieldMap["submission_id"] = e.SubmissionID
 	e.fieldMap["judge_id"] = e.JudgeID
 	e.fieldMap["participant_id"] = e.ParticipantID
+	e.fieldMap["round_id"] = e.RoundID
 	e.fieldMap["type"] = e.Type
-	e.fieldMap["vote_score"] = e.VoteScore
-	e.fieldMap["vote_position"] = e.VotePosition
-	e.fieldMap["vote_passed"] = e.VotePassed
+	e.fieldMap["score"] = e.Score
 	e.fieldMap["comment"] = e.Comment
 	e.fieldMap["serial"] = e.Serial
 	e.fieldMap["created_at"] = e.CreatedAt
@@ -675,27 +670,6 @@ type IEvaluationDo interface {
 	Returning(value interface{}, columns ...string) IEvaluationDo
 	UnderlyingDB() *gorm.DB
 	schema.Tabler
-
-	FilterWithNameAndRole(name string, role string) (result []models.Evaluation, err error)
-}
-
-// SELECT * FROM @@table WHERE name = @name{{if role !=""}} AND role = @role{{end}}
-func (e evaluationDo) FilterWithNameAndRole(name string, role string) (result []models.Evaluation, err error) {
-	var params []interface{}
-
-	var generateSQL strings.Builder
-	params = append(params, name)
-	generateSQL.WriteString("SELECT * FROM evaluations WHERE name = ? ")
-	if role != "" {
-		params = append(params, role)
-		generateSQL.WriteString("AND role = ? ")
-	}
-
-	var executeSQL *gorm.DB
-	executeSQL = e.UnderlyingDB().Raw(generateSQL.String(), params...).Find(&result) // ignore_security_alert
-	err = executeSQL.Error
-
-	return
 }
 
 func (e evaluationDo) Debug() IEvaluationDo {

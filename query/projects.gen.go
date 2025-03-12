@@ -6,7 +6,6 @@ package query
 
 import (
 	"context"
-	"strings"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -168,27 +167,6 @@ type IProjectDo interface {
 	Returning(value interface{}, columns ...string) IProjectDo
 	UnderlyingDB() *gorm.DB
 	schema.Tabler
-
-	FilterWithNameAndRole(name string, role string) (result []models.Project, err error)
-}
-
-// SELECT * FROM @@table WHERE name = @name{{if role !=""}} AND role = @role{{end}}
-func (p projectDo) FilterWithNameAndRole(name string, role string) (result []models.Project, err error) {
-	var params []interface{}
-
-	var generateSQL strings.Builder
-	params = append(params, name)
-	generateSQL.WriteString("SELECT * FROM projects WHERE name = ? ")
-	if role != "" {
-		params = append(params, role)
-		generateSQL.WriteString("AND role = ? ")
-	}
-
-	var executeSQL *gorm.DB
-	executeSQL = p.UnderlyingDB().Raw(generateSQL.String(), params...).Find(&result) // ignore_security_alert
-	err = executeSQL.Error
-
-	return
 }
 
 func (p projectDo) Debug() IProjectDo {

@@ -3,6 +3,7 @@ package taskrunner
 import (
 	"log"
 	"nokib/campwiz/models"
+	"nokib/campwiz/models/types"
 	"nokib/campwiz/repository"
 	idgenerator "nokib/campwiz/services/idGenerator"
 	rnd "nokib/campwiz/services/round"
@@ -43,7 +44,7 @@ func NewDistributionTaskRunner(taskId models.IDType, strategy IDistributionStrat
 		DistributionStrategy: strategy,
 	}
 }
-func (b *TaskRunner) importImagws(conn *gorm.DB, task *models.Task) (successCount, failedCount int) {
+func (b *TaskRunner) importImages(conn *gorm.DB, task *models.Task) (successCount, failedCount int) {
 	round_repo := repository.NewRoundRepository()
 	round, err := round_repo.FindByID(conn, *task.AssociatedRoundID)
 	if err != nil {
@@ -60,10 +61,20 @@ func (b *TaskRunner) importImagws(conn *gorm.DB, task *models.Task) (successCoun
 		// Update the round status to importing
 		round.LatestDistributionTaskID = &task.TaskID
 		round.Status = models.RoundStatusImporting
-		conn.Save(round)
+		if res := conn.Updates(&models.Round{
+			RoundID:                  round.RoundID,
+			Status:                   models.RoundStatusImporting,
+			LatestDistributionTaskID: &task.TaskID,
+		}); res.Error != nil {
+			log.Println("Error updating round status: ", res.Error)
+			task.Status = models.TaskStatusFailed
+			return
+		}
 		defer func() {
-			round.Status = currentRoundStatus
-			conn.Save(round)
+			conn.Updates(&models.Round{
+				RoundID: round.RoundID,
+				Status:  currentRoundStatus,
+			})
 		}()
 	}
 	FailedImages := &map[string]string{}
@@ -103,8 +114,9 @@ func (b *TaskRunner) importImagws(conn *gorm.DB, task *models.Task) (successCoun
 		submissions := []models.Submission{}
 		for _, image := range images {
 			uploaderId := username2IdMap[image.UploaderUsername]
+			sId := types.SubmissionIDType(idgenerator.GenerateID("s"))
 			submission := models.Submission{
-				SubmissionID:      idgenerator.GenerateID("s"),
+				SubmissionID:      sId,
 				Name:              image.Name,
 				CampaignID:        *task.AssociatedCampaignID,
 				URL:               image.URL,
@@ -136,22 +148,30 @@ func (b *TaskRunner) importImagws(conn *gorm.DB, task *models.Task) (successCoun
 			}
 			submissions = append(submissions, submission)
 			submissionCount++
+			if submissionCount%200 == 0 {
+				log.Println("Saving batch of submissions")
+				res := perBatch.Create(submissions)
+				if res.Error != nil {
+					perBatch.Rollback()
+					task.Status = models.TaskStatusFailed
+					log.Println("Error saving submissions: ", res.Error)
+					return
+				}
+				submissions = []models.Submission{}
+			}
 		}
-		if len(submissions) == 0 {
-			// No submissions to save
-			// This can happen if all the images are rejected by the technical judge
-			task.Status = models.TaskStatusSuccess
-			break
-		}
-		res := perBatch.Create(submissions)
-		if res.Error != nil {
-			task.Status = models.TaskStatusFailed
-			log.Println("Error saving submissions: ", res.Error)
-			perBatch.Rollback()
-			return
+		if len(submissions) > 0 {
+			log.Println("Saving remaining submissions")
+			res := perBatch.Create(submissions)
+			if res.Error != nil {
+				perBatch.Rollback()
+				task.Status = models.TaskStatusFailed
+				log.Println("Error saving submissions: ", res.Error)
+				return
+			}
 		}
 		*task.FailedIds = datatypes.NewJSONType(*failedBatch)
-		res = perBatch.Save(task)
+		res := perBatch.Save(task)
 		if res.Error != nil {
 			log.Println("Error saving task: ", res.Error)
 			task.Status = models.TaskStatusFailed
@@ -164,7 +184,28 @@ func (b *TaskRunner) importImagws(conn *gorm.DB, task *models.Task) (successCoun
 		task.Status = models.TaskStatusSuccess
 		round.LatestDistributionTaskID = nil // Reset the latest task id
 	}
+	if err := b.updateStatistics(conn, round, successCount, failedCount); err != nil {
+		log.Println("Error updating statistics: ", err)
+		task.Status = models.TaskStatusFailed
+	}
 	return
+}
+func (b *TaskRunner) updateStatistics(tx *gorm.DB, round *models.Round, successCount, failedCount int) error {
+	type Result struct {
+		TotalSubmissions          int
+		TotalEvaluatedSubmissions int
+	}
+	var result Result
+	res := tx.Model(&models.Submission{}).Select("count(submission_id) as total_submissions", "sum(assignment_count) as total_assignments").Where(&models.Submission{CurrentRoundID: round.RoundID}).Find(&result)
+	if res.Error != nil {
+		return res.Error
+	}
+	res = tx.Updates(&models.Round{
+		RoundID:                   round.RoundID,
+		TotalSubmissions:          result.TotalSubmissions,
+		TotalEvaluatedSubmissions: result.TotalEvaluatedSubmissions,
+	})
+	return res.Error
 }
 
 func (b *TaskRunner) distributeEvaluations(tx *gorm.DB, task *models.Task) (successCount, failedCount int, err error) {
@@ -239,7 +280,7 @@ func (b *TaskRunner) Run() {
 			task.Status = models.TaskStatusFailed
 			return
 		}
-		successCount, failedCount = b.importImagws(conn, task)
+		successCount, failedCount = b.importImages(conn, task)
 		task.Status = models.TaskStatusSuccess
 	} else if task.Type == models.TaskTypeDistributeEvaluations {
 		tx := conn.Begin()

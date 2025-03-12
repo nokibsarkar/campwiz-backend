@@ -48,7 +48,31 @@ func (r *RoundRepository) FindByID(conn *gorm.DB, id models.IDType) (*models.Rou
 }
 func (r *RoundRepository) GetResults(conn *gorm.DB, roundID models.IDType) (results []models.EvaluationResult, err error) {
 	results = []models.EvaluationResult{}
-	stmt := conn.Model(&models.Submission{}).Select("score as AverageScore, count(submission_id) as SubmissionCount").Where(&models.Submission{CurrentRoundID: roundID}).Group("score").Order("score desc").Find(&results)
+	stmt := (conn.Model(&models.Submission{}).
+		Select("score as AverageScore, count(submission_id) as SubmissionCount").
+		Where(&models.Submission{CurrentRoundID: roundID}).Group("score").Order("score").
+		Limit(100).
+		Find(&results))
+	if stmt.Error != nil {
+		return nil, stmt.Error
+	}
+	return results, nil
+
+}
+func (r *RoundRepository) GetResultsV2(conn *gorm.DB, roundID models.IDType) (results []models.EvaluationResult, err error) {
+	results = []models.EvaluationResult{}
+	// query, close := GetDBWithGen()
+	// defer close()
+	// k, err := query.Submission
+	// log.Printf("k: %v", k)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	stmt := (conn.Model(&models.Submission{}).
+		Select("score as AverageScore, count(submission_id) as SubmissionCount").
+		Where(&models.Submission{CurrentRoundID: roundID}).Group("score").Order("score").
+		Limit(100).
+		Find(&results))
 	if stmt.Error != nil {
 		return nil, stmt.Error
 	}

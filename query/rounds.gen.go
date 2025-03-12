@@ -6,7 +6,6 @@ package query
 
 import (
 	"context"
-	"strings"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -47,7 +46,7 @@ func newRound(db *gorm.DB, opts ...gen.DOOption) round {
 	_round.IsPublic = field.NewBool(tableName, "is_public")
 	_round.DependsOnRoundID = field.NewString(tableName, "depends_on_round_id")
 	_round.Serial = field.NewInt(tableName, "serial")
-	_round.Quorum = field.NewInt(tableName, "quorum")
+	_round.Quorum = field.NewUint8(tableName, "quorum")
 	_round.Type = field.NewString(tableName, "type")
 	_round.AllowJuryToParticipate = field.NewBool(tableName, "allow_jury_to_participate")
 	_round.AllowMultipleJudgement = field.NewBool(tableName, "allow_multiple_judgement")
@@ -227,7 +226,7 @@ type round struct {
 	IsPublic                         field.Bool
 	DependsOnRoundID                 field.String
 	Serial                           field.Int
-	Quorum                           field.Int
+	Quorum                           field.Uint8
 	Type                             field.String
 	AllowJuryToParticipate           field.Bool
 	AllowMultipleJudgement           field.Bool
@@ -290,7 +289,7 @@ func (r *round) updateTableName(table string) *round {
 	r.IsPublic = field.NewBool(table, "is_public")
 	r.DependsOnRoundID = field.NewString(table, "depends_on_round_id")
 	r.Serial = field.NewInt(table, "serial")
-	r.Quorum = field.NewInt(table, "quorum")
+	r.Quorum = field.NewUint8(table, "quorum")
 	r.Type = field.NewString(table, "type")
 	r.AllowJuryToParticipate = field.NewBool(table, "allow_jury_to_participate")
 	r.AllowMultipleJudgement = field.NewBool(table, "allow_multiple_judgement")
@@ -766,27 +765,6 @@ type IRoundDo interface {
 	Returning(value interface{}, columns ...string) IRoundDo
 	UnderlyingDB() *gorm.DB
 	schema.Tabler
-
-	FilterWithNameAndRole(name string, role string) (result []models.Round, err error)
-}
-
-// SELECT * FROM @@table WHERE name = @name{{if role !=""}} AND role = @role{{end}}
-func (r roundDo) FilterWithNameAndRole(name string, role string) (result []models.Round, err error) {
-	var params []interface{}
-
-	var generateSQL strings.Builder
-	params = append(params, name)
-	generateSQL.WriteString("SELECT * FROM rounds WHERE name = ? ")
-	if role != "" {
-		params = append(params, role)
-		generateSQL.WriteString("AND role = ? ")
-	}
-
-	var executeSQL *gorm.DB
-	executeSQL = r.UnderlyingDB().Raw(generateSQL.String(), params...).Find(&result) // ignore_security_alert
-	err = executeSQL.Error
-
-	return
 }
 
 func (r roundDo) Debug() IRoundDo {

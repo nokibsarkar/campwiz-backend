@@ -84,7 +84,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseList-database_Campaign"
+                            "$ref": "#/definitions/routes.ResponseList-models_Campaign"
                         }
                     }
                 }
@@ -157,7 +157,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseSingle-database_CampaignExtended"
+                            "$ref": "#/definitions/routes.ResponseSingle-models_CampaignExtended"
                         }
                     }
                 }
@@ -195,7 +195,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseSingle-database_Campaign"
+                            "$ref": "#/definitions/routes.ResponseSingle-models_Campaign"
                         }
                     }
                 }
@@ -282,7 +282,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseList-database_Evaluation"
+                            "$ref": "#/definitions/routes.ResponseList-models_Evaluation"
                         }
                     }
                 }
@@ -319,7 +319,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseList-database_Evaluation"
+                            "$ref": "#/definitions/routes.ResponseList-models_Evaluation"
                         }
                     }
                 }
@@ -362,7 +362,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseSingle-database_Evaluation"
+                            "$ref": "#/definitions/routes.ResponseSingle-models_Evaluation"
                         }
                     }
                 }
@@ -404,7 +404,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseSingle-database_Project"
+                            "$ref": "#/definitions/routes.ResponseSingle-models_Project"
                         }
                     }
                 }
@@ -444,7 +444,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseSingle-database_Project"
+                            "$ref": "#/definitions/routes.ResponseSingle-models_Project"
                         }
                     }
                 }
@@ -485,7 +485,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseSingle-database_Project"
+                            "$ref": "#/definitions/routes.ResponseSingle-models_Project"
                         }
                     }
                 }
@@ -556,7 +556,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseList-database_Round"
+                            "$ref": "#/definitions/routes.ResponseList-models_Round"
                         }
                     }
                 }
@@ -585,7 +585,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseSingle-database_Round"
+                            "$ref": "#/definitions/routes.ResponseSingle-models_Round"
                         }
                     }
                 }
@@ -623,7 +623,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseSingle-database_Task"
+                            "$ref": "#/definitions/routes.ResponseSingle-models_Task"
                         }
                     }
                 }
@@ -661,7 +661,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseSingle-database_Task"
+                            "$ref": "#/definitions/routes.ResponseSingle-models_Task"
                         }
                     }
                 }
@@ -699,7 +699,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseSingle-database_Task"
+                            "$ref": "#/definitions/routes.ResponseSingle-models_Task"
                         }
                     }
                 }
@@ -728,7 +728,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseSingle-database_Round"
+                            "$ref": "#/definitions/routes.ResponseSingle-models_Round"
                         }
                     }
                 }
@@ -764,7 +764,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseSingle-database_Round"
+                            "$ref": "#/definitions/routes.ResponseSingle-models_Round"
                         }
                     }
                 }
@@ -793,7 +793,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseList-database_EvaluationResult"
+                            "$ref": "#/definitions/routes.ResponseList-models_EvaluationResult"
                         }
                     }
                 }
@@ -845,7 +845,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseList-database_Submission"
+                            "$ref": "#/definitions/routes.ResponseList-models_Submission"
                         }
                     }
                 }
@@ -1095,10 +1095,11 @@ const docTemplate = `{
             ],
             "properties": {
                 "campaignId": {
+                    "description": "A unique identifier for the campaign, it should be custom defined",
                     "type": "string"
                 },
                 "createdAt": {
-                    "description": "read only",
+                    "description": "The time the campaign was created, it would be set automatically",
                     "type": "string"
                 },
                 "createdById": {
@@ -1156,6 +1157,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "campaignId": {
+                    "description": "A unique identifier for the campaign, it should be custom defined",
                     "type": "string"
                 },
                 "coordinators": {
@@ -1165,7 +1167,7 @@ const docTemplate = `{
                     }
                 },
                 "createdAt": {
-                    "description": "read only",
+                    "description": "The time the campaign was created, it would be set automatically",
                     "type": "string"
                 },
                 "createdById": {
@@ -1223,6 +1225,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "distributionTaskId": {
+                    "description": "Round              *Round         ` + "`" + `json:\"-\" gorm:\"foreignKey:RoundID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE\"` + "`" + `",
                     "type": "string"
                 },
                 "evaluatedAt": {
@@ -1237,9 +1240,11 @@ const docTemplate = `{
                 "participantId": {
                     "type": "string"
                 },
+                "roundId": {
+                    "type": "string"
+                },
                 "score": {
-                    "description": "Applicable if the evaluation type is score, it would be between 0-100",
-                    "type": "integer"
+                    "$ref": "#/definitions/models.ScoreType"
                 },
                 "serial": {
                     "type": "integer"
@@ -1252,14 +1257,6 @@ const docTemplate = `{
                 },
                 "updatedAt": {
                     "type": "string"
-                },
-                "votePassed": {
-                    "description": "Applicable if the evaluation type is binary, it would be true or false",
-                    "type": "boolean"
-                },
-                "votePosition": {
-                    "description": "Applicable if the evaluation type is binary, it would be 0 to Number of submissions in this round\nThe pair (JudgeID, VotePosition) should be unique (i.e. a judge can't vote for the same position twice)",
-                    "type": "integer"
                 }
             }
         },
@@ -1573,9 +1570,22 @@ const docTemplate = `{
                 "RoundStatusCompleted"
             ]
         },
+        "models.ScoreType": {
+            "type": "number",
+            "enum": [
+                100
+            ],
+            "x-enum-varnames": [
+                "MAXIMUM_EVALUATION_SCORE"
+            ]
+        },
         "models.Submission": {
             "type": "object",
             "properties": {
+                "assignmentCount": {
+                    "description": "The number of times the submission has been assigned to the juries",
+                    "type": "integer"
+                },
                 "author": {
                     "description": "The Actual Author in the Wikimedia",
                     "type": "string"
@@ -1629,7 +1639,11 @@ const docTemplate = `{
                 },
                 "score": {
                     "description": "The Average Score of the submission",
-                    "type": "number"
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.ScoreType"
+                        }
+                    ]
                 },
                 "size": {
                     "description": "in bytes",
@@ -1741,7 +1755,7 @@ const docTemplate = `{
                 "TaskTypeDistributeEvaluations"
             ]
         },
-        "routes.ResponseList-database_Campaign": {
+        "routes.ResponseList-models_Campaign": {
             "type": "object",
             "properties": {
                 "data": {
@@ -1758,7 +1772,7 @@ const docTemplate = `{
                 }
             }
         },
-        "routes.ResponseList-database_Evaluation": {
+        "routes.ResponseList-models_Evaluation": {
             "type": "object",
             "properties": {
                 "data": {
@@ -1775,7 +1789,7 @@ const docTemplate = `{
                 }
             }
         },
-        "routes.ResponseList-database_EvaluationResult": {
+        "routes.ResponseList-models_EvaluationResult": {
             "type": "object",
             "properties": {
                 "data": {
@@ -1792,7 +1806,7 @@ const docTemplate = `{
                 }
             }
         },
-        "routes.ResponseList-database_Round": {
+        "routes.ResponseList-models_Round": {
             "type": "object",
             "properties": {
                 "data": {
@@ -1809,7 +1823,7 @@ const docTemplate = `{
                 }
             }
         },
-        "routes.ResponseList-database_Submission": {
+        "routes.ResponseList-models_Submission": {
             "type": "object",
             "properties": {
                 "data": {
@@ -1826,7 +1840,7 @@ const docTemplate = `{
                 }
             }
         },
-        "routes.ResponseSingle-database_Campaign": {
+        "routes.ResponseSingle-models_Campaign": {
             "type": "object",
             "properties": {
                 "data": {
@@ -1834,7 +1848,7 @@ const docTemplate = `{
                 }
             }
         },
-        "routes.ResponseSingle-database_CampaignExtended": {
+        "routes.ResponseSingle-models_CampaignExtended": {
             "type": "object",
             "properties": {
                 "data": {
@@ -1842,7 +1856,7 @@ const docTemplate = `{
                 }
             }
         },
-        "routes.ResponseSingle-database_Evaluation": {
+        "routes.ResponseSingle-models_Evaluation": {
             "type": "object",
             "properties": {
                 "data": {
@@ -1850,7 +1864,7 @@ const docTemplate = `{
                 }
             }
         },
-        "routes.ResponseSingle-database_Project": {
+        "routes.ResponseSingle-models_Project": {
             "type": "object",
             "properties": {
                 "data": {
@@ -1858,7 +1872,7 @@ const docTemplate = `{
                 }
             }
         },
-        "routes.ResponseSingle-database_Round": {
+        "routes.ResponseSingle-models_Round": {
             "type": "object",
             "properties": {
                 "data": {
@@ -1866,7 +1880,7 @@ const docTemplate = `{
                 }
             }
         },
-        "routes.ResponseSingle-database_Task": {
+        "routes.ResponseSingle-models_Task": {
             "type": "object",
             "properties": {
                 "data": {
@@ -2010,14 +2024,8 @@ const docTemplate = `{
                 "evaluationId": {
                     "type": "string"
                 },
-                "votePassed": {
-                    "type": "boolean"
-                },
-                "votePosition": {
-                    "type": "integer"
-                },
-                "voteScore": {
-                    "type": "integer"
+                "score": {
+                    "$ref": "#/definitions/models.ScoreType"
                 }
             }
         },

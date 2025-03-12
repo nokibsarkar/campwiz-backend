@@ -2,159 +2,158 @@ basePath: /api/v2
 definitions:
   consts.Language:
     enum:
-      - am
-      - ar
-      - as
-      - af
-      - bn
-      - zh
-      - da
-      - nl
-      - en
-      - fi
-      - fr
-      - de
-      - el
-      - gu
-      - ha
-      - hi
-      - ig
-      - it
-      - ja
-      - kn
-      - ko
-      - ml
-      - mr
-      - ne
-      - "no"
-      - or
-      - om
-      - fa
-      - pt
-      - pa
-      - ru
-      - sa
-      - st
-      - sn
-      - sd
-      - so
-      - es
-      - sw
-      - sv
-      - ta
-      - te
-      - ts
-      - tn
-      - tr
-      - ur
-      - "-"
-      - ve
-      - xh
-      - yo
-      - zu
+    - am
+    - ar
+    - as
+    - af
+    - bn
+    - zh
+    - da
+    - nl
+    - en
+    - fi
+    - fr
+    - de
+    - el
+    - gu
+    - ha
+    - hi
+    - ig
+    - it
+    - ja
+    - kn
+    - ko
+    - ml
+    - mr
+    - ne
+    - "no"
+    - or
+    - om
+    - fa
+    - pt
+    - pa
+    - ru
+    - sa
+    - st
+    - sn
+    - sd
+    - so
+    - es
+    - sw
+    - sv
+    - ta
+    - te
+    - ts
+    - tn
+    - tr
+    - ur
+    - '-'
+    - ve
+    - xh
+    - yo
+    - zu
     type: string
     x-enum-varnames:
-      - Amharic
-      - Arabic
-      - Assamese
-      - Afrikaans
-      - Bangla
-      - Chinese
-      - Danish
-      - Dutch
-      - English
-      - Finnish
-      - French
-      - German
-      - Greek
-      - Gujarati
-      - Hausa
-      - Hindi
-      - Igbo
-      - Italian
-      - Japanese
-      - Kannada
-      - Korean
-      - Malayalam
-      - Marathi
-      - Nepali
-      - Norwegian
-      - Odia
-      - Oromo
-      - Persian
-      - Portuguese
-      - Punjabi
-      - Russian
-      - Sanskrit
-      - Sesotho
-      - Shona
-      - Sindhi
-      - Somali
-      - Spanish
-      - Swahili
-      - Swedish
-      - Tamil
-      - Telugu
-      - Tsonga
-      - Tswana
-      - Turkish
-      - Urdu
-      - Undefined
-      - Venda
-      - Xhosa
-      - Yoruba
-      - Zulu
+    - Amharic
+    - Arabic
+    - Assamese
+    - Afrikaans
+    - Bangla
+    - Chinese
+    - Danish
+    - Dutch
+    - English
+    - Finnish
+    - French
+    - German
+    - Greek
+    - Gujarati
+    - Hausa
+    - Hindi
+    - Igbo
+    - Italian
+    - Japanese
+    - Kannada
+    - Korean
+    - Malayalam
+    - Marathi
+    - Nepali
+    - Norwegian
+    - Odia
+    - Oromo
+    - Persian
+    - Portuguese
+    - Punjabi
+    - Russian
+    - Sanskrit
+    - Sesotho
+    - Shona
+    - Sindhi
+    - Somali
+    - Spanish
+    - Swahili
+    - Swedish
+    - Tamil
+    - Telugu
+    - Tsonga
+    - Tswana
+    - Turkish
+    - Urdu
+    - Undefined
+    - Venda
+    - Xhosa
+    - Yoruba
+    - Zulu
   consts.PermissionGroup:
     enum:
-      - 1
-      - 2
-      - 4
-      - 8
-      - 16
-      - 32
-      - 64
-      - 128
-      - 256
-      - 512
-      - 1024
-      - 2048
-      - 4096
-      - 8192
-      - 16384
-      - 32768
-      - 65536
-      - 131072
-      - 262144
-      - 524288
-      - 0
-      - 1
-      - 327681
-      - 258177
-      - 262017
-      - 262137
+    - 1
+    - 2
+    - 4
+    - 8
+    - 16
+    - 32
+    - 64
+    - 128
+    - 256
+    - 512
+    - 1024
+    - 2048
+    - 4096
+    - 8192
+    - 16384
+    - 32768
+    - 65536
+    - 131072
+    - 262144
+    - 524288
+    - 0
+    - 1
+    - 327681
+    - 258177
+    - 262017
+    - 262137
     type: integer
     x-enum-comments:
       PermissionGroupADMIN: access other projects
-      PermissionGroupCoordinator:
-        see the evaluation results of the evaluations they
+      PermissionGroupCoordinator: see the evaluation results of the evaluations they
         have done
-      PermissionGroupJury:
-        see the evaluation results of the evaluations they have
+      PermissionGroupJury: see the evaluation results of the evaluations they have
         done
       PermissionGroupLead: delete a campaign
     x-enum-varnames:
-      - PermissionGroupBanned
-      - PermissionGroupUSER
-      - PermissionGroupJury
-      - PermissionGroupCoordinator
-      - PermissionGroupLead
-      - PermissionGroupADMIN
+    - PermissionGroupBanned
+    - PermissionGroupUSER
+    - PermissionGroupJury
+    - PermissionGroupCoordinator
+    - PermissionGroupLead
+    - PermissionGroupADMIN
   models.Campaign:
     properties:
       campaignId:
+        description: A unique identifier for the campaign, it should be custom defined
         type: string
       createdAt:
-        description: read only
+        description: The time the campaign was created, it would be set automatically
         type: string
       createdById:
         type: string
@@ -168,39 +167,40 @@ definitions:
         description: Whether the campaign is shown in the public list
         type: boolean
       language:
-        $ref: "#/definitions/consts.Language"
+        $ref: '#/definitions/consts.Language'
       name:
         type: string
       project:
-        $ref: "#/definitions/models.Project"
+        $ref: '#/definitions/models.Project'
       projectId:
         type: string
       rounds:
         items:
-          $ref: "#/definitions/models.Round"
+          $ref: '#/definitions/models.Round'
         type: array
       rules:
         type: string
       startDate:
         type: string
       status:
-        $ref: "#/definitions/models.RoundStatus"
+        $ref: '#/definitions/models.RoundStatus'
     required:
-      - endDate
-      - language
-      - name
-      - startDate
+    - endDate
+    - language
+    - name
+    - startDate
     type: object
   models.CampaignExtended:
     properties:
       campaignId:
+        description: A unique identifier for the campaign, it should be custom defined
         type: string
       coordinators:
         items:
           type: string
         type: array
       createdAt:
-        description: read only
+        description: The time the campaign was created, it would be set automatically
         type: string
       createdById:
         type: string
@@ -214,28 +214,28 @@ definitions:
         description: Whether the campaign is shown in the public list
         type: boolean
       language:
-        $ref: "#/definitions/consts.Language"
+        $ref: '#/definitions/consts.Language'
       name:
         type: string
       project:
-        $ref: "#/definitions/models.Project"
+        $ref: '#/definitions/models.Project'
       projectId:
         type: string
       rounds:
         items:
-          $ref: "#/definitions/models.Round"
+          $ref: '#/definitions/models.Round'
         type: array
       rules:
         type: string
       startDate:
         type: string
       status:
-        $ref: "#/definitions/models.RoundStatus"
+        $ref: '#/definitions/models.RoundStatus'
     required:
-      - endDate
-      - language
-      - name
-      - startDate
+    - endDate
+    - language
+    - name
+    - startDate
     type: object
   models.Evaluation:
     properties:
@@ -244,6 +244,7 @@ definitions:
       createdAt:
         type: string
       distributionTaskId:
+        description: Round              *Round         `json:"-" gorm:"foreignKey:RoundID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
         type: string
       evaluatedAt:
         type: string
@@ -253,29 +254,18 @@ definitions:
         type: string
       participantId:
         type: string
+      roundId:
+        type: string
       score:
-        description:
-          Applicable if the evaluation type is score, it would be between
-          0-100
-        type: integer
+        $ref: '#/definitions/models.ScoreType'
       serial:
         type: integer
       submissionId:
         type: string
       type:
-        $ref: "#/definitions/models.EvaluationType"
+        $ref: '#/definitions/models.EvaluationType'
       updatedAt:
         type: string
-      votePassed:
-        description:
-          Applicable if the evaluation type is binary, it would be true
-          or false
-        type: boolean
-      votePosition:
-        description: |-
-          Applicable if the evaluation type is binary, it would be 0 to Number of submissions in this round
-          The pair (JudgeID, VotePosition) should be unique (i.e. a judge can't vote for the same position twice)
-        type: integer
     type: object
   models.EvaluationResult:
     properties:
@@ -286,28 +276,28 @@ definitions:
     type: object
   models.EvaluationType:
     enum:
-      - ranking
-      - score
-      - binary
+    - ranking
+    - score
+    - binary
     type: string
     x-enum-varnames:
-      - EvaluationTypeRanking
-      - EvaluationTypeScore
-      - EvaluationTypeBinary
+    - EvaluationTypeRanking
+    - EvaluationTypeScore
+    - EvaluationTypeBinary
   models.MediaType:
     enum:
-      - ARTICLE
-      - BITMAP
-      - AUDIO
-      - VIDEO
-      - PDF
+    - ARTICLE
+    - BITMAP
+    - AUDIO
+    - VIDEO
+    - PDF
     type: string
     x-enum-varnames:
-      - MediaTypeArticle
-      - MediaTypeImage
-      - MediaTypeAudio
-      - MediaTypeVideo
-      - MediaTypePDF
+    - MediaTypeArticle
+    - MediaTypeImage
+    - MediaTypeAudio
+    - MediaTypeVideo
+    - MediaTypePDF
   models.Project:
     properties:
       createdAt:
@@ -339,7 +329,7 @@ definitions:
       url:
         type: string
     required:
-      - name
+    - name
     type: object
   models.Role:
     properties:
@@ -348,7 +338,7 @@ definitions:
       isAllowed:
         type: boolean
       permission:
-        $ref: "#/definitions/consts.PermissionGroup"
+        $ref: '#/definitions/consts.PermissionGroup'
       projectId:
         type: string
       roleId:
@@ -364,24 +354,24 @@ definitions:
       totalScore:
         type: integer
       type:
-        $ref: "#/definitions/models.RoleType"
+        $ref: '#/definitions/models.RoleType'
       userId:
         type: string
     type: object
   models.RoleType:
     enum:
-      - admin
-      - projectLead
-      - coordinator
-      - jury
-      - participant
+    - admin
+    - projectLead
+    - coordinator
+    - jury
+    - participant
     type: string
     x-enum-varnames:
-      - RoleTypeAdmin
-      - RoleTypeProjectLead
-      - RoleTypeCoordinator
-      - RoleTypeJury
-      - RoleTypeParticipant
+    - RoleTypeAdmin
+    - RoleTypeProjectLead
+    - RoleTypeCoordinator
+    - RoleTypeJury
+    - RoleTypeParticipant
   models.Round:
     properties:
       allowJuryToParticipate:
@@ -390,7 +380,7 @@ definitions:
         type: boolean
       allowedMediaTypes:
         items:
-          $ref: "#/definitions/models.MediaType"
+          $ref: '#/definitions/models.MediaType'
         type: array
       articleAllowCreations:
         type: boolean
@@ -442,7 +432,7 @@ definitions:
         type: integer
       roles:
         items:
-          $ref: "#/definitions/models.Role"
+          $ref: '#/definitions/models.Role'
         type: array
       roundId:
         type: string
@@ -453,7 +443,7 @@ definitions:
       startDate:
         type: string
       status:
-        $ref: "#/definitions/models.RoundStatus"
+        $ref: '#/definitions/models.RoundStatus'
       totalAssignments:
         type: integer
       totalEvaluatedAssignments:
@@ -463,7 +453,7 @@ definitions:
       totalSubmissions:
         type: integer
       type:
-        $ref: "#/definitions/models.EvaluationType"
+        $ref: '#/definitions/models.EvaluationType'
       videoMinimumDurationMilliseconds:
         type: integer
       videoMinimumResolution:
@@ -473,30 +463,39 @@ definitions:
     type: object
   models.RoundStatus:
     enum:
-      - PENDING
-      - IMPORTING
-      - DISTRIBUTING
-      - EVALUATING
-      - REJECTED
-      - CANCELLED
-      - PAUSED
-      - SCHEDULED
-      - ACTIVE
-      - COMPLETED
+    - PENDING
+    - IMPORTING
+    - DISTRIBUTING
+    - EVALUATING
+    - REJECTED
+    - CANCELLED
+    - PAUSED
+    - SCHEDULED
+    - ACTIVE
+    - COMPLETED
     type: string
     x-enum-varnames:
-      - RoundStatusPending
-      - RoundStatusImporting
-      - RoundStatusDistributing
-      - RoundStatusEvaluating
-      - RoundStatusRejected
-      - RoundStatusCancelled
-      - RoundStatusPaused
-      - RoundStatusScheduled
-      - RoundStatusActive
-      - RoundStatusCompleted
+    - RoundStatusPending
+    - RoundStatusImporting
+    - RoundStatusDistributing
+    - RoundStatusEvaluating
+    - RoundStatusRejected
+    - RoundStatusCancelled
+    - RoundStatusPaused
+    - RoundStatusScheduled
+    - RoundStatusActive
+    - RoundStatusCompleted
+  models.ScoreType:
+    enum:
+    - 100
+    type: number
+    x-enum-varnames:
+    - MAXIMUM_EVALUATION_SCORE
   models.Submission:
     properties:
+      assignmentCount:
+        description: The number of times the submission has been assigned to the juries
+        type: integer
       author:
         description: The Actual Author in the Wikimedia
         type: string
@@ -525,7 +524,7 @@ definitions:
       license:
         type: string
       mediatype:
-        $ref: "#/definitions/models.MediaType"
+        $ref: '#/definitions/models.MediaType'
       metadata:
         items:
           type: integer
@@ -533,8 +532,9 @@ definitions:
       participantId:
         type: string
       score:
+        allOf:
+        - $ref: '#/definitions/models.ScoreType'
         description: The Average Score of the submission
-        type: number
       size:
         description: in bytes
         type: integer
@@ -579,13 +579,13 @@ definitions:
       roundId:
         type: string
       status:
-        $ref: "#/definitions/models.TaskStatus"
+        $ref: '#/definitions/models.TaskStatus'
       successCount:
         type: integer
       taskId:
         type: string
       type:
-        $ref: "#/definitions/models.TaskType"
+        $ref: '#/definitions/models.TaskType'
       updatedAt:
         type: string
       userId:
@@ -593,113 +593,113 @@ definitions:
     type: object
   models.TaskStatus:
     enum:
-      - pending
-      - running
-      - success
-      - failed
+    - pending
+    - running
+    - success
+    - failed
     type: string
     x-enum-varnames:
-      - TaskStatusPending
-      - TaskStatusRunning
-      - TaskStatusSuccess
-      - TaskStatusFailed
+    - TaskStatusPending
+    - TaskStatusRunning
+    - TaskStatusSuccess
+    - TaskStatusFailed
   models.TaskType:
     enum:
-      - import.commons
-      - distribute.evaluations
+    - import.commons
+    - distribute.evaluations
     type: string
     x-enum-varnames:
-      - TaskTypeImportFromCommons
-      - TaskTypeDistributeEvaluations
-  routes.ResponseList-database_Campaign:
+    - TaskTypeImportFromCommons
+    - TaskTypeDistributeEvaluations
+  routes.ResponseList-models_Campaign:
     properties:
       data:
         items:
-          $ref: "#/definitions/models.Campaign"
+          $ref: '#/definitions/models.Campaign'
         type: array
       next:
         type: string
       prev:
         type: string
     type: object
-  routes.ResponseList-database_Evaluation:
+  routes.ResponseList-models_Evaluation:
     properties:
       data:
         items:
-          $ref: "#/definitions/models.Evaluation"
+          $ref: '#/definitions/models.Evaluation'
         type: array
       next:
         type: string
       prev:
         type: string
     type: object
-  routes.ResponseList-database_EvaluationResult:
+  routes.ResponseList-models_EvaluationResult:
     properties:
       data:
         items:
-          $ref: "#/definitions/models.EvaluationResult"
+          $ref: '#/definitions/models.EvaluationResult'
         type: array
       next:
         type: string
       prev:
         type: string
     type: object
-  routes.ResponseList-database_Round:
+  routes.ResponseList-models_Round:
     properties:
       data:
         items:
-          $ref: "#/definitions/models.Round"
+          $ref: '#/definitions/models.Round'
         type: array
       next:
         type: string
       prev:
         type: string
     type: object
-  routes.ResponseList-database_Submission:
+  routes.ResponseList-models_Submission:
     properties:
       data:
         items:
-          $ref: "#/definitions/models.Submission"
+          $ref: '#/definitions/models.Submission'
         type: array
       next:
         type: string
       prev:
         type: string
     type: object
-  routes.ResponseSingle-database_Campaign:
+  routes.ResponseSingle-models_Campaign:
     properties:
       data:
-        $ref: "#/definitions/models.Campaign"
+        $ref: '#/definitions/models.Campaign'
     type: object
-  routes.ResponseSingle-database_CampaignExtended:
+  routes.ResponseSingle-models_CampaignExtended:
     properties:
       data:
-        $ref: "#/definitions/models.CampaignExtended"
+        $ref: '#/definitions/models.CampaignExtended'
     type: object
-  routes.ResponseSingle-database_Evaluation:
+  routes.ResponseSingle-models_Evaluation:
     properties:
       data:
-        $ref: "#/definitions/models.Evaluation"
+        $ref: '#/definitions/models.Evaluation'
     type: object
-  routes.ResponseSingle-database_Project:
+  routes.ResponseSingle-models_Project:
     properties:
       data:
-        $ref: "#/definitions/models.Project"
+        $ref: '#/definitions/models.Project'
     type: object
-  routes.ResponseSingle-database_Round:
+  routes.ResponseSingle-models_Round:
     properties:
       data:
-        $ref: "#/definitions/models.Round"
+        $ref: '#/definitions/models.Round'
     type: object
-  routes.ResponseSingle-database_Task:
+  routes.ResponseSingle-models_Task:
     properties:
       data:
-        $ref: "#/definitions/models.Task"
+        $ref: '#/definitions/models.Task'
     type: object
   routes.ResponseSingle-services_TaskResponse:
     properties:
       data:
-        $ref: "#/definitions/services.TaskResponse"
+        $ref: '#/definitions/services.TaskResponse'
     type: object
   services.CampaignCreateRequest:
     properties:
@@ -717,7 +717,7 @@ definitions:
         description: Whether the campaign is shown in the public list
         type: boolean
       language:
-        $ref: "#/definitions/consts.Language"
+        $ref: '#/definitions/consts.Language'
       name:
         type: string
       organizers:
@@ -731,12 +731,12 @@ definitions:
       startDate:
         type: string
       status:
-        $ref: "#/definitions/models.RoundStatus"
+        $ref: '#/definitions/models.RoundStatus'
     required:
-      - endDate
-      - language
-      - name
-      - startDate
+    - endDate
+    - language
+    - name
+    - startDate
     type: object
   services.CampaignUpdateRequest:
     properties:
@@ -754,7 +754,7 @@ definitions:
         description: Whether the campaign is shown in the public list
         type: boolean
       language:
-        $ref: "#/definitions/consts.Language"
+        $ref: '#/definitions/consts.Language'
       name:
         type: string
       organizers:
@@ -768,12 +768,12 @@ definitions:
       startDate:
         type: string
       status:
-        $ref: "#/definitions/models.RoundStatus"
+        $ref: '#/definitions/models.RoundStatus'
     required:
-      - endDate
-      - language
-      - name
-      - startDate
+    - endDate
+    - language
+    - name
+    - startDate
     type: object
   services.DistributionRequest:
     properties:
@@ -788,12 +788,8 @@ definitions:
         type: string
       evaluationId:
         type: string
-      votePassed:
-        type: boolean
-      votePosition:
-        type: integer
-      voteScore:
-        type: integer
+      score:
+        $ref: '#/definitions/models.ScoreType'
     type: object
   services.ImportFromCommonsPayload:
     properties:
@@ -811,7 +807,7 @@ definitions:
         type: boolean
       allowedMediaTypes:
         items:
-          $ref: "#/definitions/models.MediaType"
+          $ref: '#/definitions/models.MediaType'
         type: array
       articleAllowCreations:
         type: boolean
@@ -864,7 +860,7 @@ definitions:
       startDate:
         type: string
       type:
-        $ref: "#/definitions/models.EvaluationType"
+        $ref: '#/definitions/models.EvaluationType'
       videoMinimumDurationMilliseconds:
         type: integer
       videoMinimumResolution:
@@ -893,13 +889,13 @@ definitions:
       roundId:
         type: string
       status:
-        $ref: "#/definitions/models.TaskStatus"
+        $ref: '#/definitions/models.TaskStatus'
       successCount:
         type: integer
       taskId:
         type: string
       type:
-        $ref: "#/definitions/models.TaskType"
+        $ref: '#/definitions/models.TaskType'
       updatedAt:
         type: string
       userId:
@@ -922,600 +918,597 @@ paths:
     get:
       description: get all campaigns
       parameters:
-        - collectionFormat: csv
-          in: query
-          items:
-            type: string
-          name: ids
-          type: array
-        - description: Whether the campaign is closed (result have been finalized)
-          in: query
-          name: isClosed
-          type: boolean
-        - description: |-
-            Whether the campaign is hidden from the public list
-            If isHidden is true, then projectID is required
-          in: query
-          name: isHidden
-          type: boolean
-        - in: query
-          name: limit
-          type: integer
-        - in: query
-          name: next
+      - collectionFormat: csv
+        in: query
+        items:
           type: string
-        - in: query
-          name: prev
-          type: string
-        - description:
-            "This projectID is the project that campaigns belong to.then
-            ProjectID is required\n\t\tIf the person is not an admin, then the project
-            ID must match the project ID of the user"
-          in: query
-          name: projectId
-          type: string
+        name: ids
+        type: array
+      - description: Whether the campaign is closed (result have been finalized)
+        in: query
+        name: isClosed
+        type: boolean
+      - description: |-
+          Whether the campaign is hidden from the public list
+          If isHidden is true, then projectID is required
+        in: query
+        name: isHidden
+        type: boolean
+      - in: query
+        name: limit
+        type: integer
+      - in: query
+        name: next
+        type: string
+      - in: query
+        name: prev
+        type: string
+      - description: "This projectID is the project that campaigns belong to.then
+          ProjectID is required\n\t\tIf the person is not an admin, then the project
+          ID must match the project ID of the user"
+        in: query
+        name: projectId
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/routes.ResponseList-database_Campaign"
+            $ref: '#/definitions/routes.ResponseList-models_Campaign'
       summary: List all campaigns
       tags:
-        - Campaign
+      - Campaign
     post:
       description: Create a new campaign
       parameters:
-        - description: The campaign request
-          in: body
-          name: campaignRequest
-          required: true
-          schema:
-            $ref: "#/definitions/services.CampaignCreateRequest"
+      - description: The campaign request
+        in: body
+        name: campaignRequest
+        required: true
+        schema:
+          $ref: '#/definitions/services.CampaignCreateRequest'
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/models.Campaign"
+            $ref: '#/definitions/models.Campaign'
       summary: Create a new campaign
       tags:
-        - Campaign
+      - Campaign
   /campaign/{campaignId}:
     get:
       description: Get a single campaign
       parameters:
-        - description: The campaign ID
-          in: path
-          name: campaignId
-          required: true
-          type: string
-        - in: query
-          name: includeProject
-          type: boolean
-        - in: query
-          name: includeRoles
-          type: boolean
-        - in: query
-          name: includeRounds
-          type: boolean
+      - description: The campaign ID
+        in: path
+        name: campaignId
+        required: true
+        type: string
+      - in: query
+        name: includeProject
+        type: boolean
+      - in: query
+        name: includeRoles
+        type: boolean
+      - in: query
+        name: includeRounds
+        type: boolean
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/routes.ResponseSingle-database_CampaignExtended"
+            $ref: '#/definitions/routes.ResponseSingle-models_CampaignExtended'
       summary: Get a single campaign
       tags:
-        - Campaign
+      - Campaign
   /campaign/{id}:
     post:
       description: Update a campaign
       parameters:
-        - description: The campaign ID
-          in: path
-          name: id
-          required: true
-          type: string
-        - description: The campaign request
-          in: body
-          name: campaignRequest
-          required: true
-          schema:
-            $ref: "#/definitions/services.CampaignUpdateRequest"
+      - description: The campaign ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: The campaign request
+        in: body
+        name: campaignRequest
+        required: true
+        schema:
+          $ref: '#/definitions/services.CampaignUpdateRequest'
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/routes.ResponseSingle-database_Campaign"
+            $ref: '#/definitions/routes.ResponseSingle-models_Campaign'
       summary: Update a campaign
       tags:
-        - Campaign
+      - Campaign
   /evaluation/:
     get:
       description: get all evaluations
       parameters:
-        - in: query
-          name: campaignId
-          type: string
-        - in: query
-          name: juryId
-          type: string
-        - in: query
-          name: limit
-          type: integer
-        - in: query
-          name: next
-          type: string
-        - in: query
-          name: prev
-          type: string
-        - in: query
-          name: roundId
-          type: string
-        - in: query
-          name: status
-          type: boolean
-        - in: query
-          name: submissionId
-          type: string
-        - enum:
-            - ranking
-            - score
-            - binary
-          in: query
-          name: type
-          type: string
-          x-enum-varnames:
-            - EvaluationTypeRanking
-            - EvaluationTypeScore
-            - EvaluationTypeBinary
-        - in: query
-          name: userId
-          type: string
+      - in: query
+        name: campaignId
+        type: string
+      - in: query
+        name: juryId
+        type: string
+      - in: query
+        name: limit
+        type: integer
+      - in: query
+        name: next
+        type: string
+      - in: query
+        name: prev
+        type: string
+      - in: query
+        name: roundId
+        type: string
+      - in: query
+        name: status
+        type: boolean
+      - in: query
+        name: submissionId
+        type: string
+      - enum:
+        - ranking
+        - score
+        - binary
+        in: query
+        name: type
+        type: string
+        x-enum-varnames:
+        - EvaluationTypeRanking
+        - EvaluationTypeScore
+        - EvaluationTypeBinary
+      - in: query
+        name: userId
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/routes.ResponseList-database_Evaluation"
+            $ref: '#/definitions/routes.ResponseList-models_Evaluation'
       security:
-        - ApiKeyAuth: []
+      - ApiKeyAuth: []
       summary: List all evaluations
       tags:
-        - Evaluation
+      - Evaluation
     post:
       description: Bulk evaluate
       parameters:
-        - description: The evaluation request
-          in: body
-          name: evaluationRequest
-          required: true
-          schema:
-            items:
-              $ref: "#/definitions/services.EvaluationRequest"
-            type: array
+      - description: The evaluation request
+        in: body
+        name: evaluationRequest
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/services.EvaluationRequest'
+          type: array
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/routes.ResponseList-database_Evaluation"
+            $ref: '#/definitions/routes.ResponseList-models_Evaluation'
       security:
-        - ApiKeyAuth: []
+      - ApiKeyAuth: []
       summary: Bulk evaluate
       tags:
-        - Evaluation
+      - Evaluation
   /evaluation/{evaluationId}:
     post:
       description: Update an evaluation
       parameters:
-        - description: The evaluation ID
-          in: path
-          name: evaluationId
-          required: true
-          type: string
-        - description: The evaluation request
-          in: body
-          name: evaluationRequest
-          required: true
-          schema:
-            $ref: "#/definitions/services.EvaluationRequest"
+      - description: The evaluation ID
+        in: path
+        name: evaluationId
+        required: true
+        type: string
+      - description: The evaluation request
+        in: body
+        name: evaluationRequest
+        required: true
+        schema:
+          $ref: '#/definitions/services.EvaluationRequest'
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/routes.ResponseSingle-database_Evaluation"
+            $ref: '#/definitions/routes.ResponseSingle-models_Evaluation'
       security:
-        - ApiKeyAuth: []
+      - ApiKeyAuth: []
       summary: Update an evaluation
       tags:
-        - Evaluation
+      - Evaluation
   /project/:
     post:
       description: Create a new project
       parameters:
-        - description: The project request
-          in: body
-          name: projectRequest
-          required: true
-          schema:
-            $ref: "#/definitions/models.ProjectRequest"
-        - description: Include project leads
-          in: query
-          name: includeProjectLeads
-          type: boolean
+      - description: The project request
+        in: body
+        name: projectRequest
+        required: true
+        schema:
+          $ref: '#/definitions/models.ProjectRequest'
+      - description: Include project leads
+        in: query
+        name: includeProjectLeads
+        type: boolean
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/routes.ResponseSingle-database_Project"
+            $ref: '#/definitions/routes.ResponseSingle-models_Project'
       security:
-        - ApiKeyAuth: []
+      - ApiKeyAuth: []
       summary: Create a new project
       tags:
-        - Project
+      - Project
   /project/{projectId}:
     get:
       description: Get a single project
       parameters:
-        - description: The project ID
-          in: path
-          name: projectId
-          required: true
-          type: string
-        - description: Include project leads
-          in: query
-          name: includeProjectLeads
-          type: boolean
+      - description: The project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Include project leads
+        in: query
+        name: includeProjectLeads
+        type: boolean
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/routes.ResponseSingle-database_Project"
+            $ref: '#/definitions/routes.ResponseSingle-models_Project'
       security:
-        - ApiKeyAuth: []
+      - ApiKeyAuth: []
       summary: Get a single project
       tags:
-        - Project
+      - Project
     post:
       description: Update a project
       parameters:
-        - description: The project ID
-          in: path
-          name: projectId
-          required: true
-          type: string
-        - description: The project request
-          in: body
-          name: projectRequest
-          required: true
-          schema:
-            $ref: "#/definitions/models.ProjectRequest"
+      - description: The project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: The project request
+        in: body
+        name: projectRequest
+        required: true
+        schema:
+          $ref: '#/definitions/models.ProjectRequest'
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/routes.ResponseSingle-database_Project"
+            $ref: '#/definitions/routes.ResponseSingle-models_Project'
       security:
-        - ApiKeyAuth: []
+      - ApiKeyAuth: []
       summary: Update a project
       tags:
-        - Project
+      - Project
   /round/:
     get:
       description: get all rounds
       parameters:
-        - in: query
-          name: campaignId
-          type: string
-        - in: query
-          name: limit
-          type: integer
-        - in: query
-          name: next
-          type: string
-        - in: query
-          name: prev
-          type: string
-        - enum:
-            - PENDING
-            - IMPORTING
-            - DISTRIBUTING
-            - EVALUATING
-            - REJECTED
-            - CANCELLED
-            - PAUSED
-            - SCHEDULED
-            - ACTIVE
-            - COMPLETED
-          in: query
-          name: status
-          type: string
-          x-enum-varnames:
-            - RoundStatusPending
-            - RoundStatusImporting
-            - RoundStatusDistributing
-            - RoundStatusEvaluating
-            - RoundStatusRejected
-            - RoundStatusCancelled
-            - RoundStatusPaused
-            - RoundStatusScheduled
-            - RoundStatusActive
-            - RoundStatusCompleted
+      - in: query
+        name: campaignId
+        type: string
+      - in: query
+        name: limit
+        type: integer
+      - in: query
+        name: next
+        type: string
+      - in: query
+        name: prev
+        type: string
+      - enum:
+        - PENDING
+        - IMPORTING
+        - DISTRIBUTING
+        - EVALUATING
+        - REJECTED
+        - CANCELLED
+        - PAUSED
+        - SCHEDULED
+        - ACTIVE
+        - COMPLETED
+        in: query
+        name: status
+        type: string
+        x-enum-varnames:
+        - RoundStatusPending
+        - RoundStatusImporting
+        - RoundStatusDistributing
+        - RoundStatusEvaluating
+        - RoundStatusRejected
+        - RoundStatusCancelled
+        - RoundStatusPaused
+        - RoundStatusScheduled
+        - RoundStatusActive
+        - RoundStatusCompleted
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/routes.ResponseList-database_Round"
+            $ref: '#/definitions/routes.ResponseList-models_Round'
       summary: List all rounds
       tags:
-        - Round
+      - Round
     post:
       description: Create a new round for a campaign
       parameters:
-        - description: The round request
-          in: body
-          name: roundRequest
-          required: true
-          schema:
-            $ref: "#/definitions/services.RoundRequest"
+      - description: The round request
+        in: body
+        name: roundRequest
+        required: true
+        schema:
+          $ref: '#/definitions/services.RoundRequest'
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/routes.ResponseSingle-database_Round"
+            $ref: '#/definitions/routes.ResponseSingle-models_Round'
       summary: Create a new round
       tags:
-        - Round
+      - Round
   /round/{roundId}:
     get:
       description: Get a round
       parameters:
-        - description: The round ID
-          in: path
-          name: roundId
-          required: true
-          type: string
+      - description: The round ID
+        in: path
+        name: roundId
+        required: true
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/routes.ResponseSingle-database_Round"
+            $ref: '#/definitions/routes.ResponseSingle-models_Round'
       summary: Get a round
       tags:
-        - Round
+      - Round
     post:
       description: Update the details of a round
       parameters:
-        - description: The round ID
-          in: path
-          name: roundId
-          required: true
-          type: string
-        - description: The round request
-          in: body
-          name: roundRequest
-          required: true
-          schema:
-            $ref: "#/definitions/services.RoundRequest"
+      - description: The round ID
+        in: path
+        name: roundId
+        required: true
+        type: string
+      - description: The round request
+        in: body
+        name: roundRequest
+        required: true
+        schema:
+          $ref: '#/definitions/services.RoundRequest'
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/routes.ResponseSingle-database_Round"
+            $ref: '#/definitions/routes.ResponseSingle-models_Round'
       summary: Update the details of a round
       tags:
-        - Round
+      - Round
   /round/{roundId}/results:
     get:
       description: Get results of a round
       parameters:
-        - description: The round ID
-          in: path
-          name: roundId
-          required: true
-          type: string
+      - description: The round ID
+        in: path
+        name: roundId
+        required: true
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/routes.ResponseList-database_EvaluationResult"
+            $ref: '#/definitions/routes.ResponseList-models_EvaluationResult'
       summary: Get results of a round
       tags:
-        - Round
+      - Round
   /round/distribute/{roundId}:
     post:
       description: Distribute evaluations to juries
       parameters:
-        - description: The round ID
-          in: path
-          name: roundId
-          required: true
-          type: string
-        - description: The distribution request
-          in: body
-          name: DistributionRequest
-          required: true
-          schema:
-            $ref: "#/definitions/services.DistributionRequest"
+      - description: The round ID
+        in: path
+        name: roundId
+        required: true
+        type: string
+      - description: The distribution request
+        in: body
+        name: DistributionRequest
+        required: true
+        schema:
+          $ref: '#/definitions/services.DistributionRequest'
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/routes.ResponseSingle-database_Task"
+            $ref: '#/definitions/routes.ResponseSingle-models_Task'
       summary: Distribute evaluations to juries
       tags:
-        - Round
+      - Round
   /round/distribute/{roundId}/simulate:
     post:
       description: Simulate distributing evaluations to juries
       parameters:
-        - description: The round ID
-          in: path
-          name: roundId
-          required: true
-          type: string
-        - description: The distribution request
-          in: body
-          name: DistributionRequest
-          required: true
-          schema:
-            $ref: "#/definitions/services.DistributionRequest"
+      - description: The round ID
+        in: path
+        name: roundId
+        required: true
+        type: string
+      - description: The distribution request
+        in: body
+        name: DistributionRequest
+        required: true
+        schema:
+          $ref: '#/definitions/services.DistributionRequest'
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/routes.ResponseSingle-database_Task"
+            $ref: '#/definitions/routes.ResponseSingle-models_Task'
       summary: Simulate distributing evaluations to juries
       tags:
-        - Round
+      - Round
   /round/import/{roundId}/commons:
     post:
-      description:
-        The user would provide a round ID and a list of commons categories
+      description: The user would provide a round ID and a list of commons categories
         and the system would import images from those categories
       parameters:
-        - description: The round ID
-          in: path
-          name: roundId
-          required: true
-          type: string
-        - description: The import from commons request
-          in: body
-          name: ImportFromCommons
-          required: true
-          schema:
-            $ref: "#/definitions/services.ImportFromCommonsPayload"
+      - description: The round ID
+        in: path
+        name: roundId
+        required: true
+        type: string
+      - description: The import from commons request
+        in: body
+        name: ImportFromCommons
+        required: true
+        schema:
+          $ref: '#/definitions/services.ImportFromCommonsPayload'
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/routes.ResponseSingle-database_Task"
+            $ref: '#/definitions/routes.ResponseSingle-models_Task'
       summary: Import images from commons
       tags:
-        - Round
+      - Round
   /submission/:
     get:
       description: get all submissions
       parameters:
-        - in: query
-          name: campaignId
-          type: string
-        - in: query
-          name: limit
-          type: integer
-        - in: query
-          name: next
-          type: string
-        - in: query
-          name: participantId
-          type: string
-        - in: query
-          name: prev
-          type: string
-        - in: query
-          name: roundId
-          type: string
+      - in: query
+        name: campaignId
+        type: string
+      - in: query
+        name: limit
+        type: integer
+      - in: query
+        name: next
+        type: string
+      - in: query
+        name: participantId
+        type: string
+      - in: query
+        name: prev
+        type: string
+      - in: query
+        name: roundId
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/routes.ResponseList-database_Submission"
+            $ref: '#/definitions/routes.ResponseList-models_Submission'
       summary: List all submissions
       tags:
-        - Submission
+      - Submission
   /submission/{id}:
     get:
       description: get a submission
       parameters:
-        - description: Submission ID
-          in: path
-          name: id
-          required: true
-          type: string
+      - description: Submission ID
+        in: path
+        name: id
+        required: true
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/models.Submission"
+            $ref: '#/definitions/models.Submission'
       summary: Get a submission
       tags:
-        - Submission
+      - Submission
   /task/{taskId}:
     get:
       description: The task represents a background job that can be run by the system
       parameters:
-        - description: The task ID
-          in: path
-          name: taskId
-          required: true
-          type: string
+      - description: The task ID
+        in: path
+        name: taskId
+        required: true
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/routes.ResponseSingle-services_TaskResponse"
+            $ref: '#/definitions/routes.ResponseSingle-services_TaskResponse'
       summary: Get a task by ID
       tags:
-        - Task
+      - Task
   /task/{taskId}/stream:
     get:
-      description:
-        The task represents a background job that can be run by the system.
+      description: The task represents a background job that can be run by the system.
         This endpoint streams the response
       parameters:
-        - description: The task ID
-          in: path
-          name: taskId
-          required: true
-          type: string
+      - description: The task ID
+        in: path
+        name: taskId
+        required: true
+        type: string
       produces:
-        - application/json
+      - application/json
       responses: {}
       summary: Get a task by ID but stream the response
       tags:
-        - Task
+      - Task
 produces:
-  - application/json
+- application/json
 schemes:
-  - http
-  - https
+- http
+- https
 swagger: "2.0"

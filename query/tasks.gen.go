@@ -6,7 +6,6 @@ package query
 
 import (
 	"context"
-	"strings"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -287,27 +286,6 @@ type ITaskDo interface {
 	Returning(value interface{}, columns ...string) ITaskDo
 	UnderlyingDB() *gorm.DB
 	schema.Tabler
-
-	FilterWithNameAndRole(name string, role string) (result []models.Task, err error)
-}
-
-// SELECT * FROM @@table WHERE name = @name{{if role !=""}} AND role = @role{{end}}
-func (t taskDo) FilterWithNameAndRole(name string, role string) (result []models.Task, err error) {
-	var params []interface{}
-
-	var generateSQL strings.Builder
-	params = append(params, name)
-	generateSQL.WriteString("SELECT * FROM tasks WHERE name = ? ")
-	if role != "" {
-		params = append(params, role)
-		generateSQL.WriteString("AND role = ? ")
-	}
-
-	var executeSQL *gorm.DB
-	executeSQL = t.UnderlyingDB().Raw(generateSQL.String(), params...).Find(&result) // ignore_security_alert
-	err = executeSQL.Error
-
-	return
 }
 
 func (t taskDo) Debug() ITaskDo {

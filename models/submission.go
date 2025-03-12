@@ -1,6 +1,7 @@
 package models
 
 import (
+	"nokib/campwiz/models/types"
 	"time"
 
 	"gorm.io/datatypes"
@@ -41,10 +42,10 @@ type MediaSubmission struct {
 	AudioVideoSubmission
 }
 type Submission struct {
-	SubmissionID IDType `json:"submissionId" gorm:"primaryKey"`
-	Name         string `json:"title"`
-	CampaignID   IDType `json:"campaignId" gorm:"null;index;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	URL          string `json:"url"`
+	SubmissionID types.SubmissionIDType `json:"submissionId" gorm:"primaryKey"`
+	Name         string                 `json:"title"`
+	CampaignID   IDType                 `json:"campaignId" gorm:"null;index;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	URL          string                 `json:"url"`
 	// The Average Score of the submission
 	Score ScoreType `json:"score" gorm:"default:0"`
 	// The Actual Author in the Wikimedia
@@ -52,7 +53,7 @@ type Submission struct {
 	// The User who submitted the article on behalf of the participant
 	SubmittedByID      IDType     `json:"submittedById" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	ParticipantID      IDType     `json:"participantId" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	CurrentRoundID     IDType     `json:"currentRoundId" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	CurrentRoundID     IDType     `json:"currentRoundId" gorm:"index;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	SubmittedAt        time.Time  `json:"submittedAt" gorm:"type:datetime"`
 	Participant        User       `json:"-" gorm:"foreignKey:ParticipantID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	Submitter          User       `json:"-" gorm:"foreignKey:SubmittedByID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
@@ -61,6 +62,10 @@ type Submission struct {
 	CurrentRound       *Round     `json:"-" gorm:"foreignKey:CurrentRoundID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	DistributionTaskID *IDType    `json:"distributionTaskId" gorm:"null"`
 	ImportTaskID       IDType     `json:"importTaskId" gorm:"null"`
+	// The number of times the submission has been assigned to the juries
+	AssignmentCount uint8 `json:"assignmentCount" gorm:"default:0"`
+	// The number of times the submission has been evaluated by the juries
+	EvaluationCount uint8 `json:"evaluationCount" gorm:"default:0"`
 	// The task that was used to distribute the submission to the juries
 	DistributionTask *Task `json:"-" gorm:"foreignKey:DistributionTaskID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
 	// The task that was used to import the submission from the external source

@@ -291,7 +291,7 @@ func (r *RoundService) DistributeEvaluations(currentUserID models.IDType, roundI
 	}
 	tx.Commit()
 	fmt.Println("Task created with ID: ", task.TaskID)
-	strategy := distributionstrategy.NewRoundRobinDistributionStrategyV2(task.TaskID)
+	strategy := distributionstrategy.NewRoundRobinDistributionStrategyV3(task.TaskID)
 	runner := importservice.NewDistributionTaskRunner(task.TaskID, strategy)
 	go runner.Run()
 	return task, nil
@@ -339,7 +339,7 @@ func (r *RoundService) GetResults(roundID models.IDType) (results []models.Evalu
 	round_repo := repository.NewRoundRepository()
 	conn, close := repository.GetDB()
 	defer close()
-	results, err = round_repo.GetResults(conn, roundID)
+	results, err = round_repo.GetResultsV2(conn, roundID)
 	if err != nil {
 		return nil, err
 	}

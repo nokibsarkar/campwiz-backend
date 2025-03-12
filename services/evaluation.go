@@ -2,9 +2,13 @@ package services
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"nokib/campwiz/models"
+	"nokib/campwiz/models/types"
 	"nokib/campwiz/repository"
+
+	"gorm.io/gorm"
 )
 
 type EvaluationService struct{}
@@ -14,11 +18,9 @@ func NewEvaluationService() *EvaluationService {
 }
 
 type EvaluationRequest struct {
-	VoteScore    *int          `json:"voteScore"`
-	Comment      string        `json:"comment"`
-	VotePassed   *bool         `json:"votePassed"`
-	VotePosition *int          `json:"votePosition"`
-	EvaluationID models.IDType `json:"evaluationId"`
+	Comment      string            `json:"comment"`
+	Score        *models.ScoreType `json:"score"`
+	EvaluationID models.IDType     `json:"evaluationId"`
 }
 
 func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluationRequests []EvaluationRequest) ([]*models.Evaluation, error) {
@@ -41,10 +43,20 @@ func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluation
 	}
 	evaluations := []*models.Evaluation{}
 	evaluationIDs := []models.IDType{}
+	submissionIds := []types.SubmissionIDType{}
 	evaluationRequestMap := map[models.IDType]EvaluationRequest{}
 	var currentRound *models.Round
 	var campaign *models.Campaign
 	for _, evaluationRequest := range evaluationRequests {
+		if evaluationRequest.Score == nil {
+			tx.Rollback()
+			return nil, fmt.Errorf("no score is given for evaluation %s", evaluationRequest.EvaluationID)
+		}
+		if *evaluationRequest.Score > models.MAXIMUM_EVALUATION_SCORE {
+			tx.Rollback()
+			return nil, fmt.Errorf("score is greater than %v", models.MAXIMUM_EVALUATION_SCORE)
+		}
+
 		evaluationRequestMap[evaluationRequest.EvaluationID] = evaluationRequest
 		evaluationIDs = append(evaluationIDs, evaluationRequest.EvaluationID)
 	}
@@ -84,7 +96,10 @@ func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluation
 			tx.Rollback()
 			return nil, errors.New("all submissions must be from the same round")
 		}
-		log.Println("Evaluating evaluation", evaluation.Type)
+		if evaluationRequest.Score == nil {
+			tx.Rollback()
+			return nil, errors.New("no score is given")
+		}
 		if evaluation.Type == models.EvaluationTypeBinary {
 			log.Println("Binary evaluation")
 		} else if evaluation.Type == models.EvaluationTypeRanking {
@@ -92,10 +107,36 @@ func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluation
 		} else if evaluation.Type == models.EvaluationTypeScore {
 			log.Println("Score evaluation")
 		}
-		log.Println(evaluationRequest)
-	}
+		res = tx.Updates(&models.Evaluation{
+			EvaluationID: evaluationRequest.EvaluationID,
+			Score:        evaluationRequest.Score,
+			Comment:      evaluationRequest.Comment,
+		})
 
+		if res.Error != nil {
+			tx.Rollback()
+			return nil, res.Error
+		}
+		submissionIds = append(submissionIds, submission.SubmissionID)
+
+	}
+	// trigger submission score counting
+	if err := e.triggerEvaluationScoreCount(tx, submissionIds); err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	tx.Commit()
 	return evaluations, nil
+}
+
+// This function would be used to trigger the evaluation score counting
+func (e *EvaluationService) triggerEvaluationScoreCount(tx *gorm.DB, submissionIds []types.SubmissionIDType) error {
+	// This function would be used to trigger the evaluation score counting
+	stmt := tx.Exec("UPDATE `submissions` `s` SET `score`=(SELECT AVG(`score`) FROM `evaluations` `e` WHERE `e`.`submission_id` =`s`.`submission_id`) WHERE `submission_id` IN ? LIMIT ?", submissionIds, len(submissionIds))
+	if stmt.Error != nil {
+		return stmt.Error
+	}
+	return nil
 }
 
 func (e *EvaluationService) Evaluate(currentUserID models.IDType, evaluationID models.IDType, evaluationRequest *EvaluationRequest) (*models.Evaluation, error) {
@@ -114,13 +155,13 @@ func (e *EvaluationService) Evaluate(currentUserID models.IDType, evaluationID m
 		tx.Rollback()
 		return nil, errors.New("evaluation not found")
 	}
-	if evaluation.Type == models.EvaluationTypeBinary && evaluationRequest.VotePassed == nil {
+	if evaluation.Type == models.EvaluationTypeBinary && evaluationRequest.Score == nil {
 		tx.Rollback()
 		return nil, errors.New("votePassed is required for binary evaluation")
-	} else if evaluation.Type == models.EvaluationTypeRanking && evaluationRequest.VotePosition == nil {
+	} else if evaluation.Type == models.EvaluationTypeRanking && evaluationRequest.Score == nil {
 		tx.Rollback()
 		return nil, errors.New("votePosition is required for positional evaluation")
-	} else if evaluation.Type == models.EvaluationTypeScore && evaluationRequest.VoteScore == nil {
+	} else if evaluation.Type == models.EvaluationTypeScore && evaluationRequest.Score == nil {
 		tx.Rollback()
 		return nil, errors.New("voteScore is required for score evaluation")
 	}

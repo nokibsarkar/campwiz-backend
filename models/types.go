@@ -6,8 +6,9 @@ type UserIDType string
 type CampaignIDType string
 type RoundIDType string
 type TaskIDType string
-type SubmissionIDType string
-type RoleIDType string
+
+// type SubmissionIDType string
+type RoleIDType IDType
 type EvaluationIDType string
 type IDType string
 type ScoreType float64

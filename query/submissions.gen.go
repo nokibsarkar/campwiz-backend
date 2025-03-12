@@ -6,7 +6,6 @@ package query
 
 import (
 	"context"
-	"strings"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -41,6 +40,8 @@ func newSubmission(db *gorm.DB, opts ...gen.DOOption) submission {
 	_submission.CreatedAtExternal = field.NewTime(tableName, "created_at_external")
 	_submission.DistributionTaskID = field.NewString(tableName, "distribution_task_id")
 	_submission.ImportTaskID = field.NewString(tableName, "import_task_id")
+	_submission.AssignmentCount = field.NewUint8(tableName, "assignment_count")
+	_submission.EvaluationCount = field.NewUint8(tableName, "evaluation_count")
 	_submission.MediaType = field.NewString(tableName, "media_type")
 	_submission.ThumbURL = field.NewString(tableName, "thumb_url")
 	_submission.ThumbWidth = field.NewUint64(tableName, "thumb_width")
@@ -218,6 +219,8 @@ type submission struct {
 	CreatedAtExternal  field.Time
 	DistributionTaskID field.String
 	ImportTaskID       field.String
+	AssignmentCount    field.Uint8
+	EvaluationCount    field.Uint8
 	MediaType          field.String
 	ThumbURL           field.String
 	ThumbWidth         field.Uint64
@@ -271,6 +274,8 @@ func (s *submission) updateTableName(table string) *submission {
 	s.CreatedAtExternal = field.NewTime(table, "created_at_external")
 	s.DistributionTaskID = field.NewString(table, "distribution_task_id")
 	s.ImportTaskID = field.NewString(table, "import_task_id")
+	s.AssignmentCount = field.NewUint8(table, "assignment_count")
+	s.EvaluationCount = field.NewUint8(table, "evaluation_count")
 	s.MediaType = field.NewString(table, "media_type")
 	s.ThumbURL = field.NewString(table, "thumb_url")
 	s.ThumbWidth = field.NewUint64(table, "thumb_width")
@@ -300,7 +305,7 @@ func (s *submission) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (s *submission) fillFieldMap() {
-	s.fieldMap = make(map[string]field.Expr, 32)
+	s.fieldMap = make(map[string]field.Expr, 34)
 	s.fieldMap["submission_id"] = s.SubmissionID
 	s.fieldMap["name"] = s.Name
 	s.fieldMap["campaign_id"] = s.CampaignID
@@ -314,6 +319,8 @@ func (s *submission) fillFieldMap() {
 	s.fieldMap["created_at_external"] = s.CreatedAtExternal
 	s.fieldMap["distribution_task_id"] = s.DistributionTaskID
 	s.fieldMap["import_task_id"] = s.ImportTaskID
+	s.fieldMap["assignment_count"] = s.AssignmentCount
+	s.fieldMap["evaluation_count"] = s.EvaluationCount
 	s.fieldMap["media_type"] = s.MediaType
 	s.fieldMap["thumb_url"] = s.ThumbURL
 	s.fieldMap["thumb_width"] = s.ThumbWidth
@@ -872,27 +879,6 @@ type ISubmissionDo interface {
 	Returning(value interface{}, columns ...string) ISubmissionDo
 	UnderlyingDB() *gorm.DB
 	schema.Tabler
-
-	FilterWithNameAndRole(name string, role string) (result []models.Submission, err error)
-}
-
-// SELECT * FROM @@table WHERE name = @name{{if role !=""}} AND role = @role{{end}}
-func (s submissionDo) FilterWithNameAndRole(name string, role string) (result []models.Submission, err error) {
-	var params []interface{}
-
-	var generateSQL strings.Builder
-	params = append(params, name)
-	generateSQL.WriteString("SELECT * FROM submissions WHERE name = ? ")
-	if role != "" {
-		params = append(params, role)
-		generateSQL.WriteString("AND role = ? ")
-	}
-
-	var executeSQL *gorm.DB
-	executeSQL = s.UnderlyingDB().Raw(generateSQL.String(), params...).Find(&result) // ignore_security_alert
-	err = executeSQL.Error
-
-	return
 }
 
 func (s submissionDo) Debug() ISubmissionDo {

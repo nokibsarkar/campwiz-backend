@@ -52,7 +52,7 @@ func (r *EvaluationRepository) ListAllEvaluations(tx *gorm.DB, filter *models.Ev
 			condition.SubmissionID = filter.SubmissionID
 		}
 		if filter.JuryRoleID != "" {
-			condition.JudgeID = filter.JuryRoleID
+			condition.JudgeID = &filter.JuryRoleID
 		}
 		if filter.ContinueToken != "" {
 			stmt = stmt.Where("evaluation_id > ?", filter.ContinueToken)
@@ -70,4 +70,13 @@ func (r *EvaluationRepository) ListAllEvaluations(tx *gorm.DB, filter *models.Ev
 func (r *EvaluationRepository) UpdateEvaluation(tx *gorm.DB, evaluation *models.Evaluation) error {
 	result := tx.Save(evaluation)
 	return result.Error
+}
+func (r *EvaluationRepository) ListSubmissionIDWithEvaluationCount(tx *gorm.DB, filter *models.EvaluationFilter) ([]models.NewEvaluationRequest, error) {
+	results := []models.NewEvaluationRequest{}
+	stmt := tx.Model(&models.Evaluation{}).Select("submission_id, count(evaluation_id) as EvaluationCount").Group("submission_id")
+	if filter != nil {
+		stmt = stmt.Where(filter)
+	}
+	result := stmt.Find(&results)
+	return results, result.Error
 }

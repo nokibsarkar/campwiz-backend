@@ -2,7 +2,7 @@ package types
 
 import "strings"
 
-type SubmissionIDType string
+type SubmissionIDType IDType
 
 const SUBMISSION_ID_PREFIX = "s"
 

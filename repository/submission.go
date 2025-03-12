@@ -2,6 +2,7 @@ package repository
 
 import (
 	"nokib/campwiz/models"
+	"nokib/campwiz/models/types"
 
 	"gorm.io/gorm"
 )
@@ -15,7 +16,7 @@ func (r *SubmissionRepository) CreateSubmission(tx *gorm.DB, submission *models.
 	result := tx.Create(submission)
 	return result.Error
 }
-func (r *SubmissionRepository) FindSubmissionByID(tx *gorm.DB, submissionID models.IDType) (*models.Submission, error) {
+func (r *SubmissionRepository) FindSubmissionByID(tx *gorm.DB, submissionID types.SubmissionIDType) (*models.Submission, error) {
 	submission := &models.Submission{}
 	result := tx.First(submission, &models.Submission{SubmissionID: submissionID})
 	return submission, result.Error

@@ -19,14 +19,14 @@ func ExportToCache(tx *gorm.DB, cacheTx *gorm.DB, filter *models.EvaluationFilte
 	condition := &models.Evaluation{}
 	stmt := tx.Model(&models.Evaluation{})
 	if filter != nil {
-		if filter.RoundID != "" {
-			condition.SubmissionID = filter.RoundID
+		if filter.SubmissionID != "" {
+			condition.SubmissionID = filter.SubmissionID
 		}
 		if filter.ParticipantID != "" {
 			condition.ParticipantID = filter.ParticipantID
 		}
 		if filter.JuryRoleID != "" {
-			condition.JudgeID = filter.JuryRoleID
+			condition.JudgeID = &filter.JuryRoleID
 		}
 		if filter.Limit > 0 {
 			stmt = stmt.Limit(max(5, filter.Limit))

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log"
 	"nokib/campwiz/consts"
-	"nokib/campwiz/database"
-	"nokib/campwiz/database/cache"
+	"nokib/campwiz/models"
+	"nokib/campwiz/repository/cache"
 	idgenerator "nokib/campwiz/services/idGenerator"
 	"strings"
 	"time"
@@ -19,8 +19,8 @@ type AuthenticationService struct {
 	Config *consts.AuthenticationConfiguration
 }
 type SessionClaims struct {
-	Permission consts.PermissionGroup         `json:"permission"`
-	Name       database.WikimediaUsernameType `json:"name"`
+	Permission consts.PermissionGroup       `json:"permission"`
+	Name       models.WikimediaUsernameType `json:"name"`
 	jwt.RegisteredClaims
 }
 
@@ -36,8 +36,8 @@ func (a *AuthenticationService) VerifyToken(cacheDB *gorm.DB, tokenMap *SessionC
 		return nil, fmt.Errorf("no session ID found")
 	}
 	session := &cache.Session{
-		ID:     database.IDType(sessionIDString),
-		UserID: database.IDType(tokenMap.Subject),
+		ID:     models.IDType(sessionIDString),
+		UserID: models.IDType(tokenMap.Subject),
 	}
 	result := cacheDB.First(session)
 	if result.Error != nil {
@@ -49,7 +49,7 @@ func (a *AuthenticationService) VerifyToken(cacheDB *gorm.DB, tokenMap *SessionC
 func (a *AuthenticationService) NewSession(tx *gorm.DB, tokenMap *SessionClaims) (string, *cache.Session, error) {
 	session := &cache.Session{
 		ID:         idgenerator.GenerateID("ses"),
-		UserID:     database.IDType(tokenMap.Subject),
+		UserID:     models.IDType(tokenMap.Subject),
 		Username:   tokenMap.Name,
 		Permission: tokenMap.Permission,
 		ExpiresAt:  tokenMap.ExpiresAt.Time,
@@ -58,7 +58,7 @@ func (a *AuthenticationService) NewSession(tx *gorm.DB, tokenMap *SessionClaims)
 	if result.Error != nil {
 		return "", nil, result.Error
 	}
-	tokenMap.ID = string(database.IDType(session.ID))
+	tokenMap.ID = string(models.IDType(session.ID))
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, tokenMap)
 	accessToken, err := token.SignedString([]byte(a.Config.Secret))
 	if err != nil {
@@ -93,14 +93,14 @@ func (a *AuthenticationService) RefreshSession(cacheDB *gorm.DB, tokenMap *Sessi
 		return "", nil, fmt.Errorf("no session ID found")
 	}
 	session = &cache.Session{
-		ID:         database.IDType(sessionIDString),
-		UserID:     database.IDType(tokenMap.Subject),
+		ID:         models.IDType(sessionIDString),
+		UserID:     models.IDType(tokenMap.Subject),
 		Username:   tokenMap.Name,
 		Permission: tokenMap.Permission,
 		ExpiresAt:  tokenMap.ExpiresAt.Time,
 	}
 	tx := cacheDB.Begin()
-	result := tx.First(session, &cache.Session{ID: database.IDType(sessionIDString)})
+	result := tx.First(session, &cache.Session{ID: models.IDType(sessionIDString)})
 	if result.Error != nil {
 		fmt.Println("Error: ", result.Error)
 		tx.Rollback()
@@ -123,7 +123,7 @@ func (a *AuthenticationService) RefreshSession(cacheDB *gorm.DB, tokenMap *Sessi
 	tx.Commit()
 	return accessToken, session, nil
 }
-func (a *AuthenticationService) RemoveSession(cacheDB *gorm.DB, ID database.IDType) error {
+func (a *AuthenticationService) RemoveSession(cacheDB *gorm.DB, ID models.IDType) error {
 	session := &cache.Session{ID: ID}
 	result := cacheDB.Delete(session)
 	if result.Error != nil {

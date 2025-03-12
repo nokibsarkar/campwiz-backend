@@ -47,6 +47,18 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "boolean",
+                        "description": "Whether the campaign is closed (result have been finalized)",
+                        "name": "isClosed",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Whether the campaign is hidden from the public list\nIf isHidden is true, then projectID is required",
+                        "name": "isHidden",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "name": "limit",
                         "in": "query"
@@ -59,6 +71,12 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "name": "prev",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "This projectID is the project that campaigns belong to.then ProjectID is required\n\t\tIf the person is not an admin, then the project ID must match the project ID of the user",
+                        "name": "projectId",
                         "in": "query"
                     }
                 ],
@@ -95,7 +113,89 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/database.Campaign"
+                            "$ref": "#/definitions/models.Campaign"
+                        }
+                    }
+                }
+            }
+        },
+        "/campaign/{campaignId}": {
+            "get": {
+                "description": "Get a single campaign",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Campaign"
+                ],
+                "summary": "Get a single campaign",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The campaign ID",
+                        "name": "campaignId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "name": "includeProject",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "name": "includeRoles",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "name": "includeRounds",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.ResponseSingle-database_CampaignExtended"
+                        }
+                    }
+                }
+            }
+        },
+        "/campaign/{id}": {
+            "post": {
+                "description": "Update a campaign",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Campaign"
+                ],
+                "summary": "Update a campaign",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The campaign ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "The campaign request",
+                        "name": "campaignRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/services.CampaignUpdateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.ResponseSingle-database_Campaign"
                         }
                     }
                 }
@@ -290,7 +390,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/database.ProjectRequest"
+                            "$ref": "#/definitions/models.ProjectRequest"
                         }
                     },
                     {
@@ -377,7 +477,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/database.ProjectRequest"
+                            "$ref": "#/definitions/models.ProjectRequest"
                         }
                     }
                 ],
@@ -670,6 +770,35 @@ const docTemplate = `{
                 }
             }
         },
+        "/round/{roundId}/results": {
+            "get": {
+                "description": "Get results of a round",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Round"
+                ],
+                "summary": "Get results of a round",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The round ID",
+                        "name": "roundId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.ResponseList-database_EvaluationResult"
+                        }
+                    }
+                }
+            }
+        },
         "/submission/": {
             "get": {
                 "description": "get all submissions",
@@ -745,7 +874,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/database.Submission"
+                            "$ref": "#/definitions/models.Submission"
                         }
                     }
                 }
@@ -956,7 +1085,7 @@ const docTemplate = `{
                 "PermissionGroupADMIN"
             ]
         },
-        "database.Campaign": {
+        "models.Campaign": {
             "type": "object",
             "required": [
                 "endDate",
@@ -985,6 +1114,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "isPublic": {
+                    "description": "Whether the campaign is shown in the public list",
                     "type": "boolean"
                 },
                 "language": {
@@ -993,13 +1123,16 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
+                "project": {
+                    "$ref": "#/definitions/models.Project"
+                },
                 "projectId": {
                     "type": "string"
                 },
-                "roles": {
+                "rounds": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/database.Role"
+                        "$ref": "#/definitions/models.Round"
                     }
                 },
                 "rules": {
@@ -1007,10 +1140,80 @@ const docTemplate = `{
                 },
                 "startDate": {
                     "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/models.RoundStatus"
                 }
             }
         },
-        "database.Evaluation": {
+        "models.CampaignExtended": {
+            "type": "object",
+            "required": [
+                "endDate",
+                "language",
+                "name",
+                "startDate"
+            ],
+            "properties": {
+                "campaignId": {
+                    "type": "string"
+                },
+                "coordinators": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "createdAt": {
+                    "description": "read only",
+                    "type": "string"
+                },
+                "createdById": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "endDate": {
+                    "type": "string"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "isPublic": {
+                    "description": "Whether the campaign is shown in the public list",
+                    "type": "boolean"
+                },
+                "language": {
+                    "$ref": "#/definitions/consts.Language"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "project": {
+                    "$ref": "#/definitions/models.Project"
+                },
+                "projectId": {
+                    "type": "string"
+                },
+                "rounds": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Round"
+                    }
+                },
+                "rules": {
+                    "type": "string"
+                },
+                "startDate": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/models.RoundStatus"
+                }
+            }
+        },
+        "models.Evaluation": {
             "type": "object",
             "properties": {
                 "comment": {
@@ -1045,7 +1248,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "type": {
-                    "$ref": "#/definitions/database.EvaluationType"
+                    "$ref": "#/definitions/models.EvaluationType"
                 },
                 "updatedAt": {
                     "type": "string"
@@ -1060,7 +1263,18 @@ const docTemplate = `{
                 }
             }
         },
-        "database.EvaluationType": {
+        "models.EvaluationResult": {
+            "type": "object",
+            "properties": {
+                "averageScore": {
+                    "type": "number"
+                },
+                "submissionCount": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.EvaluationType": {
             "type": "string",
             "enum": [
                 "ranking",
@@ -1073,7 +1287,7 @@ const docTemplate = `{
                 "EvaluationTypeBinary"
             ]
         },
-        "database.MediaType": {
+        "models.MediaType": {
             "type": "string",
             "enum": [
                 "ARTICLE",
@@ -1090,7 +1304,7 @@ const docTemplate = `{
                 "MediaTypePDF"
             ]
         },
-        "database.Project": {
+        "models.Project": {
             "type": "object",
             "properties": {
                 "createdAt": {
@@ -1114,7 +1328,7 @@ const docTemplate = `{
                 }
             }
         },
-        "database.ProjectRequest": {
+        "models.ProjectRequest": {
             "type": "object",
             "required": [
                 "name"
@@ -1140,7 +1354,7 @@ const docTemplate = `{
                 }
             }
         },
-        "database.Role": {
+        "models.Role": {
             "type": "object",
             "properties": {
                 "campaignId": {
@@ -1174,14 +1388,14 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "type": {
-                    "$ref": "#/definitions/database.RoleType"
+                    "$ref": "#/definitions/models.RoleType"
                 },
                 "userId": {
                     "type": "string"
                 }
             }
         },
-        "database.RoleType": {
+        "models.RoleType": {
             "type": "string",
             "enum": [
                 "admin",
@@ -1198,7 +1412,7 @@ const docTemplate = `{
                 "RoleTypeParticipant"
             ]
         },
-        "database.Round": {
+        "models.Round": {
             "type": "object",
             "properties": {
                 "allowJuryToParticipate": {
@@ -1210,7 +1424,7 @@ const docTemplate = `{
                 "allowedMediaTypes": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/database.MediaType"
+                        "$ref": "#/definitions/models.MediaType"
                     }
                 },
                 "articleAllowCreations": {
@@ -1282,10 +1496,13 @@ const docTemplate = `{
                 "projectId": {
                     "type": "string"
                 },
+                "quorum": {
+                    "type": "integer"
+                },
                 "roles": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/database.Role"
+                        "$ref": "#/definitions/models.Role"
                     }
                 },
                 "roundId": {
@@ -1301,13 +1518,22 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/database.RoundStatus"
+                    "$ref": "#/definitions/models.RoundStatus"
+                },
+                "totalAssignments": {
+                    "type": "integer"
+                },
+                "totalEvaluatedAssignments": {
+                    "type": "integer"
+                },
+                "totalEvaluatedSubmissions": {
+                    "type": "integer"
                 },
                 "totalSubmissions": {
                     "type": "integer"
                 },
                 "type": {
-                    "$ref": "#/definitions/database.EvaluationType"
+                    "$ref": "#/definitions/models.EvaluationType"
                 },
                 "videoMinimumDurationMilliseconds": {
                     "type": "integer"
@@ -1320,7 +1546,7 @@ const docTemplate = `{
                 }
             }
         },
-        "database.RoundStatus": {
+        "models.RoundStatus": {
             "type": "string",
             "enum": [
                 "PENDING",
@@ -1347,7 +1573,7 @@ const docTemplate = `{
                 "RoundStatusCompleted"
             ]
         },
-        "database.Submission": {
+        "models.Submission": {
             "type": "object",
             "properties": {
                 "author": {
@@ -1390,7 +1616,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "mediatype": {
-                    "$ref": "#/definitions/database.MediaType"
+                    "$ref": "#/definitions/models.MediaType"
                 },
                 "metadata": {
                     "type": "array",
@@ -1400,6 +1626,10 @@ const docTemplate = `{
                 },
                 "participantId": {
                     "type": "string"
+                },
+                "score": {
+                    "description": "The Average Score of the submission",
+                    "type": "number"
                 },
                 "size": {
                     "description": "in bytes",
@@ -1435,7 +1665,7 @@ const docTemplate = `{
                 }
             }
         },
-        "database.Task": {
+        "models.Task": {
             "type": "object",
             "properties": {
                 "campaignId": {
@@ -1466,7 +1696,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/database.TaskStatus"
+                    "$ref": "#/definitions/models.TaskStatus"
                 },
                 "successCount": {
                     "type": "integer"
@@ -1475,7 +1705,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "type": {
-                    "$ref": "#/definitions/database.TaskType"
+                    "$ref": "#/definitions/models.TaskType"
                 },
                 "updatedAt": {
                     "type": "string"
@@ -1485,7 +1715,7 @@ const docTemplate = `{
                 }
             }
         },
-        "database.TaskStatus": {
+        "models.TaskStatus": {
             "type": "string",
             "enum": [
                 "pending",
@@ -1500,7 +1730,7 @@ const docTemplate = `{
                 "TaskStatusFailed"
             ]
         },
-        "database.TaskType": {
+        "models.TaskType": {
             "type": "string",
             "enum": [
                 "import.commons",
@@ -1517,7 +1747,7 @@ const docTemplate = `{
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/database.Campaign"
+                        "$ref": "#/definitions/models.Campaign"
                     }
                 },
                 "next": {
@@ -1534,7 +1764,24 @@ const docTemplate = `{
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/database.Evaluation"
+                        "$ref": "#/definitions/models.Evaluation"
+                    }
+                },
+                "next": {
+                    "type": "string"
+                },
+                "prev": {
+                    "type": "string"
+                }
+            }
+        },
+        "routes.ResponseList-database_EvaluationResult": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.EvaluationResult"
                     }
                 },
                 "next": {
@@ -1551,7 +1798,7 @@ const docTemplate = `{
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/database.Round"
+                        "$ref": "#/definitions/models.Round"
                     }
                 },
                 "next": {
@@ -1568,7 +1815,7 @@ const docTemplate = `{
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/database.Submission"
+                        "$ref": "#/definitions/models.Submission"
                     }
                 },
                 "next": {
@@ -1579,11 +1826,27 @@ const docTemplate = `{
                 }
             }
         },
+        "routes.ResponseSingle-database_Campaign": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/models.Campaign"
+                }
+            }
+        },
+        "routes.ResponseSingle-database_CampaignExtended": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/models.CampaignExtended"
+                }
+            }
+        },
         "routes.ResponseSingle-database_Evaluation": {
             "type": "object",
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/database.Evaluation"
+                    "$ref": "#/definitions/models.Evaluation"
                 }
             }
         },
@@ -1591,7 +1854,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/database.Project"
+                    "$ref": "#/definitions/models.Project"
                 }
             }
         },
@@ -1599,7 +1862,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/database.Round"
+                    "$ref": "#/definitions/models.Round"
                 }
             }
         },
@@ -1607,7 +1870,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/database.Task"
+                    "$ref": "#/definitions/models.Task"
                 }
             }
         },
@@ -1644,6 +1907,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "isPublic": {
+                    "description": "Whether the campaign is shown in the public list",
                     "type": "boolean"
                 },
                 "language": {
@@ -1666,6 +1930,63 @@ const docTemplate = `{
                 },
                 "startDate": {
                     "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/models.RoundStatus"
+                }
+            }
+        },
+        "services.CampaignUpdateRequest": {
+            "type": "object",
+            "required": [
+                "endDate",
+                "language",
+                "name",
+                "startDate"
+            ],
+            "properties": {
+                "coordinators": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "endDate": {
+                    "type": "string"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "isPublic": {
+                    "description": "Whether the campaign is shown in the public list",
+                    "type": "boolean"
+                },
+                "language": {
+                    "$ref": "#/definitions/consts.Language"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "organizers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "projectId": {
+                    "type": "string"
+                },
+                "rules": {
+                    "type": "string"
+                },
+                "startDate": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/models.RoundStatus"
                 }
             }
         },
@@ -1724,7 +2045,7 @@ const docTemplate = `{
                 "allowedMediaTypes": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/database.MediaType"
+                        "$ref": "#/definitions/models.MediaType"
                     }
                 },
                 "articleAllowCreations": {
@@ -1790,6 +2111,9 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
+                "quorum": {
+                    "type": "integer"
+                },
                 "secretBallot": {
                     "type": "boolean"
                 },
@@ -1800,7 +2124,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "type": {
-                    "$ref": "#/definitions/database.EvaluationType"
+                    "$ref": "#/definitions/models.EvaluationType"
                 },
                 "videoMinimumDurationMilliseconds": {
                     "type": "integer"
@@ -1844,7 +2168,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/database.TaskStatus"
+                    "$ref": "#/definitions/models.TaskStatus"
                 },
                 "successCount": {
                     "type": "integer"
@@ -1853,7 +2177,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "type": {
-                    "$ref": "#/definitions/database.TaskType"
+                    "$ref": "#/definitions/models.TaskType"
                 },
                 "updatedAt": {
                     "type": "string"

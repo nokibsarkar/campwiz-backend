@@ -1,4 +1,4 @@
-package database
+package repository
 
 import (
 	"fmt"
@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"net/url"
 	"nokib/campwiz/consts"
+	"nokib/campwiz/models"
 	"strings"
-	"time"
 )
 
 const COMMONS_API = "http://commons.wikimedia.org/w/api.php"
@@ -18,68 +18,6 @@ type CommonsRepository struct {
 	endpoint    string
 	accessToken string
 	cl          *http.Client
-}
-type ImageResult struct {
-	ID               uint64 `json:"pageid"`
-	Name             string `json:"title"`
-	URL              string
-	SubmittedAt      time.Time
-	UploaderUsername WikimediaUsernameType
-	Height           uint64
-	Width            uint64
-	Size             uint64
-	MediaType        string
-	Duration         uint64
-	License          string
-	Description      string
-	CreditHTML       string
-	Resolution       uint64
-}
-type GContinue struct {
-	Gcmcontinue string `json:"gcmcontinue"`
-}
-type Paginator[PageType any] struct {
-	repo *CommonsRepository
-}
-type WikimediaUser struct {
-	Name       WikimediaUsernameType `json:"name"`
-	Registered time.Time             `json:"registration"`
-	CentralIds *struct {
-		CentralAuth uint64 `json:"CentralAuth"`
-	} `json:"centralids"`
-}
-type UserList struct {
-	Users map[string]WikimediaUser `json:"users"`
-}
-
-type KeyValue struct {
-	Name  string `json:"name"`
-	Value any    `json:"value"`
-}
-
-type ImageInfo struct {
-	Info []struct {
-		Timestamp      time.Time             `json:"timestamp"`
-		User           WikimediaUsernameType `json:"user"`
-		Size           uint64                `json:"size"`
-		Width          uint64                `json:"width"`
-		Height         uint64                `json:"height"`
-		Title          string                `json:"canonicaltitle"`
-		URL            string                `json:"url"`
-		DescriptionURL string                `json:"descriptionurl"`
-		MediaType      string                `json:"mediatype"`
-		Duration       float64               `json:"duration"`
-		ExtMetadata    *ExtMetadata          `json:"extmetadata"`
-	} `json:"imageinfo"`
-}
-type Page struct {
-	Pageid int    `json:"pageid"`
-	Ns     int    `json:"ns"`
-	Title  string `json:"title"`
-}
-type ImageInfoPage struct {
-	Page
-	ImageInfo
 }
 
 func (c *CommonsRepository) Get(values url.Values) (_ io.ReadCloser, err error) {
@@ -98,11 +36,11 @@ func (c *CommonsRepository) Get(values url.Values) (_ io.ReadCloser, err error) 
 }
 
 // returns images from commons categories
-func (c *CommonsRepository) GetImagesFromCommonsCategories(category string) ([]ImageResult, map[string]string) {
+func (c *CommonsRepository) GetImagesFromCommonsCategories(category string) ([]models.ImageResult, map[string]string) {
 	// Get images from commons category
 	// Create batch from commons category
 	log.Println("Getting images from commons category: ", category)
-	paginator := NewPaginator[ImageInfoPage](c)
+	paginator := NewPaginator[models.ImageInfoPage](c)
 	params := url.Values{
 		"action":    {"query"},
 		"format":    {"json"},
@@ -118,7 +56,7 @@ func (c *CommonsRepository) GetImagesFromCommonsCategories(category string) ([]I
 		fmt.Println("Error: ", err)
 		return nil, nil
 	}
-	result := []ImageResult{}
+	result := []models.ImageResult{}
 	for image := range images {
 		// Append images to result
 		if image == nil {
@@ -129,7 +67,7 @@ func (c *CommonsRepository) GetImagesFromCommonsCategories(category string) ([]I
 			continue
 		}
 		info := image.Info[0]
-		img := ImageResult{
+		img := models.ImageResult{
 			ID:               uint64(image.Pageid),
 			Name:             image.Title,
 			URL:              info.URL,
@@ -154,16 +92,16 @@ func (c *CommonsRepository) GetImagesFromCommonsCategories(category string) ([]I
 }
 
 // returns images from commons categories
-func (c *CommonsRepository) GeUsersFromUsernames(usernames []WikimediaUsernameType) ([]WikimediaUser, error) {
+func (c *CommonsRepository) GeUsersFromUsernames(usernames []models.WikimediaUsernameType) ([]models.WikimediaUser, error) {
 	// Get images from commons category
 	// Create batch from commons category
-	paginator := NewPaginator[WikimediaUser](c)
+	paginator := NewPaginator[models.WikimediaUser](c)
 	batchSize := 40
 	batchCount := len(usernames) / batchSize
 	if len(usernames)%batchSize != 0 {
 		batchCount++
 	}
-	result := []WikimediaUser{}
+	result := []models.WikimediaUser{}
 	for i := range batchCount {
 		start := i * batchSize
 		end := min((i+1)*batchSize, len(usernames))
@@ -236,7 +174,7 @@ type PageQueryResponse[PageType any] = BaseQueryResponse[struct {
 }, map[string]string]
 
 type UserListQueryResponse = BaseQueryResponse[struct {
-	Users []WikimediaUser `json:"users"`
+	Users []models.WikimediaUser `json:"users"`
 }, map[string]string]
 
 // NewCommonsRepository returns a new instance of CommonsRepository

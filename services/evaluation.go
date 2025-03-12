@@ -3,7 +3,8 @@ package services
 import (
 	"errors"
 	"log"
-	"nokib/campwiz/database"
+	"nokib/campwiz/models"
+	"nokib/campwiz/repository"
 )
 
 type EvaluationService struct{}
@@ -13,20 +14,20 @@ func NewEvaluationService() *EvaluationService {
 }
 
 type EvaluationRequest struct {
-	VoteScore    *int            `json:"voteScore"`
-	Comment      string          `json:"comment"`
-	VotePassed   *bool           `json:"votePassed"`
-	VotePosition *int            `json:"votePosition"`
-	EvaluationID database.IDType `json:"evaluationId"`
+	VoteScore    *int          `json:"voteScore"`
+	Comment      string        `json:"comment"`
+	VotePassed   *bool         `json:"votePassed"`
+	VotePosition *int          `json:"votePosition"`
+	EvaluationID models.IDType `json:"evaluationId"`
 }
 
-func (e *EvaluationService) BulkEvaluate(currentUserID database.IDType, evaluationRequests []EvaluationRequest) ([]*database.Evaluation, error) {
-	// ev_repo := database.NewEvaluationRepository()
-	user_repo := database.NewUserRepository()
-	round_repo := database.NewRoundRepository()
+func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluationRequests []EvaluationRequest) ([]*models.Evaluation, error) {
+	// ev_repo := repository.NewEvaluationRepository()
+	user_repo := repository.NewUserRepository()
+	round_repo := repository.NewRoundRepository()
 
-	// jury_repo := database.NewRoleRepository()
-	conn, close := database.GetDB()
+	// jury_repo := repository.NewRoleRepository()
+	conn, close := repository.GetDB()
 	defer close()
 	tx := conn.Begin()
 	currentUser, err := user_repo.FindByID(tx, currentUserID)
@@ -38,11 +39,11 @@ func (e *EvaluationService) BulkEvaluate(currentUserID database.IDType, evaluati
 		tx.Rollback()
 		return nil, errors.New("user not found")
 	}
-	evaluations := []*database.Evaluation{}
-	evaluationIDs := []database.IDType{}
-	evaluationRequestMap := map[database.IDType]EvaluationRequest{}
-	var currentRound *database.Round
-	var campaign *database.Campaign
+	evaluations := []*models.Evaluation{}
+	evaluationIDs := []models.IDType{}
+	evaluationRequestMap := map[models.IDType]EvaluationRequest{}
+	var currentRound *models.Round
+	var campaign *models.Campaign
 	for _, evaluationRequest := range evaluationRequests {
 		evaluationRequestMap[evaluationRequest.EvaluationID] = evaluationRequest
 		evaluationIDs = append(evaluationIDs, evaluationRequest.EvaluationID)
@@ -84,11 +85,11 @@ func (e *EvaluationService) BulkEvaluate(currentUserID database.IDType, evaluati
 			return nil, errors.New("all submissions must be from the same round")
 		}
 		log.Println("Evaluating evaluation", evaluation.Type)
-		if evaluation.Type == database.EvaluationTypeBinary {
+		if evaluation.Type == models.EvaluationTypeBinary {
 			log.Println("Binary evaluation")
-		} else if evaluation.Type == database.EvaluationTypeRanking {
+		} else if evaluation.Type == models.EvaluationTypeRanking {
 			log.Println("Ranking evaluation")
-		} else if evaluation.Type == database.EvaluationTypeScore {
+		} else if evaluation.Type == models.EvaluationTypeScore {
 			log.Println("Score evaluation")
 		}
 		log.Println(evaluationRequest)
@@ -97,11 +98,11 @@ func (e *EvaluationService) BulkEvaluate(currentUserID database.IDType, evaluati
 	return evaluations, nil
 }
 
-func (e *EvaluationService) Evaluate(currentUserID database.IDType, evaluationID database.IDType, evaluationRequest *EvaluationRequest) (*database.Evaluation, error) {
-	ev_repo := database.NewEvaluationRepository()
-	user_repo := database.NewUserRepository()
-	jury_repo := database.NewRoleRepository()
-	conn, close := database.GetDB()
+func (e *EvaluationService) Evaluate(currentUserID models.IDType, evaluationID models.IDType, evaluationRequest *EvaluationRequest) (*models.Evaluation, error) {
+	ev_repo := repository.NewEvaluationRepository()
+	user_repo := repository.NewUserRepository()
+	jury_repo := repository.NewRoleRepository()
+	conn, close := repository.GetDB()
 	defer close()
 	tx := conn.Begin()
 	evaluation, err := ev_repo.FindEvaluationByID(tx.Preload("Submission").Preload("Submission.CurrentRound").Preload("Submission.CurrentRound.Campaign"), evaluationID)
@@ -113,13 +114,13 @@ func (e *EvaluationService) Evaluate(currentUserID database.IDType, evaluationID
 		tx.Rollback()
 		return nil, errors.New("evaluation not found")
 	}
-	if evaluation.Type == database.EvaluationTypeBinary && evaluationRequest.VotePassed == nil {
+	if evaluation.Type == models.EvaluationTypeBinary && evaluationRequest.VotePassed == nil {
 		tx.Rollback()
 		return nil, errors.New("votePassed is required for binary evaluation")
-	} else if evaluation.Type == database.EvaluationTypeRanking && evaluationRequest.VotePosition == nil {
+	} else if evaluation.Type == models.EvaluationTypeRanking && evaluationRequest.VotePosition == nil {
 		tx.Rollback()
 		return nil, errors.New("votePosition is required for positional evaluation")
-	} else if evaluation.Type == database.EvaluationTypeScore && evaluationRequest.VoteScore == nil {
+	} else if evaluation.Type == models.EvaluationTypeScore && evaluationRequest.VoteScore == nil {
 		tx.Rollback()
 		return nil, errors.New("voteScore is required for score evaluation")
 	}
@@ -140,12 +141,12 @@ func (e *EvaluationService) Evaluate(currentUserID database.IDType, evaluationID
 	}
 	round := submission.CurrentRound
 	campaign := round.Campaign
-	juries, err := jury_repo.ListAllRoles(tx, &database.RoleFilter{RoundID: &round.RoundID, CampaignID: &campaign.CampaignID})
+	juries, err := jury_repo.ListAllRoles(tx, &models.RoleFilter{RoundID: &round.RoundID, CampaignID: &campaign.CampaignID})
 	if err != nil {
 		tx.Rollback()
 		return nil, err
 	}
-	juryMap := map[database.IDType]*database.Role{}
+	juryMap := map[models.IDType]*models.Role{}
 	for _, jury := range juries {
 		juryMap[jury.RoleID] = &jury
 	}
@@ -153,11 +154,11 @@ func (e *EvaluationService) Evaluate(currentUserID database.IDType, evaluationID
 	// 	tx.Rollback()
 	// 	return nil, errors.New("user is not a jury")
 	// }
-	if evaluation.Type == database.EvaluationTypeBinary {
+	if evaluation.Type == models.EvaluationTypeBinary {
 		log.Println("Binary evaluation")
-	} else if evaluation.Type == database.EvaluationTypeRanking {
+	} else if evaluation.Type == models.EvaluationTypeRanking {
 		log.Println("Ranking evaluation")
-	} else if evaluation.Type == database.EvaluationTypeScore {
+	} else if evaluation.Type == models.EvaluationTypeScore {
 		log.Println("Score evaluation")
 	}
 	if evaluationRequest.Comment != "" {
@@ -174,9 +175,9 @@ func (e *EvaluationService) Evaluate(currentUserID database.IDType, evaluationID
 func (e *EvaluationService) GetEvaluationById() {
 }
 
-func (e *EvaluationService) ListEvaluations(filter *database.EvaluationFilter) ([]database.Evaluation, error) {
-	ev_repo := database.NewEvaluationRepository()
-	conn, close := database.GetDB()
+func (e *EvaluationService) ListEvaluations(filter *models.EvaluationFilter) ([]models.Evaluation, error) {
+	ev_repo := repository.NewEvaluationRepository()
+	conn, close := repository.GetDB()
 	defer close()
 	return ev_repo.ListAllEvaluations(conn, filter)
 }

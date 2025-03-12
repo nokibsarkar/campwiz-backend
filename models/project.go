@@ -1,10 +1,6 @@
-package database
+package models
 
-import (
-	"time"
-
-	"gorm.io/gorm"
-)
+import "time"
 
 type Project struct {
 	ProjectID IDType  `json:"projectId" gorm:"primaryKey"`
@@ -27,22 +23,4 @@ type ProjectRequest struct {
 	CreatedByID  IDType                  `json:"-"`
 	ProjectLeads []WikimediaUsernameType `json:"projectLeads"  gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	Campaigns    []*Campaign             `json:"-"  gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-}
-type ProjectRepository struct{}
-
-func NewProjectRepository() *ProjectRepository {
-	return &ProjectRepository{}
-}
-func (r *ProjectRepository) CreateProject(tx *gorm.DB, project *Project) error {
-	result := tx.Create(project)
-	return result.Error
-}
-func (r *ProjectRepository) FindProjectByID(tx *gorm.DB, projectID IDType) (*Project, error) {
-	project := &Project{}
-	result := tx.First(project, &Project{ProjectID: projectID})
-	return project, result.Error
-}
-func (r *ProjectRepository) UpdateProject(tx *gorm.DB, project *Project) error {
-	result := tx.Updates(project)
-	return result.Error
 }

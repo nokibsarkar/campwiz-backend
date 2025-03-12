@@ -1,6 +1,9 @@
 package services
 
-import "nokib/campwiz/database"
+import (
+	"nokib/campwiz/models"
+	"nokib/campwiz/repository"
+)
 
 type TaskService struct{}
 
@@ -18,7 +21,7 @@ type TaskRequest struct {
 	HandlerFunc          func(c ...any)
 }
 type TaskResponse struct {
-	database.Task
+	models.Task
 	handlerFunc func(c ...any)
 }
 type TaskFilter struct {
@@ -37,12 +40,12 @@ func (t *TaskService) CreateTask(TaskRequest, handlerFunc func(c ...any)) (*Task
 
 	return nil, nil
 }
-func (t *TaskService) GetTask(taskId database.IDType) (*database.Task, error) {
-	task_repo := database.NewTaskRepository()
-	conn, close := database.GetDB()
+func (t *TaskService) GetTask(taskId models.IDType) (*models.Task, error) {
+	task_repo := repository.NewTaskRepository()
+	conn, close := repository.GetDB()
 	defer close()
 	return task_repo.FindByID(conn, taskId)
 }
-func (t *TaskService) ListTasks(filter *TaskFilter) ([]database.Task, error) {
+func (t *TaskService) ListTasks(filter *TaskFilter) ([]models.Task, error) {
 	return nil, nil
 }

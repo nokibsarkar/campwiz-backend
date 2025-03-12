@@ -2,8 +2,8 @@ package routes
 
 import (
 	"nokib/campwiz/consts"
-	"nokib/campwiz/database"
-	"nokib/campwiz/database/cache"
+	"nokib/campwiz/models"
+	"nokib/campwiz/repository/cache"
 	"nokib/campwiz/services"
 
 	"github.com/gin-gonic/gin"
@@ -13,7 +13,7 @@ import (
 // @Summary Create a new round
 // @Description Create a new round for a campaign
 // @Produce  json
-// @Success 200 {object} ResponseSingle[database.Round]
+// @Success 200 {object} ResponseSingle[models.Round]
 // @Router /round/ [post]
 // @Param roundRequest body services.RoundRequest true "The round request"
 // @Tags Round
@@ -34,21 +34,21 @@ func CreateRound(c *gin.Context, sess *cache.Session) {
 		c.JSON(400, ResponseError{Detail: "Error creating round : " + err.Error()})
 		return
 	}
-	c.JSON(200, ResponseSingle[database.Round]{Data: *round})
+	c.JSON(200, ResponseSingle[models.Round]{Data: *round})
 }
 
 // ListAllRounds godoc
 // @Summary List all rounds
 // @Description get all rounds
 // @Produce  json
-// @Success 200 {object} ResponseList[database.Round]
+// @Success 200 {object} ResponseList[models.Round]
 // @Router /round/ [get]
-// @param RoundFilter query database.RoundFilter false "Filter the rounds"
+// @param RoundFilter query models.RoundFilter false "Filter the rounds"
 // @Tags Round
 // @Error 400 {object} ResponseError
 func ListAllRounds(c *gin.Context, sess *cache.Session) {
 	defer HandleError("ListAllRounds")
-	filter := &database.RoundFilter{}
+	filter := &models.RoundFilter{}
 	err := c.ShouldBindQuery(filter)
 	if err != nil {
 		c.JSON(400, ResponseError{Detail: "Invalid request : " + err.Error()})
@@ -60,14 +60,14 @@ func ListAllRounds(c *gin.Context, sess *cache.Session) {
 		c.JSON(400, ResponseError{Detail: "Error listing rounds : " + err.Error()})
 		return
 	}
-	c.JSON(200, ResponseList[database.Round]{Data: rounds})
+	c.JSON(200, ResponseList[models.Round]{Data: rounds})
 }
 
 // ImportFromCommons godoc
 // @Summary Import images from commons
 // @Description The user would provide a round ID and a list of commons categories and the system would import images from those categories
 // @Produce  json
-// @Success 200 {object} ResponseSingle[database.Task]
+// @Success 200 {object} ResponseSingle[models.Task]
 // @Router /round/import/{roundId}/commons [post]
 // @Param roundId path string true "The round ID"
 // @Param ImportFromCommons body services.ImportFromCommonsPayload true "The import from commons request"
@@ -89,19 +89,19 @@ func ImportFromCommons(c *gin.Context, sess *cache.Session) {
 		c.JSON(400, ResponseError{Detail: "Invalid request : No categories provided"})
 		return
 	}
-	task, err := round_service.ImportFromCommons(database.IDType(roundId), req.Categories)
+	task, err := round_service.ImportFromCommons(models.IDType(roundId), req.Categories)
 	if err != nil {
 		c.JSON(400, ResponseError{Detail: "Failed to import images : " + err.Error()})
 		return
 	}
-	c.JSON(200, ResponseSingle[*database.Task]{Data: task})
+	c.JSON(200, ResponseSingle[*models.Task]{Data: task})
 }
 
 // UpdateRoundDetails godoc
 // @Summary Update the details of a round
 // @Description Update the details of a round
 // @Produce  json
-// @Success 200 {object} ResponseSingle[database.Round]
+// @Success 200 {object} ResponseSingle[models.Round]
 // @Router /round/{roundId} [post]
 // @Param roundId path string true "The round ID"
 // @Param roundRequest body services.RoundRequest true "The round request"
@@ -119,19 +119,19 @@ func UpdateRoundDetails(c *gin.Context, sess *cache.Session) {
 		return
 	}
 	round_service := services.NewRoundService()
-	round, err := round_service.UpdateRoundDetails(database.IDType(roundId), req)
+	round, err := round_service.UpdateRoundDetails(models.IDType(roundId), req)
 	if err != nil {
 		c.JSON(400, ResponseError{Detail: "Failed to update round : " + err.Error()})
 		return
 	}
-	c.JSON(200, ResponseSingle[*database.Round]{Data: round})
+	c.JSON(200, ResponseSingle[*models.Round]{Data: round})
 }
 
 // DistributeEvaluations godoc
 // @Summary Distribute evaluations to juries
 // @Description Distribute evaluations to juries
 // @Produce  json
-// @Success 200 {object} ResponseSingle[database.Task]
+// @Success 200 {object} ResponseSingle[models.Task]
 // @Router /round/distribute/{roundId} [post]
 // @Param roundId path string true "The round ID"
 // @Param DistributionRequest body services.DistributionRequest true "The distribution request"
@@ -149,19 +149,19 @@ func DistributeEvaluations(c *gin.Context, sess *cache.Session) {
 		return
 	}
 	round_service := services.NewRoundService()
-	task, err := round_service.DistributeEvaluations(sess.UserID, database.IDType(roundId), distributionReq)
+	task, err := round_service.DistributeEvaluations(sess.UserID, models.IDType(roundId), distributionReq)
 	if err != nil {
 		c.JSON(400, ResponseError{Detail: "Failed to distribute evaluations : " + err.Error()})
 		return
 	}
-	c.JSON(200, ResponseSingle[*database.Task]{Data: task})
+	c.JSON(200, ResponseSingle[*models.Task]{Data: task})
 }
 
 // SimulateDistributeEvaluations godoc
 // @Summary Simulate distributing evaluations to juries
 // @Description Simulate distributing evaluations to juries
 // @Produce  json
-// @Success 200 {object} ResponseSingle[database.Task]
+// @Success 200 {object} ResponseSingle[models.Task]
 // @Router /round/distribute/{roundId}/simulate [post]
 // @Param roundId path string true "The round ID"
 // @Param DistributionRequest body services.DistributionRequest true "The distribution request"
@@ -179,19 +179,19 @@ func SimulateDistributeEvaluations(c *gin.Context, sess *cache.Session) {
 		c.JSON(400, ResponseError{Detail: "Error Decoding : " + err.Error()})
 		return
 	}
-	task, err := round_service.SimulateDistributeEvaluations(sess.UserID, database.IDType(roundId), distributionReq)
+	task, err := round_service.SimulateDistributeEvaluations(sess.UserID, models.IDType(roundId), distributionReq)
 	if err != nil {
 		c.JSON(400, ResponseError{Detail: "Failed to distribute evaluations : " + err.Error()})
 		return
 	}
-	c.JSON(200, ResponseSingle[*database.Task]{Data: task})
+	c.JSON(200, ResponseSingle[*models.Task]{Data: task})
 }
 
 // GetRound godoc
 // @Summary Get a round
 // @Description Get a round
 // @Produce  json
-// @Success 200 {object} ResponseSingle[database.Round]
+// @Success 200 {object} ResponseSingle[models.Round]
 // @Router /round/{roundId} [get]
 // @Param roundId path string true "The round ID"
 // @Tags Round
@@ -202,17 +202,41 @@ func GetRound(c *gin.Context) {
 		c.JSON(400, ResponseError{Detail: "Invalid request : Round ID is required"})
 	}
 	round_service := services.NewRoundService()
-	round, err := round_service.GetById(database.IDType(roundId))
+	round, err := round_service.GetById(models.IDType(roundId))
 	if err != nil {
 		c.JSON(400, ResponseError{Detail: "Failed to get round : " + err.Error()})
 		return
 	}
-	c.JSON(200, ResponseSingle[*database.Round]{Data: round})
+	c.JSON(200, ResponseSingle[*models.Round]{Data: round})
+}
+
+// GetResults godoc
+// @Summary Get results of a round
+// @Description Get results of a round
+// @Produce  json
+// @Success 200 {object} ResponseList[models.EvaluationResult]
+// @Router /round/{roundId}/results [get]
+// @Param roundId path string true "The round ID"
+// @Tags Round
+// @Error 400 {object} ResponseError
+func GetResults(c *gin.Context, sess *cache.Session) {
+	roundId := c.Param("roundId")
+	if roundId == "" {
+		c.JSON(400, ResponseError{Detail: "Invalid request : Round ID is required"})
+	}
+	round_service := services.NewRoundService()
+	results, err := round_service.GetResults(models.IDType(roundId))
+	if err != nil {
+		c.JSON(400, ResponseError{Detail: "Failed to get round results : " + err.Error()})
+		return
+	}
+	c.JSON(200, ResponseList[models.EvaluationResult]{Data: results})
 }
 func NewRoundRoutes(parent *gin.RouterGroup) {
 	r := parent.Group("/round")
 	r.GET("/", WithSession(ListAllRounds))
 	r.GET("/:roundId", GetRound)
+	r.GET("/:roundId/results", WithSession(GetResults))
 	r.POST("/", WithPermission(consts.PermissionCreateCampaign, CreateRound))
 	r.POST("/:roundId", WithPermission(consts.PermissionCreateCampaign, UpdateRoundDetails))
 	r.POST("/import/:roundId/commons", WithPermission(consts.PermissionLogin, ImportFromCommons))

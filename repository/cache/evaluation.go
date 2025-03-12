@@ -1,23 +1,23 @@
 package cache
 
 import (
-	"nokib/campwiz/database"
+	"nokib/campwiz/models"
 	idgenerator "nokib/campwiz/services/idGenerator"
 
 	"gorm.io/gorm"
 )
 
 type Assignments struct {
-	EvaluationID       database.IDType ` gorm:"primaryKey"`
-	SubmissionID       database.IDType `gorm:"uniqueIndex:idx_submission_judge"`
-	JudgeID            database.IDType `gorm:"uniqueIndex:idx_submission_judge"`
-	DistributionTaskID database.IDType
+	EvaluationID       models.IDType ` gorm:"primaryKey"`
+	SubmissionID       models.IDType `gorm:"uniqueIndex:idx_submission_judge"`
+	JudgeID            models.IDType `gorm:"uniqueIndex:idx_submission_judge"`
+	DistributionTaskID models.IDType
 }
 
-func ExportToCache(tx *gorm.DB, cacheTx *gorm.DB, filter *database.EvaluationFilter) ([]*Assignments, error) {
+func ExportToCache(tx *gorm.DB, cacheTx *gorm.DB, filter *models.EvaluationFilter) ([]*Assignments, error) {
 	var evaluations []*Assignments
-	condition := &database.Evaluation{}
-	stmt := tx.Model(&database.Evaluation{})
+	condition := &models.Evaluation{}
+	stmt := tx.Model(&models.Evaluation{})
 	if filter != nil {
 		if filter.RoundID != "" {
 			condition.SubmissionID = filter.RoundID

@@ -1,10 +1,9 @@
-package database
+package models
 
 import (
 	"time"
 
 	"gorm.io/datatypes"
-	"gorm.io/gorm"
 )
 
 type SubmissionListFilter struct {
@@ -46,6 +45,8 @@ type Submission struct {
 	Name         string `json:"title"`
 	CampaignID   IDType `json:"campaignId" gorm:"null;index;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	URL          string `json:"url"`
+	// The Average Score of the submission
+	Score ScoreType `json:"score" gorm:"default:0"`
 	// The Actual Author in the Wikimedia
 	Author WikimediaUsernameType `json:"author"`
 	// The User who submitted the article on behalf of the participant
@@ -58,7 +59,7 @@ type Submission struct {
 	Campaign           *Campaign  `json:"-"  gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	CreatedAtExternal  *time.Time `json:"createdAtServer"`
 	CurrentRound       *Round     `json:"-" gorm:"foreignKey:CurrentRoundID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	DistributionTaskID IDType     `json:"distributionTaskId" gorm:"null"`
+	DistributionTaskID *IDType    `json:"distributionTaskId" gorm:"null"`
 	ImportTaskID       IDType     `json:"importTaskId" gorm:"null"`
 	// The task that was used to distribute the submission to the juries
 	DistributionTask *Task `json:"-" gorm:"foreignKey:DistributionTaskID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
@@ -68,87 +69,4 @@ type Submission struct {
 }
 type SubmissionSelectID struct {
 	SubmissionID IDType
-}
-type SubmissionRepository struct{}
-
-func NewSubmissionRepository() *SubmissionRepository {
-	return &SubmissionRepository{}
-}
-func (r *SubmissionRepository) CreateSubmission(tx *gorm.DB, submission *Submission) error {
-	result := tx.Create(submission)
-	return result.Error
-}
-func (r *SubmissionRepository) FindSubmissionByID(tx *gorm.DB, submissionID IDType) (*Submission, error) {
-	submission := &Submission{}
-	result := tx.First(submission, &Submission{SubmissionID: submissionID})
-	return submission, result.Error
-}
-func (r *SubmissionRepository) ListAllSubmissions(tx *gorm.DB, filter *SubmissionListFilter) ([]Submission, error) {
-	var submissions []Submission
-	condition := &Submission{}
-	if filter != nil {
-		if filter.CampaignID != "" {
-			condition.CampaignID = filter.CampaignID
-		}
-		if filter.RoundID != "" {
-			condition.CurrentRoundID = filter.RoundID
-		}
-		if filter.ParticipantID != "" {
-			condition.ParticipantID = filter.ParticipantID
-		}
-	}
-	where := tx.Where(condition)
-	if filter.ContinueToken != "" {
-		where = where.Where("submission_id > ?", filter.ContinueToken)
-	}
-
-	stmt := where //.Order("submission_id")
-	if filter.Limit > 0 {
-		stmt = stmt.Limit(max(100, filter.Limit))
-	}
-	result := stmt.Find(&submissions)
-	return submissions, result.Error
-}
-func (r *SubmissionRepository) GetSubmissionCount(tx *gorm.DB, filter *SubmissionListFilter) (int64, error) {
-	condition := &Submission{}
-	if filter != nil {
-		if filter.CampaignID != "" {
-			condition.CampaignID = filter.CampaignID
-		}
-		if filter.RoundID != "" {
-			condition.CurrentRoundID = filter.RoundID
-		}
-		if filter.ParticipantID != "" {
-			condition.ParticipantID = filter.ParticipantID
-		}
-	}
-	var count int64
-	result := tx.Model(&Submission{}).Where(condition).Count(&count)
-	return count, result.Error
-}
-func (r *SubmissionRepository) ListAllSubmissionIDs(tx *gorm.DB, filter *SubmissionListFilter) ([]SubmissionSelectID, error) {
-	var submissionIDs []SubmissionSelectID
-	condition := &Submission{}
-	if filter != nil {
-		if filter.CampaignID != "" {
-			condition.CampaignID = filter.CampaignID
-		}
-		if filter.RoundID != "" {
-			condition.CurrentRoundID = filter.RoundID
-		}
-		if filter.ParticipantID != "" {
-			condition.ParticipantID = filter.ParticipantID
-		}
-	}
-	where := tx.Where(condition)
-	if filter.ContinueToken != "" {
-		where = where.Where("submission_id > ?", filter.ContinueToken)
-	}
-
-	stmt := where //.Order("submission_id")
-	if filter.Limit > 0 {
-		stmt = stmt.Limit(max(100, filter.Limit))
-	}
-	result := stmt.Model(&Submission{}).Find(&submissionIDs)
-	return submissionIDs, result.Error
 }

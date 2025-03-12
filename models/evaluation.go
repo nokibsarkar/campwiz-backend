@@ -1,10 +1,6 @@
-package database
+package models
 
-import (
-	"time"
-
-	"gorm.io/gorm"
-)
+import "time"
 
 type EvaluationType string
 
@@ -46,69 +42,4 @@ type EvaluationFilter struct {
 	SubmissionID  IDType         `form:"submissionId"`
 	JuryRoleID    IDType         `form:"juryId"`
 	CommonFilter
-}
-type EvaluationRepository struct{}
-
-func NewEvaluationRepository() *EvaluationRepository {
-	return &EvaluationRepository{}
-}
-func (r *EvaluationRepository) CreateEvaluation(tx *gorm.DB, evaluation *Evaluation) error {
-	result := tx.Create(evaluation)
-	return result.Error
-}
-func (r *EvaluationRepository) FindEvaluationByID(tx *gorm.DB, evaluationID IDType) (*Evaluation, error) {
-	evaluation := &Evaluation{}
-	result := tx.First(evaluation, &Evaluation{EvaluationID: evaluationID})
-	return evaluation, result.Error
-}
-func (r *EvaluationRepository) ListAllEvaluations(tx *gorm.DB, filter *EvaluationFilter) ([]Evaluation, error) {
-	var evaluations []Evaluation
-	condition := &Evaluation{}
-	stmt := tx
-	if filter != nil {
-		s := &Submission{}
-		if filter.RoundID != "" || filter.CampaignID != "" {
-			if filter.RoundID != "" {
-				s.CurrentRoundID = filter.RoundID
-			}
-			if filter.CampaignID != "" {
-				s.CampaignID = filter.CampaignID
-			}
-			stmt = tx.Joins("Submission", tx.Where(s))
-		}
-		if filter.ParticipantID != "" {
-			condition.ParticipantID = filter.ParticipantID
-		}
-		if filter.Type != "" {
-			condition.Type = filter.Type
-		}
-		if filter.Evaluated != nil {
-			if *filter.Evaluated {
-				stmt = stmt.Where("evaluated_at IS NOT NULL")
-			} else {
-				stmt = stmt.Where("evaluated_at IS NULL")
-			}
-		}
-		if filter.SubmissionID != "" {
-			condition.SubmissionID = filter.SubmissionID
-		}
-		if filter.JuryRoleID != "" {
-			condition.JudgeID = filter.JuryRoleID
-		}
-		if filter.ContinueToken != "" {
-			stmt = stmt.Where("evaluation_id > ?", filter.ContinueToken)
-		}
-		if filter.PreviousToken != "" {
-			stmt = stmt.Where("evaluation_id < ?", filter.PreviousToken)
-		}
-		if filter.Limit > 0 {
-			stmt = stmt.Limit(max(5, filter.Limit))
-		}
-	}
-	result := stmt.Where(condition).Find(&evaluations)
-	return evaluations, result.Error
-}
-func (r *EvaluationRepository) UpdateEvaluation(tx *gorm.DB, evaluation *Evaluation) error {
-	result := tx.Save(evaluation)
-	return result.Error
 }

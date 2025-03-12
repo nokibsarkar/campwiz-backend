@@ -1,20 +1,16 @@
-package database
+package repository
 
 import (
 	"fmt"
 	"nokib/campwiz/consts"
+	"nokib/campwiz/models"
 
 	"github.com/go-gorm/caches/v4"
 	"gorm.io/driver/mysql"
+	"gorm.io/gen"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
-
-type CommonFilter struct {
-	Limit         int    `form:"limit"`
-	ContinueToken string `form:"next"`
-	PreviousToken string `form:"prev"`
-}
 
 func GetDB() (db *gorm.DB, close func()) {
 	dsn := consts.Config.Database.Main.DSN
@@ -73,6 +69,30 @@ func GetTestDB() (db *gorm.DB, close func()) {
 		raw_db.Close()
 	}
 }
+func InitGen() {
+	g := gen.NewGenerator(gen.Config{
+		OutPath: "query",                                                            // output path
+		Mode:    gen.WithoutContext | gen.WithDefaultQuery | gen.WithQueryInterface, // generate mode
+	})
+	conn, close := GetDB()
+	defer close()
+	// gormdb, _ := gorm.Open(mysql.Open("root:@(127.0.0.1:3306)/demo?charset=utf8mb4&parseTime=True&loc=Local"))
+	g.UseDB(conn) // reuse your gorm db
+	// Generate basic type-safe DAO API for struct `model.User` following conventions
+	g.ApplyBasic(models.Project{}, models.User{}, models.Campaign{}, models.Round{}, models.Task{}, models.Role{}, models.Submission{}, models.Evaluation{})
+	// Dynamic SQL
+	type Querier interface {
+		// SELECT * FROM @@table WHERE name = @name{{if role !=""}} AND role = @role{{end}}
+		FilterWithNameAndRole(name, role string) ([]gen.T, error)
+	}
+	// Generate Type Safe API with Dynamic SQL defined on Querier interface for `model.User` and `model.Company`
+	g.ApplyInterface(
+		func(Querier) {},
+
+		models.Project{}, models.User{}, models.Campaign{}, models.Round{}, models.Task{}, models.Role{}, models.Submission{}, models.Evaluation{})
+	// Generate the code
+	g.Execute()
+}
 func InitDB(testing bool) {
 	conn, close := GetDB()
 	if testing {
@@ -86,14 +106,14 @@ func InitDB(testing bool) {
 	db := conn.Begin()
 	// set character set to utf8mb4
 	db.Exec("ALTER DATABASE campwiz CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci;")
-	db.AutoMigrate(&Project{})
-	db.AutoMigrate(&User{})
-	db.AutoMigrate(&Campaign{})
-	db.AutoMigrate(&Round{})
-	db.AutoMigrate(&Task{})
-	db.AutoMigrate(&Role{})
-	db.AutoMigrate(&Submission{})
-	db.AutoMigrate(&Evaluation{})
+	db.AutoMigrate(&models.Project{})
+	db.AutoMigrate(&models.User{})
+	db.AutoMigrate(&models.Campaign{})
+	db.AutoMigrate(&models.Round{})
+	db.AutoMigrate(&models.Task{})
+	db.AutoMigrate(&models.Role{})
+	db.AutoMigrate(&models.Submission{})
+	db.AutoMigrate(&models.Evaluation{})
 	fmt.Println((db))
 	db.Commit()
 }

@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"nokib/campwiz/database"
+	"nokib/campwiz/models"
 	"nokib/campwiz/services"
 
 	"github.com/gin-gonic/gin"
@@ -11,13 +11,13 @@ import (
 // @Summary List all submissions
 // @Description get all submissions
 // @Produce  json
-// @Success 200 {object} ResponseList[database.Submission]
+// @Success 200 {object} ResponseList[models.Submission]
 // @Router /submission/ [get]
-// @param SubmissionListFilter query database.SubmissionListFilter false "Filter the submissions"
+// @param SubmissionListFilter query models.SubmissionListFilter false "Filter the submissions"
 // @Tags Submission
 // @Error 400 {object} ResponseError
 func ListAllSubmissions(c *gin.Context) {
-	filter := &database.SubmissionListFilter{}
+	filter := &models.SubmissionListFilter{}
 	err := c.ShouldBindQuery(filter)
 	if err != nil {
 		c.JSON(400, ResponseError{
@@ -43,7 +43,7 @@ func ListAllSubmissions(c *gin.Context) {
 		continueToken = string(submissions[len(submissions)-1].SubmissionID)
 		previousToken = string(submissions[0].SubmissionID)
 	}
-	c.JSON(200, ResponseList[database.Submission]{
+	c.JSON(200, ResponseList[models.Submission]{
 		Data:          submissions,
 		ContinueToken: continueToken,
 		PreviousToken: previousToken,
@@ -64,7 +64,7 @@ func GetDraftSubmission(c *gin.Context) {
 // @Summary Get a submission
 // @Description get a submission
 // @Produce  json
-// @Success 200 {object} database.Submission
+// @Success 200 {object} models.Submission
 // @Router /submission/{id} [get]
 // @Param id path string true "Submission ID"
 // @Tags Submission
@@ -73,14 +73,14 @@ func GetDraftSubmission(c *gin.Context) {
 func GetSubmission(c *gin.Context) {
 	id := c.Param("submissionId")
 	submission_service := services.NewSubmissionService()
-	submission, err := submission_service.GetSubmission(database.IDType(id))
+	submission, err := submission_service.GetSubmission(models.IDType(id))
 	if err != nil {
 		c.JSON(404, ResponseError{
 			Detail: "Submission not found",
 		})
 		return
 	}
-	c.JSON(200, ResponseSingle[*database.Submission]{
+	c.JSON(200, ResponseSingle[*models.Submission]{
 		Data: submission,
 	})
 }

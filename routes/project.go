@@ -2,8 +2,8 @@ package routes
 
 import (
 	"nokib/campwiz/consts"
-	"nokib/campwiz/database"
-	"nokib/campwiz/database/cache"
+	"nokib/campwiz/models"
+	"nokib/campwiz/repository/cache"
 	"nokib/campwiz/services"
 
 	"github.com/gin-gonic/gin"
@@ -13,9 +13,9 @@ import (
 // @Summary Create a new project
 // @Description Create a new project
 // @Produce  json
-// @Success 200 {object} ResponseSingle[database.Project]
+// @Success 200 {object} ResponseSingle[models.Project]
 // @Router /project/ [post]
-// @Param projectRequest body database.ProjectRequest true "The project request"
+// @Param projectRequest body models.ProjectRequest true "The project request"
 // @Param includeProjectLeads query bool false "Include project leads"
 // @Tags Project
 // @Security ApiKeyAuth
@@ -23,7 +23,7 @@ import (
 // @Error 403 {object} ResponseError
 // @Error 404 {object} ResponseError
 func CreateProject(c *gin.Context, sess *cache.Session) {
-	projectRequest := &database.ProjectRequest{}
+	projectRequest := &models.ProjectRequest{}
 	err := c.ShouldBindJSON(projectRequest)
 	if err != nil {
 		c.JSON(400, ResponseError{Detail: "Invalid request : " + err.Error()})
@@ -42,17 +42,17 @@ func CreateProject(c *gin.Context, sess *cache.Session) {
 		c.JSON(400, ResponseError{Detail: "Error creating project : " + err.Error()})
 		return
 	}
-	c.JSON(200, ResponseSingle[database.ProjectExtended]{Data: *project})
+	c.JSON(200, ResponseSingle[models.ProjectExtended]{Data: *project})
 }
 
 // UpdateProject godoc
 // @Summary Update a project
 // @Description Update a project
 // @Produce  json
-// @Success 200 {object} ResponseSingle[database.Project]
+// @Success 200 {object} ResponseSingle[models.Project]
 // @Router /project/{projectId} [post]
 // @Param projectId path string true "The project ID"
-// @Param projectRequest body database.ProjectRequest true "The project request"
+// @Param projectRequest body models.ProjectRequest true "The project request"
 // @Tags Project
 // @Security ApiKeyAuth
 // @Error 400 {object} ResponseError
@@ -64,13 +64,13 @@ func UpdateProject(c *gin.Context, sess *cache.Session) {
 		c.JSON(400, ResponseError{Detail: "Invalid request : Project ID is required"})
 		return
 	}
-	projectRequest := &database.ProjectRequest{}
+	projectRequest := &models.ProjectRequest{}
 	err := c.ShouldBindJSON(projectRequest)
 	if err != nil {
 		c.JSON(400, ResponseError{Detail: "Invalid request: " + err.Error()})
 		return
 	}
-	projectRequest.ProjectID = database.IDType(projectId)
+	projectRequest.ProjectID = models.IDType(projectId)
 	projectRequest.CreatedByID = sess.UserID
 	project_service := services.NewProjectService()
 	project, err := project_service.UpdateProject(projectRequest)
@@ -78,7 +78,7 @@ func UpdateProject(c *gin.Context, sess *cache.Session) {
 		c.JSON(400, ResponseError{Detail: "Error updating project : " + err.Error()})
 		return
 	}
-	c.JSON(200, ResponseSingle[database.ProjectExtended]{Data: *project})
+	c.JSON(200, ResponseSingle[models.ProjectExtended]{Data: *project})
 }
 
 // ProjectSingleQuery is a query struct for getting a single project
@@ -90,7 +90,7 @@ type ProjectSingleQuery struct {
 // @Summary Get a single project
 // @Description Get a single project
 // @Produce  json
-// @Success 200 {object} ResponseSingle[database.Project]
+// @Success 200 {object} ResponseSingle[models.Project]
 // @Router /project/{projectId} [get]
 // @Param projectId path string true "The project ID"
 // @Param includeProjectLeads query bool false "Include project leads"
@@ -112,12 +112,12 @@ func GetSingleProject(c *gin.Context) {
 		return
 	}
 	project_service := services.NewProjectService()
-	project, err := project_service.GetProjectByID(database.IDType(projectId), q.IncludeProjectLeads)
+	project, err := project_service.GetProjectByID(models.IDType(projectId), q.IncludeProjectLeads)
 	if err != nil {
 		c.JSON(400, ResponseError{Detail: "Error getting project : " + err.Error()})
 		return
 	}
-	c.JSON(200, ResponseSingle[database.ProjectExtended]{Data: *project})
+	c.JSON(200, ResponseSingle[models.ProjectExtended]{Data: *project})
 }
 
 func NewProjectRoutes(parent *gin.RouterGroup) *gin.RouterGroup {

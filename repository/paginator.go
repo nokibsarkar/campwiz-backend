@@ -1,10 +1,15 @@
-package database
+package repository
 
 import (
 	"encoding/json"
 	"log"
 	"net/url"
+	"nokib/campwiz/models"
 )
+
+type Paginator[PageType any] struct {
+	repo *CommonsRepository
+}
 
 func NewPaginator[PageType any](repo *CommonsRepository) *Paginator[PageType] {
 	return &Paginator[PageType]{
@@ -48,9 +53,9 @@ func (p *Paginator[PageType]) Query(params url.Values) (chan *PageType, error) {
 	}()
 	return streamChanel, nil
 }
-func (p *Paginator[PageType]) UserList(params url.Values) (chan *WikimediaUser, error) {
+func (p *Paginator[PageType]) UserList(params url.Values) (chan *models.WikimediaUser, error) {
 	// Query
-	streamChanel := make(chan *WikimediaUser)
+	streamChanel := make(chan *models.WikimediaUser)
 	go func() {
 		defer close(streamChanel)
 		defer func() { streamChanel <- nil }()

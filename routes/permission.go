@@ -2,7 +2,7 @@ package routes
 
 import (
 	"nokib/campwiz/consts"
-	"nokib/campwiz/database/cache"
+	"nokib/campwiz/repository/cache"
 
 	"github.com/gin-gonic/gin"
 )

@@ -4,7 +4,8 @@ import (
 	"container/heap"
 	"fmt"
 	"log"
-	"nokib/campwiz/database"
+	"nokib/campwiz/models"
+	"nokib/campwiz/repository"
 	idgenerator "nokib/campwiz/services/idGenerator"
 
 	"gorm.io/gorm"
@@ -12,12 +13,12 @@ import (
 )
 
 type RoundRobinDistributionStrategy struct {
-	TaskId database.IDType
+	TaskId models.IDType
 }
 type DistributionResult struct {
-	TotalWorkLoad             WorkLoadType                     `json:"totalWorkLoad"`
-	AvergaeWorkLoad           WorkLoadType                     `json:"averageWorkLoad"`
-	TotalWorkloadDistribution map[database.IDType]WorkLoadType `json:"totalworkloadDistribution"`
+	TotalWorkLoad             WorkLoadType                   `json:"totalWorkLoad"`
+	AvergaeWorkLoad           WorkLoadType                   `json:"averageWorkLoad"`
+	TotalWorkloadDistribution map[models.IDType]WorkLoadType `json:"totalworkloadDistribution"`
 }
 type WorkLoadType int64
 
@@ -48,7 +49,7 @@ func (h *MinimumWorkloadHeap) Pop() interface{} {
 	*h = old[0 : n-1]
 	return x
 }
-func NewRoundRobinDistributionStrategy(taskId database.IDType) *RoundRobinDistributionStrategy {
+func NewRoundRobinDistributionStrategy(taskId models.IDType) *RoundRobinDistributionStrategy {
 	return &RoundRobinDistributionStrategy{
 		TaskId: taskId,
 	}
@@ -109,9 +110,9 @@ func distributeImagesBalanced(numberOfImages, numberOfJury, distinctJuryPerImage
 	return assignments, nil
 }
 
-func (strategy *RoundRobinDistributionStrategy) AssignJuries(tx *gorm.DB, round *database.Round, juries []database.Role) (evaluationCount int, err error) {
-	submission_repo := database.NewSubmissionRepository()
-	submissions, err := submission_repo.ListAllSubmissions(tx, &database.SubmissionListFilter{
+func (strategy *RoundRobinDistributionStrategy) AssignJuries(tx *gorm.DB, round *models.Round, juries []models.Role) (evaluationCount int, err error) {
+	submission_repo := repository.NewSubmissionRepository()
+	submissions, err := submission_repo.ListAllSubmissions(tx, &models.SubmissionListFilter{
 		RoundID:    round.RoundID,
 		CampaignID: round.CampaignID,
 	})
@@ -129,13 +130,13 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries(tx *gorm.DB, round 
 	if err != nil {
 		return 0, err
 	}
-	evaluations := []database.Evaluation{}
-	updatedJury := make([]database.Role, numberOfJury)
+	evaluations := []models.Evaluation{}
+	updatedJury := make([]models.Role, numberOfJury)
 	for i, assignment := range assignments {
 		for juryIndex := range assignment {
 			jury := juries[juryIndex]
 			submission := submissions[i]
-			evaluation := database.Evaluation{
+			evaluation := models.Evaluation{
 				SubmissionID:       submission.SubmissionID,
 				EvaluationID:       idgenerator.GenerateID("e"),
 				JudgeID:            jury.RoleID,

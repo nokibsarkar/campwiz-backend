@@ -3,7 +3,8 @@ package services
 import (
 	"fmt"
 	"log"
-	"nokib/campwiz/database"
+	"nokib/campwiz/models"
+	"nokib/campwiz/repository"
 	idgenerator "nokib/campwiz/services/idGenerator"
 
 	"gorm.io/gorm"
@@ -14,34 +15,34 @@ type ProjectService struct{}
 func NewProjectService() *ProjectService {
 	return &ProjectService{}
 }
-func (p *ProjectService) GetProjectByID(id database.IDType, includeProjectLeads bool) (*database.ProjectExtended, error) {
-	project_repo := database.NewProjectRepository()
-	conn, close := database.GetDB()
+func (p *ProjectService) GetProjectByID(id models.IDType, includeProjectLeads bool) (*models.ProjectExtended, error) {
+	project_repo := repository.NewProjectRepository()
+	conn, close := repository.GetDB()
 	defer close()
 	project, err := project_repo.FindProjectByID(conn, id)
 	if err != nil {
 		return nil, err
 	}
-	px := &database.ProjectExtended{Project: *project}
+	px := &models.ProjectExtended{Project: *project}
 	if includeProjectLeads {
-		user_repo := database.NewUserRepository()
+		user_repo := repository.NewUserRepository()
 		leads, err := user_repo.FindProjectLeads(conn, &id)
 		if err != nil {
 			return nil, err
 		}
-		px.Leads = []database.WikimediaUsernameType{}
+		px.Leads = []models.WikimediaUsernameType{}
 		for _, lead := range leads {
 			px.Leads = append(px.Leads, lead.Username)
 		}
 	}
 	return px, nil
 }
-func (p *ProjectService) CreateProject(projectReq *database.ProjectRequest, includeProjectLeads bool) (*database.ProjectExtended, error) {
-	project_repo := database.NewProjectRepository()
-	conn, close := database.GetDB()
+func (p *ProjectService) CreateProject(projectReq *models.ProjectRequest, includeProjectLeads bool) (*models.ProjectExtended, error) {
+	project_repo := repository.NewProjectRepository()
+	conn, close := repository.GetDB()
 	defer close()
 	tx := conn.Begin()
-	project := &database.Project{
+	project := &models.Project{
 		ProjectID:   projectReq.ProjectID,
 		Name:        projectReq.Name,
 		LogoURL:     projectReq.LogoURL,
@@ -63,8 +64,8 @@ func (p *ProjectService) CreateProject(projectReq *database.ProjectRequest, incl
 	if res.Error != nil {
 		return nil, res.Error
 	}
-	px := &database.ProjectExtended{Project: *project}
-	px.Leads = []database.WikimediaUsernameType{}
+	px := &models.ProjectExtended{Project: *project}
+	px.Leads = []models.WikimediaUsernameType{}
 	if includeProjectLeads {
 		for _, lead := range currentLeads {
 			px.Leads = append(px.Leads, lead.Username)
@@ -72,9 +73,9 @@ func (p *ProjectService) CreateProject(projectReq *database.ProjectRequest, incl
 	}
 	return px, nil
 }
-func (p *ProjectService) AssignProjectLead(tx *gorm.DB, projectReq *database.ProjectRequest) (currentLeads []database.User, err error) {
-	user_repo := database.NewUserRepository()
-	username2RandomId := map[database.WikimediaUsernameType]database.IDType{}
+func (p *ProjectService) AssignProjectLead(tx *gorm.DB, projectReq *models.ProjectRequest) (currentLeads []models.User, err error) {
+	user_repo := repository.NewUserRepository()
+	username2RandomId := map[models.WikimediaUsernameType]models.IDType{}
 	for _, username := range projectReq.ProjectLeads {
 		username2RandomId[username] = idgenerator.GenerateID("u")
 	}
@@ -87,7 +88,7 @@ func (p *ProjectService) AssignProjectLead(tx *gorm.DB, projectReq *database.Pro
 	if err != nil {
 		return nil, err
 	}
-	previousLeadsSet := map[database.IDType]database.User{}
+	previousLeadsSet := map[models.IDType]models.User{}
 	for _, lead := range previousLeads {
 		previousLeadsSet[lead.UserID] = lead
 	}
@@ -104,9 +105,9 @@ func (p *ProjectService) AssignProjectLead(tx *gorm.DB, projectReq *database.Pro
 			return nil, err
 		}
 		if user.LeadingProjectID != nil {
-			return nil, fmt.Errorf(database.ErrUserAlreadyLeadsProject, user.Username, *user.LeadingProjectID)
+			return nil, fmt.Errorf(repository.ErrUserAlreadyLeadsProject, user.Username, *user.LeadingProjectID)
 		}
-		res := tx.Updates(&database.User{UserID: realId, LeadingProjectID: &projectReq.ProjectID})
+		res := tx.Updates(&models.User{UserID: realId, LeadingProjectID: &projectReq.ProjectID})
 		if res.Error != nil {
 			return nil, res.Error
 		}
@@ -120,13 +121,13 @@ func (p *ProjectService) AssignProjectLead(tx *gorm.DB, projectReq *database.Pro
 		}
 	}
 	if len(currentLeads) == 0 {
-		return nil, fmt.Errorf(database.ErrNoProjectLeads)
+		return nil, fmt.Errorf(repository.ErrNoProjectLeads)
 	}
 	return currentLeads, nil
 }
-func (p *ProjectService) UpdateProject(projectReq *database.ProjectRequest) (*database.ProjectExtended, error) {
-	project_repo := database.NewProjectRepository()
-	conn, close := database.GetDB()
+func (p *ProjectService) UpdateProject(projectReq *models.ProjectRequest) (*models.ProjectExtended, error) {
+	project_repo := repository.NewProjectRepository()
+	conn, close := repository.GetDB()
 	defer close()
 	tx := conn.Begin()
 	project, err := project_repo.FindProjectByID(tx, projectReq.ProjectID)
@@ -151,8 +152,8 @@ func (p *ProjectService) UpdateProject(projectReq *database.ProjectRequest) (*da
 	if res.Error != nil {
 		return nil, res.Error
 	}
-	px := &database.ProjectExtended{Project: *project}
-	px.Leads = []database.WikimediaUsernameType{}
+	px := &models.ProjectExtended{Project: *project}
+	px.Leads = []models.WikimediaUsernameType{}
 	for _, lead := range currentLeads {
 		px.Leads = append(px.Leads, lead.Username)
 	}

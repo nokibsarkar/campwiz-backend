@@ -1,7 +1,9 @@
 package routes
 
 import (
-	"nokib/campwiz/database/cache"
+	"nokib/campwiz/models"
+	"nokib/campwiz/repository/cache"
+	"nokib/campwiz/services"
 
 	"github.com/gin-gonic/gin"
 )
@@ -28,6 +30,18 @@ func GetSession(c *gin.Context) *cache.Session {
 		return nil
 	}
 	return session
+}
+func GetCurrentUser(c *gin.Context) *models.User {
+	session := GetSession(c)
+	if session == nil {
+		return nil
+	}
+	user_service := services.NewUserService()
+	user, err := user_service.GetUserByID(session.UserID)
+	if err != nil {
+		return nil
+	}
+	return user
 }
 func NewRoutes(nonAPIParent *gin.RouterGroup) *gin.RouterGroup {
 	r := nonAPIParent.Group("/api/v2")

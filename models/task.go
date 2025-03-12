@@ -1,11 +1,9 @@
-// This would be used for running background tasks
-package database
+package models
 
 import (
 	"time"
 
 	"gorm.io/datatypes"
-	"gorm.io/gorm"
 )
 
 type TaskStatus string
@@ -38,33 +36,4 @@ type Task struct {
 	RemainingCount       int                                    `json:"remainingCount"`
 	CreatedByID          IDType                                 `json:"createdById" gorm:"index;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	Submittor            User                                   `json:"-" gorm:"foreignKey:CreatedByID;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-}
-
-type TaskRepository struct{}
-
-func NewTaskRepository() *TaskRepository {
-	return &TaskRepository{}
-}
-
-func (r *TaskRepository) Create(tx *gorm.DB, task *Task) (*Task, error) {
-	err := tx.Create(task).Error
-	if err != nil {
-		return nil, err
-	}
-	return task, nil
-}
-func (r *TaskRepository) FindByID(tx *gorm.DB, taskId IDType) (*Task, error) {
-	task := &Task{}
-	err := tx.Find(task, &Task{TaskID: taskId}).First(task).Error
-	if err != nil {
-		return nil, err
-	}
-	return task, nil
-}
-func (r *TaskRepository) Update(tx *gorm.DB, task *Task) (*Task, error) {
-	err := tx.Save(task).Error
-	if err != nil {
-		return nil, err
-	}
-	return task, nil
 }

@@ -1,4 +1,4 @@
-package database
+package models
 
 type ExtMetadataValue[Value any] struct {
 	Value  Value  `json:"value"`

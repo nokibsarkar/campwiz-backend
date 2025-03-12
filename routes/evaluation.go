@@ -2,8 +2,8 @@ package routes
 
 import (
 	"nokib/campwiz/consts"
-	"nokib/campwiz/database"
-	"nokib/campwiz/database/cache"
+	"nokib/campwiz/models"
+	"nokib/campwiz/repository/cache"
 	"nokib/campwiz/services"
 
 	"github.com/gin-gonic/gin"
@@ -13,14 +13,14 @@ import (
 // @Summary List all evaluations
 // @Description get all evaluations
 // @Produce  json
-// @Success 200 {object} ResponseList[database.Evaluation]
+// @Success 200 {object} ResponseList[models.Evaluation]
 // @Router /evaluation/ [get]
-// @param EvaluationFilter query database.EvaluationFilter false "Filter the evaluations"
+// @param EvaluationFilter query models.EvaluationFilter false "Filter the evaluations"
 // @Tags Evaluation
 // @Security ApiKeyAuth
 // @Error 400 {object} ResponseError
 func ListEvaluations(c *gin.Context, sess *cache.Session) {
-	filter := &database.EvaluationFilter{}
+	filter := &models.EvaluationFilter{}
 	err := c.ShouldBindQuery(filter)
 	if err != nil {
 		c.JSON(400, ResponseError{Detail: "Invalid request : " + err.Error()})
@@ -32,14 +32,14 @@ func ListEvaluations(c *gin.Context, sess *cache.Session) {
 		c.JSON(400, ResponseError{Detail: "Error listing evaluations : " + err.Error()})
 		return
 	}
-	c.JSON(200, ResponseList[database.Evaluation]{Data: evaluations})
+	c.JSON(200, ResponseList[models.Evaluation]{Data: evaluations})
 }
 
 // Update Evaluation godoc
 // @Summary Update an evaluation
 // @Description Update an evaluation
 // @Produce  json
-// @Success 200 {object} ResponseSingle[database.Evaluation]
+// @Success 200 {object} ResponseSingle[models.Evaluation]
 // @Router /evaluation/{evaluationId} [post]
 // @Tags Evaluation
 // @Param evaluationId path string true "The evaluation ID"
@@ -61,19 +61,19 @@ func UpdateEvaluation(c *gin.Context, sess *cache.Session) {
 		return
 	}
 	evaluation_service := services.NewEvaluationService()
-	evaluation, err := evaluation_service.Evaluate(sess.UserID, database.IDType(evaluationId), &requestedEvaluation)
+	evaluation, err := evaluation_service.Evaluate(sess.UserID, models.IDType(evaluationId), &requestedEvaluation)
 	if err != nil {
 		c.JSON(400, ResponseError{Detail: "Error updating evaluation : " + err.Error()})
 		return
 	}
-	c.JSON(200, ResponseSingle[database.Evaluation]{Data: *evaluation})
+	c.JSON(200, ResponseSingle[models.Evaluation]{Data: *evaluation})
 }
 
 // Bulk Evaluate godoc
 // @Summary Bulk evaluate
 // @Description Bulk evaluate
 // @Produce  json
-// @Success 200 {object} ResponseList[database.Evaluation]
+// @Success 200 {object} ResponseList[models.Evaluation]
 // @Router /evaluation/ [post]
 // @Tags Evaluation
 // @Security ApiKeyAuth
@@ -94,7 +94,7 @@ func BulkEvaluate(c *gin.Context, sess *cache.Session) {
 		c.JSON(400, ResponseError{Detail: "Error updating evaluations : " + err.Error()})
 		return
 	}
-	c.JSON(200, ResponseList[*database.Evaluation]{Data: evaluations})
+	c.JSON(200, ResponseList[*models.Evaluation]{Data: evaluations})
 }
 
 func NewEvaluationRoutes(r *gin.RouterGroup) {

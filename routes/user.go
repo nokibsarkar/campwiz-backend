@@ -1,8 +1,8 @@
 package routes
 
 import (
-	"nokib/campwiz/database"
-	"nokib/campwiz/database/cache"
+	"nokib/campwiz/models"
+	"nokib/campwiz/repository/cache"
 	"nokib/campwiz/services"
 
 	"github.com/gin-gonic/gin"
@@ -23,7 +23,7 @@ func GetMe(c *gin.Context, session *cache.Session) {
 		})
 		return
 	}
-	c.JSON(200, ResponseSingle[*database.ExtendedUserDetails]{user})
+	c.JSON(200, ResponseSingle[*models.ExtendedUserDetails]{user})
 }
 func GetUser(c *gin.Context) {
 	// ...

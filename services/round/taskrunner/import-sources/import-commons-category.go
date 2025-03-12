@@ -2,13 +2,14 @@ package importsources
 
 import (
 	"maps"
-	"nokib/campwiz/database"
+	"nokib/campwiz/models"
+	"nokib/campwiz/repository"
 )
 
 type CommonsCategoryListSource struct {
 	Categories   []string
 	currentIndex int
-	commons_repo *database.CommonsRepository
+	commons_repo *repository.CommonsRepository
 }
 
 // ImportImageResults imports images from commons categories
@@ -17,7 +18,7 @@ type CommonsCategoryListSource struct {
 // If there are no images in the category it will return nil
 // If there are images in the category it will return the images
 // If there are failed images in the category it will return the reason as value of the map
-func (c *CommonsCategoryListSource) ImportImageResults(failedImageReason *map[string]string) ([]database.ImageResult, *map[string]string) {
+func (c *CommonsCategoryListSource) ImportImageResults(failedImageReason *map[string]string) ([]models.ImageResult, *map[string]string) {
 	if c.currentIndex < len(c.Categories) {
 		category := c.Categories[c.currentIndex]
 		c.currentIndex++
@@ -31,6 +32,6 @@ func NewCommonsCategoryListSource(categories []string) *CommonsCategoryListSourc
 	return &CommonsCategoryListSource{
 		Categories:   categories,
 		currentIndex: 0,
-		commons_repo: database.NewCommonsRepository(),
+		commons_repo: repository.NewCommonsRepository(),
 	}
 }

@@ -2,7 +2,8 @@ package services
 
 import (
 	"log"
-	"nokib/campwiz/database"
+	"nokib/campwiz/models"
+	"nokib/campwiz/repository"
 	idgenerator "nokib/campwiz/services/idGenerator"
 
 	"gorm.io/gorm"
@@ -13,14 +14,14 @@ type RoleService struct{}
 func NewRoleService() *RoleService {
 	return &RoleService{}
 }
-func (r *RoleService) CalculateRoleDifference(tx *gorm.DB, Type database.RoleType, filter *database.RoleFilter, updatedRoleUsernames []database.WikimediaUsernameType) (addedRoles []database.Role, removedRoles []database.IDType, err error) {
-	role_repo := database.NewRoleRepository()
-	user_repo := database.NewUserRepository()
+func (r *RoleService) CalculateRoleDifference(tx *gorm.DB, Type models.RoleType, filter *models.RoleFilter, updatedRoleUsernames []models.WikimediaUsernameType) (addedRoles []models.Role, removedRoles []models.IDType, err error) {
+	role_repo := repository.NewRoleRepository()
+	user_repo := repository.NewUserRepository()
 	existingRoles, err := role_repo.ListAllRoles(tx, filter)
 	if err != nil {
 		return nil, nil, err
 	}
-	username2IDMap := map[database.WikimediaUsernameType]database.IDType{}
+	username2IDMap := map[models.WikimediaUsernameType]models.IDType{}
 	for _, username := range updatedRoleUsernames {
 		username2IDMap[username] = idgenerator.GenerateID("u")
 	}
@@ -28,13 +29,13 @@ func (r *RoleService) CalculateRoleDifference(tx *gorm.DB, Type database.RoleTyp
 	if err != nil {
 		return nil, nil, err
 	}
-	userId2NameMap := map[database.IDType]database.WikimediaUsernameType{}
+	userId2NameMap := map[models.IDType]models.WikimediaUsernameType{}
 	for username := range username2IDMap {
 		userId := username2IDMap[username]
 		userId2NameMap[userId] = username
 	}
 
-	id2RoleMap := map[database.IDType]database.Role{}
+	id2RoleMap := map[models.IDType]models.Role{}
 	for _, existingRole := range existingRoles {
 		id2RoleMap[existingRole.UserID] = existingRole
 		if !existingRole.IsAllowed {
@@ -59,7 +60,7 @@ func (r *RoleService) CalculateRoleDifference(tx *gorm.DB, Type database.RoleTyp
 		role, ok := id2RoleMap[userId]
 		if !ok || !role.IsAllowed {
 			// Newly added
-			newRole := database.Role{
+			newRole := models.Role{
 				RoleID:          idgenerator.GenerateID("j"),
 				Type:            Type,
 				UserID:          userId,
@@ -85,8 +86,8 @@ func (r *RoleService) CalculateRoleDifference(tx *gorm.DB, Type database.RoleTyp
 	log.Println("Remove ", removedRoles)
 	return addedRoles, removedRoles, nil
 }
-func (service *RoleService) FetchChangeRoles(tx *gorm.DB, roleType database.RoleType, projectID database.IDType, targetProjectID *database.IDType, campaignId *database.IDType, roundID *database.IDType, updatedRoleUsernames []database.WikimediaUsernameType) ([]database.Role, error) {
-	filter := &database.RoleFilter{
+func (service *RoleService) FetchChangeRoles(tx *gorm.DB, roleType models.RoleType, projectID models.IDType, targetProjectID *models.IDType, campaignId *models.IDType, roundID *models.IDType, updatedRoleUsernames []models.WikimediaUsernameType) ([]models.Role, error) {
+	filter := &models.RoleFilter{
 		ProjectID: projectID,
 		Type:      &roleType,
 	}
@@ -113,13 +114,13 @@ func (service *RoleService) FetchChangeRoles(tx *gorm.DB, roleType database.Role
 	}
 	if len(removedRoles) > 0 {
 		for _, roleID := range removedRoles {
-			res := tx.Model(&database.Role{RoleID: roleID}).Update("is_allowed", false)
+			res := tx.Model(&models.Role{RoleID: roleID}).Update("is_allowed", false)
 			if res.Error != nil {
 				return nil, res.Error
 			}
 		}
 	}
-	currentRoles := []database.Role{}
+	currentRoles := []models.Role{}
 	res := tx.Where(filter).Find(&currentRoles)
 	if res.Error != nil {
 		return nil, res.Error

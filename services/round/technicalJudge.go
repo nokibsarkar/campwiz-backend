@@ -1,12 +1,12 @@
 package round
 
 import (
-	"nokib/campwiz/database"
+	"nokib/campwiz/models"
 	"time"
 )
 
 type TechnicalJudgeService struct {
-	AllowedTypes      database.MediaTypeSet
+	AllowedTypes      models.MediaTypeSet
 	MinimumUploadDate time.Time
 	MinimumResolution uint64
 	MinimumSize       uint64
@@ -15,7 +15,7 @@ type TechnicalJudgeService struct {
 	Blacklist []string
 }
 
-func NewTechnicalJudgeService(round *database.Round) *TechnicalJudgeService {
+func NewTechnicalJudgeService(round *models.Round) *TechnicalJudgeService {
 	return &TechnicalJudgeService{
 		AllowedTypes:      round.AllowedMediaTypes,
 		MinimumUploadDate: round.StartDate,
@@ -32,7 +32,7 @@ func NewTechnicalJudgeService(round *database.Round) *TechnicalJudgeService {
 //   - Minimum Resolution
 //   - Minimum Size
 //   - Whether Image allowed or not
-func (j *TechnicalJudgeService) PreventionReason(img database.ImageResult) string {
+func (j *TechnicalJudgeService) PreventionReason(img models.ImageResult) string {
 	if !j.MinimumUploadDate.IsZero() && img.SubmittedAt.Before(j.MinimumUploadDate) {
 		// log.Printf("Image %s is not allowed because it was uploaded before %s", img.Name, j.MinimumUploadDate)
 		return "before-minimum-upload-date"
@@ -45,7 +45,7 @@ func (j *TechnicalJudgeService) PreventionReason(img database.ImageResult) strin
 		// log.Printf("Image %s is not allowed because it has a size of %d which is less than %d", img.Name, img.Size, j.MinimumSize)
 		return "below-minimum-size"
 	}
-	if j.AllowedTypes != nil && !j.AllowedTypes.Contains(database.MediaType(img.MediaType)) {
+	if j.AllowedTypes != nil && !j.AllowedTypes.Contains(models.MediaType(img.MediaType)) {
 		// log.Printf("Image %s is not allowed because it is of type %s", img.Name, img.MediaType)
 		return "not-allowed-type"
 	}

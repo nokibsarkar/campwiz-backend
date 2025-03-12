@@ -2,8 +2,8 @@ package routes
 
 import (
 	"io"
-	"nokib/campwiz/database"
-	"nokib/campwiz/database/cache"
+	"nokib/campwiz/models"
+	"nokib/campwiz/repository/cache"
 	"nokib/campwiz/services"
 
 	"github.com/gin-gonic/gin"
@@ -27,7 +27,7 @@ func GetTaskById(c *gin.Context, sess *cache.Session) {
 		return
 	}
 	task_service := services.NewTaskService()
-	task, err := task_service.GetTask(database.IDType(taskId))
+	task, err := task_service.GetTask(models.IDType(taskId))
 	if err != nil {
 		c.JSON(400, ResponseError{Detail: "Error getting task : " + err.Error()})
 		return
@@ -36,7 +36,7 @@ func GetTaskById(c *gin.Context, sess *cache.Session) {
 		c.JSON(404, ResponseError{Detail: "Task not found"})
 		return
 	}
-	c.JSON(200, ResponseSingle[database.Task]{Data: *task})
+	c.JSON(200, ResponseSingle[models.Task]{Data: *task})
 }
 
 // GetTaskByIDStream godoc
@@ -57,7 +57,7 @@ func GetTaskByIDStream(c *gin.Context, sess *cache.Session) {
 	}
 	task_service := services.NewTaskService()
 	c.Stream(func(w io.Writer) bool {
-		task, err := task_service.GetTask(database.IDType(taskId))
+		task, err := task_service.GetTask(models.IDType(taskId))
 		if err != nil {
 			c.SSEvent("error", err.Error())
 			return false
@@ -67,7 +67,7 @@ func GetTaskByIDStream(c *gin.Context, sess *cache.Session) {
 			return false
 		}
 		c.SSEvent("task", task)
-		if task.Status == database.TaskStatusSuccess || task.Status == database.TaskStatusFailed {
+		if task.Status == models.TaskStatusSuccess || task.Status == models.TaskStatusFailed {
 			// No need to stream anymore
 			return false
 		}

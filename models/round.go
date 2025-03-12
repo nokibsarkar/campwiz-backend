@@ -1,10 +1,6 @@
-package database
+package models
 
-import (
-	"time"
-
-	"gorm.io/gorm"
-)
+import "time"
 
 // These are the restrictions that are applied to the articles that are submitted to the campaign
 type RoundCommonRestrictions struct {
@@ -14,6 +10,10 @@ type RoundCommonRestrictions struct {
 	Blacklist              string `json:"blacklist"`
 }
 type RoundStatus string
+type EvaluationResult struct {
+	AverageScore    float64 `json:"averageScore"`
+	SubmissionCount int     `json:"submissionCount"`
+}
 
 const (
 	// RoundStatusPending is the status when the round is created but not yet approved by the admin
@@ -85,21 +85,25 @@ type RoundWritable struct {
 	IsPublic         bool           `json:"isPublic" gorm:"default:false"`
 	DependsOnRoundID *string        `json:"dependsOnRoundId" gorm:"default:null"`
 	DependsOnRound   *Round         `json:"-" gorm:"foreignKey:DependsOnRoundID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	Serial           int            `json:"serial" gorm:"default:0"`
+	Serial           int            `json:"serial" gorm:"default:1"`
+	Quorum           int            `json:"quorum" gorm:"default:0"`
 	Type             EvaluationType `json:"type"`
 	RoundRestrictions
 }
 type Round struct {
-	RoundID                  IDType      `json:"roundId" gorm:"primaryKey"`
-	CampaignID               IDType      `json:"campaignId" gorm:"index;cascade:OnUpdate,OnDelete"`
-	ProjectID                IDType      `json:"projectId" gorm:"index;cascade:OnUpdate,OnDelete"`
-	CreatedAt                *time.Time  `json:"createdAt" gorm:"-<-:create"`
-	CreatedByID              IDType      `json:"createdById" gorm:"index"`
-	TotalSubmissions         int         `json:"totalSubmissions" gorm:"default:0"`
-	Status                   RoundStatus `json:"status"`
-	Campaign                 *Campaign   `json:"-"  gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	Creator                  *User       `json:"-" gorm:"foreignKey:CreatedByID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
-	LatestDistributionTaskID *IDType     `json:"latestTaskId" gorm:"default:null"`
+	RoundID                   IDType      `json:"roundId" gorm:"primaryKey"`
+	CampaignID                IDType      `json:"campaignId" gorm:"index;cascade:OnUpdate,OnDelete"`
+	ProjectID                 IDType      `json:"projectId" gorm:"index;cascade:OnUpdate,OnDelete"`
+	CreatedAt                 *time.Time  `json:"createdAt" gorm:"-<-:create"`
+	CreatedByID               IDType      `json:"createdById" gorm:"index"`
+	TotalSubmissions          int         `json:"totalSubmissions" gorm:"default:0"`
+	TotalAssignments          int         `json:"totalAssignments" gorm:"default:0"`
+	TotalEvaluatedAssignments int         `json:"totalEvaluatedAssignments" gorm:"default:0"`
+	TotalEvaluatedSubmissions int         `json:"totalEvaluatedSubmissions" gorm:"default:0"`
+	Status                    RoundStatus `json:"status"`
+	Campaign                  *Campaign   `json:"-"  gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Creator                   *User       `json:"-" gorm:"foreignKey:CreatedByID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
+	LatestDistributionTaskID  *IDType     `json:"latestTaskId" gorm:"default:null"`
 	RoundWritable
 	Roles []Role `json:"roles"`
 	// Project Project `json:"-" gorm:"foreignKey:ProjectID"`
@@ -108,44 +112,4 @@ type RoundFilter struct {
 	CampaignID IDType      `form:"campaignId"`
 	Status     RoundStatus `form:"status"`
 	CommonFilter
-}
-type RoundRepository struct{}
-
-func NewRoundRepository() *RoundRepository {
-	return &RoundRepository{}
-}
-func (r *RoundRepository) Create(conn *gorm.DB, round *Round) (*Round, error) {
-	result := conn.Create(round)
-	if result.Error != nil {
-		return nil, result.Error
-	}
-	return round, nil
-}
-func (r *RoundRepository) Update(conn *gorm.DB, round *Round) (*Round, error) {
-	result := conn.Save(round)
-	if result.Error != nil {
-		return nil, result.Error
-	}
-	return round, nil
-}
-func (r *RoundRepository) FindAll(conn *gorm.DB, filter *RoundFilter) ([]Round, error) {
-	var rounds []Round
-	where := &Round{}
-	if filter != nil {
-		if filter.CampaignID != "" {
-			where.CampaignID = filter.CampaignID
-		}
-	}
-	stmt := conn.Where(where)
-	if filter.Limit > 0 {
-		stmt = stmt.Limit(filter.Limit)
-	}
-	result := stmt.Find(&rounds)
-	return rounds, result.Error
-}
-func (r *RoundRepository) FindByID(conn *gorm.DB, id IDType) (*Round, error) {
-	round := &Round{}
-	where := &Round{RoundID: IDType(id)}
-	result := conn.First(round, where)
-	return round, result.Error
 }

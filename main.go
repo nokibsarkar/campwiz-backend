@@ -1,8 +1,9 @@
 package main
 
 import (
-	"nokib/campwiz/database"
-	"nokib/campwiz/database/cache"
+	"flag"
+	"nokib/campwiz/repository"
+	"nokib/campwiz/repository/cache"
 	"nokib/campwiz/routes"
 
 	swaggerfiles "github.com/swaggo/files"
@@ -20,7 +21,7 @@ func preRun() {
 func postRun() {
 }
 func beforeSetupRouter(testing bool) {
-	database.InitDB(testing)
+	repository.InitDB(testing)
 	cache.InitCacheDB(testing)
 }
 func afterSetupRouter(testing bool) {
@@ -54,6 +55,13 @@ func SetupRouter(testing bool) *gin.Engine {
 // @contact.email nokibsarkar@gmail.com
 // @contact.url https://github.com/nokibsarkar
 func main() {
+	RunGormCodeGenerator := false
+	flag.BoolVar(&RunGormCodeGenerator, "gen", false, "Run Gorm Code Generator")
+	flag.Parse()
+	if RunGormCodeGenerator {
+		repository.InitGen()
+		return
+	}
 	preRun()
 	r := SetupRouter(false)
 	r.Run()

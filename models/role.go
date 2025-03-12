@@ -1,10 +1,6 @@
-package database
+package models
 
-import (
-	"nokib/campwiz/consts"
-
-	"gorm.io/gorm"
-)
+import "nokib/campwiz/consts"
 
 type RoleType string
 
@@ -42,49 +38,9 @@ type RoleFilter struct {
 	RoundID         *IDType                 `form:"roundId"`
 	Type            *RoleType               `form:"type"`
 	Permission      *consts.PermissionGroup `form:"permission"`
+	UserID          *IDType                 `form:"userId"`
 }
-type RoleRepository struct{}
 
-func NewRoleRepository() *RoleRepository {
-	return &RoleRepository{}
-}
-func (r *RoleRepository) CreateRole(tx *gorm.DB, jury *Role) error {
-	result := tx.Create(jury)
-	return result.Error
-}
-func (r *RoleRepository) CreateRoles(tx *gorm.DB, juries []Role) error {
-	result := tx.Create(juries)
-	return result.Error
-}
-func (r *RoleRepository) FindRoleByID(tx *gorm.DB, juryID IDType) (*Role, error) {
-	jury := &Role{}
-	result := tx.First(jury, &Role{RoleID: juryID})
-	return jury, result.Error
-}
-func (r *RoleRepository) ListAllRoles(tx *gorm.DB, filter *RoleFilter) ([]Role, error) {
-	var juries []Role
-	stmt := tx
-	if filter != nil {
-		if filter.ProjectID != "" {
-			stmt = stmt.Where(&Role{ProjectID: filter.ProjectID})
-		}
-		if filter.TargetProjectID != nil {
-			stmt = stmt.Where(&Role{TargetProjectID: filter.TargetProjectID})
-		}
-		if filter.CampaignID != nil {
-			stmt = stmt.Where(&Role{CampaignID: filter.CampaignID})
-		}
-		if filter.RoundID != nil {
-			stmt = stmt.Where(&Role{RoundID: filter.RoundID})
-		}
-		if filter.Type != nil {
-			stmt = stmt.Where(&Role{Type: *filter.Type})
-		}
-
-	}
-	result := stmt.Find(&juries)
-	return juries, result.Error
-}
 func (r *RoleType) GetPermission() consts.PermissionGroup {
 	switch *r {
 	case RoleTypeAdmin:

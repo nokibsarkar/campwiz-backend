@@ -3,7 +3,8 @@ package distributionstrategy
 import (
 	"bytes"
 	"fmt"
-	"nokib/campwiz/database"
+	"nokib/campwiz/models"
+	"nokib/campwiz/repository"
 
 	"encoding/json"
 
@@ -12,10 +13,10 @@ import (
 )
 
 type RoundRobinDistributionStrategySimulator struct {
-	TaskId database.IDType
+	TaskId models.IDType
 }
 
-func NewRoundRobinDistributionStrategySimulator(taskId database.IDType) *RoundRobinDistributionStrategySimulator {
+func NewRoundRobinDistributionStrategySimulator(taskId models.IDType) *RoundRobinDistributionStrategySimulator {
 	return &RoundRobinDistributionStrategySimulator{
 		TaskId: taskId,
 	}
@@ -45,9 +46,9 @@ func simulateDistributeImagesBalanced(numberOfImages int, numberOfJury int, dist
 	}
 	return
 }
-func (r *RoundRobinDistributionStrategySimulator) AssignJuries(tx *gorm.DB, round *database.Round, juries []database.Role) (int, error) {
-	submission_repo := database.NewSubmissionRepository()
-	numberOfImages, err := submission_repo.GetSubmissionCount(tx, &database.SubmissionListFilter{
+func (r *RoundRobinDistributionStrategySimulator) AssignJuries(tx *gorm.DB, round *models.Round, juries []models.Role) (int, error) {
+	submission_repo := repository.NewSubmissionRepository()
+	numberOfImages, err := submission_repo.GetSubmissionCount(tx, &models.SubmissionListFilter{
 		RoundID:    round.RoundID,
 		CampaignID: round.CampaignID,
 	})
@@ -71,7 +72,7 @@ func (r *RoundRobinDistributionStrategySimulator) AssignJuries(tx *gorm.DB, roun
 	fmt.Println("Workload Distribution: ", distribution)
 	result.TotalWorkLoad = totalWorkload
 	result.AvergaeWorkLoad = averageWorkload
-	result.TotalWorkloadDistribution = make(map[database.IDType]WorkLoadType)
+	result.TotalWorkloadDistribution = make(map[models.IDType]WorkLoadType)
 	for i, jury := range juries {
 		result.TotalWorkloadDistribution[jury.RoleID] = distribution[i]
 	}
@@ -84,7 +85,7 @@ func (r *RoundRobinDistributionStrategySimulator) AssignJuries(tx *gorm.DB, roun
 		return 0, err
 	}
 	res := buf.Bytes()
-	tx.Updates(&database.Task{
+	tx.Updates(&models.Task{
 		TaskID: r.TaskId,
 		Data:   (*datatypes.JSON)(&res),
 	})

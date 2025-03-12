@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"log"
 	"nokib/campwiz/consts"
-	"nokib/campwiz/database"
-	"nokib/campwiz/database/cache"
+	"nokib/campwiz/models"
+	"nokib/campwiz/repository"
+	"nokib/campwiz/repository/cache"
 	"nokib/campwiz/services"
 	idgenerator "nokib/campwiz/services/idGenerator"
 	"strings"
@@ -49,7 +50,7 @@ func HandleOAuth2Callback(c *gin.Context) {
 		})
 		return
 	}
-	conn, close := database.GetDB()
+	conn, close := repository.GetDB()
 	defer close()
 	user_service := services.NewUserService()
 	db_user, err := user_service.GetUserByUsername(conn, user.Name)
@@ -57,7 +58,7 @@ func HandleOAuth2Callback(c *gin.Context) {
 		fmt.Println("Error: ", err)
 		if err == gorm.ErrRecordNotFound {
 			// Create the user
-			db_user = &database.User{
+			db_user = &models.User{
 				UserID:       idgenerator.GenerateID("usr"),
 				RegisteredAt: user.Registered,
 				Username:     user.Name,

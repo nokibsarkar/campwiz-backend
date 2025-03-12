@@ -6,8 +6,12 @@ import (
 	"log"
 	"nokib/campwiz/models"
 	"nokib/campwiz/models/types"
+	"nokib/campwiz/query"
 	"nokib/campwiz/repository"
+	idgenerator "nokib/campwiz/services/idGenerator"
+	"time"
 
+	"golang.org/x/net/context"
 	"gorm.io/gorm"
 )
 
@@ -107,10 +111,12 @@ func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluation
 		} else if evaluation.Type == models.EvaluationTypeScore {
 			log.Println("Score evaluation")
 		}
+		now := time.Now().UTC()
 		res = tx.Updates(&models.Evaluation{
 			EvaluationID: evaluationRequest.EvaluationID,
 			Score:        evaluationRequest.Score,
 			Comment:      evaluationRequest.Comment,
+			EvaluatedAt:  &now,
 		})
 
 		if res.Error != nil {
@@ -132,10 +138,30 @@ func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluation
 // This function would be used to trigger the evaluation score counting
 func (e *EvaluationService) triggerEvaluationScoreCount(tx *gorm.DB, submissionIds []types.SubmissionIDType) error {
 	// This function would be used to trigger the evaluation score counting
-	stmt := tx.Exec("UPDATE `submissions` `s` SET `score`=(SELECT AVG(`score`) FROM `evaluations` `e` WHERE `e`.`submission_id` =`s`.`submission_id`) WHERE `submission_id` IN ? LIMIT ?", submissionIds, len(submissionIds))
+	q := query.Use(tx)
+	submission := q.Submission
+	evaluation := q.Evaluation
+	stringSubmissionIds := make([]string, len(submissionIds))
+	for i, id := range submissionIds {
+		stringSubmissionIds[i] = string(id)
+	}
+	averageScore := evaluation.Select(q.Evaluation.Score.Avg()).Where(evaluation.SubmissionID.EqCol(submission.SubmissionID))
+	stmt, err := submission.WithContext(context.Background()).Where(submission.SubmissionID.In(stringSubmissionIds...)).Update(submission.Score, averageScore)
+	if err != nil {
+		return err
+	}
 	if stmt.Error != nil {
 		return stmt.Error
 	}
+	evaluated_count := evaluation.Select(evaluation.EvaluationID.Count()).Where(evaluation.SubmissionID.EqCol(submission.SubmissionID)).Where(evaluation.Score.IsNotNull()).Where(evaluation.EvaluatedAt.IsNotNull())
+	stmt, err = submission.WithContext(context.Background()).Where(submission.SubmissionID.In(stringSubmissionIds...)).Update(submission.EvaluationCount, evaluated_count)
+	if err != nil {
+		return err
+	}
+	if stmt.Error != nil {
+		return stmt.Error
+	}
+	log.Println("triggerEvaluationScoreCount", stmt.RowsAffected)
 	return nil
 }
 
@@ -146,6 +172,7 @@ func (e *EvaluationService) Evaluate(currentUserID models.IDType, evaluationID m
 	conn, close := repository.GetDB()
 	defer close()
 	tx := conn.Begin()
+	// first check if user
 	evaluation, err := ev_repo.FindEvaluationByID(tx.Preload("Submission").Preload("Submission.CurrentRound").Preload("Submission.CurrentRound.Campaign"), evaluationID)
 	if err != nil {
 		tx.Rollback()
@@ -209,6 +236,84 @@ func (e *EvaluationService) Evaluate(currentUserID models.IDType, evaluationID m
 	if res.Error != nil {
 		tx.Rollback()
 		return nil, res.Error
+	}
+	tx.Commit()
+	return evaluation, nil
+}
+func (e *EvaluationService) PublicEvaluate(currentUserID models.IDType, submissionID types.SubmissionIDType, evaluationRequest *EvaluationRequest) (*models.Evaluation, error) {
+	if evaluationRequest == nil {
+		return nil, errors.New("evaluation request is required")
+	}
+	if evaluationRequest.Score == nil {
+		return nil, errors.New("score is required")
+	}
+	if evaluationRequest.EvaluationID != "" {
+		return e.Evaluate(currentUserID, evaluationRequest.EvaluationID, evaluationRequest)
+	}
+	submission_repo := repository.NewSubmissionRepository()
+	jury_repo := repository.NewRoleRepository()
+	conn, close := repository.GetDB()
+	defer close()
+	tx := conn.Begin()
+	submision, err := submission_repo.FindSubmissionByID(tx.Preload("CurrentRound"), submissionID)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	if submision == nil {
+		tx.Rollback()
+		return nil, errors.New("submission not found")
+	}
+	// first check if the round exists
+	round := submision.CurrentRound
+	// now round exists, check if jury exists
+	juryRole, err := jury_repo.FindRoleByUserIDAndRoundID(tx, currentUserID, round.RoundID, models.RoleTypeJury)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	if juryRole == nil {
+		// if not, create a jury
+		juryRole = &models.Role{
+			UserID:         currentUserID,
+			RoundID:        &round.RoundID,
+			Type:           models.RoleTypeJury,
+			RoleID:         idgenerator.GenerateID("j"),
+			ProjectID:      round.ProjectID,
+			CampaignID:     &round.CampaignID,
+			IsAllowed:      true,
+			TotalAssigned:  1,
+			TotalEvaluated: 1,
+			TotalScore:     0,
+		}
+		res := tx.Create(juryRole)
+		if res.Error != nil {
+			tx.Rollback()
+			return nil, res.Error
+		}
+	}
+	now := time.Now().UTC()
+	// then create evaluation with the user
+	evaluation := &models.Evaluation{
+		EvaluationID:  idgenerator.GenerateID("e"),
+		SubmissionID:  submision.SubmissionID,
+		JudgeID:       &juryRole.RoleID,
+		Score:         evaluationRequest.Score,
+		Comment:       evaluationRequest.Comment,
+		Type:          models.EvaluationTypeScore,
+		EvaluatedAt:   &now,
+		ParticipantID: submision.ParticipantID,
+		RoundID:       submision.CurrentRoundID,
+	}
+	res := tx.Save(evaluation)
+	if res.Error != nil {
+		tx.Rollback()
+		return nil, res.Error
+	}
+	// trigger submission score counting
+	if err := e.triggerEvaluationScoreCount(tx, []types.SubmissionIDType{submision.SubmissionID}); err != nil {
+		tx.Rollback()
+		return nil, err
 	}
 	tx.Commit()
 	return evaluation, nil

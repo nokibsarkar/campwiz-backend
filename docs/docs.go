@@ -325,6 +325,56 @@ const docTemplate = `{
                 }
             }
         },
+        "/evaluation/public/{roundId}/{submissionId}": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Submit a new public evaluation",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Evaluation"
+                ],
+                "summary": "Submit a new public evaluation",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The round ID",
+                        "name": "roundId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "The submission ID",
+                        "name": "submissionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "The evaluation request",
+                        "name": "evaluationRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/services.EvaluationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.ResponseSingle-models_Evaluation"
+                        }
+                    }
+                }
+            }
+        },
         "/evaluation/{evaluationId}": {
             "post": {
                 "security": [
@@ -765,6 +815,35 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/routes.ResponseSingle-models_Round"
+                        }
+                    }
+                }
+            }
+        },
+        "/round/{roundId}/next/public": {
+            "get": {
+                "description": "Get the next public submission for a jury",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Round"
+                ],
+                "summary": "Get the next public submission",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The round ID",
+                        "name": "roundId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.ResponseSingle-models_Submission"
                         }
                     }
                 }
@@ -1616,6 +1695,10 @@ const docTemplate = `{
                     "description": "in milliseconds",
                     "type": "integer"
                 },
+                "evaluationCount": {
+                    "description": "The number of times the submission has been evaluated by the juries",
+                    "type": "integer"
+                },
                 "height": {
                     "type": "integer"
                 },
@@ -1877,6 +1960,14 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/models.Round"
+                }
+            }
+        },
+        "routes.ResponseSingle-models_Submission": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/models.Submission"
                 }
             }
         },

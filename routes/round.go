@@ -232,10 +232,35 @@ func GetResults(c *gin.Context, sess *cache.Session) {
 	}
 	c.JSON(200, ResponseList[models.EvaluationResult]{Data: results})
 }
+
+// NextPublicSubmission godoc
+// @Summary Get the next public submission
+// @Description Get the next public submission for a jury
+// @Produce  json
+// @Success 200 {object} ResponseSingle[models.Submission]
+// @Router /round/{roundId}/next/public [get]
+// @Param roundId path string true "The round ID"
+// @Tags Round
+// @Error 400 {object} ResponseError
+func NextPublicSubmission(c *gin.Context, sess *cache.Session) {
+	roundID := c.Param("roundId")
+	if roundID == "" {
+		c.JSON(400, ResponseError{Detail: "Invalid request : Round ID is required"})
+	}
+	u := GetCurrentUser(c)
+	round_service := services.NewRoundService()
+	submission, err := round_service.GetNextUnevaluatedSubmissionForPublicJury(u.UserID, models.IDType(roundID))
+	if err != nil {
+		c.JSON(400, ResponseError{Detail: "Failed to get next submission : " + err.Error()})
+		return
+	}
+	c.JSON(200, ResponseSingle[*models.Submission]{Data: submission})
+}
 func NewRoundRoutes(parent *gin.RouterGroup) {
 	r := parent.Group("/round")
 	r.GET("/", WithSession(ListAllRounds))
 	r.GET("/:roundId", GetRound)
+	r.GET("/:roundId/next/public", WithSession(NextPublicSubmission))
 	r.GET("/:roundId/results", WithSession(GetResults))
 	r.POST("/", WithPermission(consts.PermissionCreateCampaign, CreateRound))
 	r.POST("/:roundId", WithPermission(consts.PermissionCreateCampaign, UpdateRoundDetails))

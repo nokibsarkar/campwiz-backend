@@ -517,6 +517,10 @@ definitions:
       duration:
         description: in milliseconds
         type: integer
+      evaluationCount:
+        description: The number of times the submission has been evaluated by the
+          juries
+        type: integer
       height:
         type: integer
       importTaskId:
@@ -690,6 +694,11 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/models.Round'
+    type: object
+  routes.ResponseSingle-models_Submission:
+    properties:
+      data:
+        $ref: '#/definitions/models.Submission'
     type: object
   routes.ResponseSingle-models_Task:
     properties:
@@ -1135,6 +1144,38 @@ paths:
       summary: Update an evaluation
       tags:
       - Evaluation
+  /evaluation/public/{roundId}/{submissionId}:
+    post:
+      description: Submit a new public evaluation
+      parameters:
+      - description: The round ID
+        in: path
+        name: roundId
+        required: true
+        type: string
+      - description: The submission ID
+        in: path
+        name: submissionId
+        required: true
+        type: string
+      - description: The evaluation request
+        in: body
+        name: evaluationRequest
+        required: true
+        schema:
+          $ref: '#/definitions/services.EvaluationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.ResponseSingle-models_Evaluation'
+      security:
+      - ApiKeyAuth: []
+      summary: Submit a new public evaluation
+      tags:
+      - Evaluation
   /project/:
     post:
       description: Create a new project
@@ -1323,6 +1364,25 @@ paths:
           schema:
             $ref: '#/definitions/routes.ResponseSingle-models_Round'
       summary: Update the details of a round
+      tags:
+      - Round
+  /round/{roundId}/next/public:
+    get:
+      description: Get the next public submission for a jury
+      parameters:
+      - description: The round ID
+        in: path
+        name: roundId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.ResponseSingle-models_Submission'
+      summary: Get the next public submission
       tags:
       - Round
   /round/{roundId}/results:

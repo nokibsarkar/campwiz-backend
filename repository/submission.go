@@ -3,6 +3,7 @@ package repository
 import (
 	"nokib/campwiz/models"
 	"nokib/campwiz/models/types"
+	"nokib/campwiz/query"
 
 	"gorm.io/gorm"
 )
@@ -89,4 +90,30 @@ func (r *SubmissionRepository) ListAllSubmissionIDs(tx *gorm.DB, filter *models.
 	}
 	result := stmt.Model(&models.Submission{}).Find(&submissionIDs)
 	return submissionIDs, result.Error
+}
+func (r *SubmissionRepository) FindNextUnevaluatedSubmissionForPublicJury(tx *gorm.DB, juryID *models.IDType, round *models.Round) (*models.Submission, error) {
+	alreadyCoveredSubmissionIDs := []string{}
+	if juryID != nil {
+		type submissionID struct {
+			SubmissionID types.SubmissionIDType
+		}
+		results := []submissionID{}
+		stmt := tx.Model(&models.Evaluation{}).Find(&results, &models.Evaluation{JudgeID: juryID})
+		if stmt.Error != nil {
+			return nil, stmt.Error
+		}
+		for _, s := range results {
+			alreadyCoveredSubmissionIDs = append(alreadyCoveredSubmissionIDs, s.SubmissionID.String())
+		}
+	}
+
+	q := query.Use(tx)
+	s := q.Submission
+	submission, error := (s.
+		Where(s.CurrentRoundID.Eq(round.RoundID.String())).
+		Where(s.SubmissionID.NotIn(alreadyCoveredSubmissionIDs...)).
+		Where(s.EvaluationCount.Lt(round.Quorum)).
+		Order(s.EvaluationCount).
+		First())
+	return submission, error
 }

@@ -11,6 +11,7 @@ import (
 
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // ImportService is an interface for importing data from different sources
@@ -150,7 +151,8 @@ func (b *TaskRunner) importImages(conn *gorm.DB, task *models.Task) (successCoun
 			submissionCount++
 			if submissionCount%200 == 0 {
 				log.Println("Saving batch of submissions")
-				res := perBatch.Create(submissions)
+
+				res := perBatch.Clauses(clause.Insert{Modifier: "IGNORE"}).Create(submissions)
 				if res.Error != nil {
 					perBatch.Rollback()
 					task.Status = models.TaskStatusFailed
@@ -162,7 +164,7 @@ func (b *TaskRunner) importImages(conn *gorm.DB, task *models.Task) (successCoun
 		}
 		if len(submissions) > 0 {
 			log.Println("Saving remaining submissions")
-			res := perBatch.Create(submissions)
+			res := perBatch.Clauses(clause.Insert{Modifier: "IGNORE"}).Create(submissions)
 			if res.Error != nil {
 				perBatch.Rollback()
 				task.Status = models.TaskStatusFailed

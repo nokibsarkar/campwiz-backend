@@ -48,3 +48,8 @@ func (r *RoleRepository) ListAllRoles(tx *gorm.DB, filter *models.RoleFilter) ([
 	result := stmt.Find(&juries)
 	return juries, result.Error
 }
+func (r *RoleRepository) FindRoleByUserIDAndRoundID(tx *gorm.DB, userID models.IDType, roundID models.IDType, roleType models.RoleType) (*models.Role, error) {
+	jury := &models.Role{}
+	result := tx.First(jury, &models.Role{UserID: userID, RoundID: &roundID, Type: roleType, IsAllowed: true})
+	return jury, result.Error
+}

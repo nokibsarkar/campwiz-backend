@@ -3,6 +3,7 @@ package routes
 import (
 	"nokib/campwiz/consts"
 	"nokib/campwiz/models"
+	"nokib/campwiz/models/types"
 	"nokib/campwiz/repository/cache"
 	"nokib/campwiz/services"
 
@@ -97,9 +98,45 @@ func BulkEvaluate(c *gin.Context, sess *cache.Session) {
 	c.JSON(200, ResponseList[*models.Evaluation]{Data: evaluations})
 }
 
+// SubmitNewPublicEvaluation godoc
+// @Summary Submit a new public evaluation
+// @Description Submit a new public evaluation
+// @Produce  json
+// @Success 200 {object} ResponseSingle[models.Evaluation]
+// @Router /evaluation/public/{roundId}/{submissionId} [post]
+// @Tags Evaluation
+// @Param roundId path string true "The round ID"
+// @Param submissionId path string true "The submission ID"
+// @Param evaluationRequest body services.EvaluationRequest true "The evaluation request"
+// @Security ApiKeyAuth
+// @Error 400 {object} ResponseError
+// @Error 403 {object} ResponseError
+// @Error 404 {object} ResponseError
+func SubmitNewPublicEvaluation(c *gin.Context, sess *cache.Session) {
+	roundId := c.Param("roundId")
+	submissionId := c.Param("submissionId")
+	if roundId == "" || submissionId == "" {
+		c.JSON(400, ResponseError{Detail: "Invalid request : Round ID and Submission ID are required"})
+		return
+	}
+	requestedEvaluation := services.EvaluationRequest{}
+	err := c.ShouldBindJSON(&requestedEvaluation)
+	if err != nil {
+		c.JSON(400, ResponseError{Detail: "Invalid request : " + err.Error()})
+		return
+	}
+	evaluation_service := services.NewEvaluationService()
+	evaluation, err := evaluation_service.PublicEvaluate(sess.UserID, types.SubmissionIDType(submissionId), &requestedEvaluation)
+	if err != nil {
+		c.JSON(400, ResponseError{Detail: "Error updating evaluation : " + err.Error()})
+		return
+	}
+	c.JSON(200, ResponseSingle[models.Evaluation]{Data: *evaluation})
+}
 func NewEvaluationRoutes(r *gin.RouterGroup) {
 	route := r.Group("/evaluation")
 	route.GET("/", WithSession(ListEvaluations))
 	route.POST("/", WithPermission(consts.PermissionCreateCampaign, BulkEvaluate))
 	route.POST("/:evaluationId", WithPermission(consts.PermissionCreateCampaign, UpdateEvaluation))
+	route.POST("/public/:roundId/:submissionId", WithPermission(consts.PermissionCreateCampaign, SubmitNewPublicEvaluation))
 }

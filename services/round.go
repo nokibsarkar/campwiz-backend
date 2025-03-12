@@ -345,3 +345,32 @@ func (r *RoundService) GetResults(roundID models.IDType) (results []models.Evalu
 	}
 	return
 }
+func (e *RoundService) GetNextUnevaluatedSubmissionForPublicJury(userID models.IDType, roundID models.IDType) (*models.Submission, error) {
+	conn, close := repository.GetDB()
+	defer close()
+	submission_repo := repository.NewSubmissionRepository()
+	round_repo := repository.NewRoundRepository()
+	role_repo := repository.NewRoleRepository()
+	round, err := round_repo.FindByID(conn, roundID)
+	if err != nil {
+		return nil, err
+	}
+	if round == nil {
+		return nil, errors.New("round not found")
+	}
+	var roleID *models.IDType
+	role, err := role_repo.FindRoleByUserIDAndRoundID(conn, userID, roundID, models.RoleTypeJury)
+	if err != nil {
+		if err.Error() != "record not found" {
+			return nil, err
+		}
+	}
+	if role.RoleID != "" {
+		roleID = &role.RoleID
+	}
+	submission, err := submission_repo.FindNextUnevaluatedSubmissionForPublicJury(conn, roleID, round)
+	if err != nil {
+		return nil, err
+	}
+	return submission, nil
+}

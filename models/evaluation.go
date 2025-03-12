@@ -16,8 +16,8 @@ const (
 
 type Evaluation struct {
 	EvaluationID  IDType                 `json:"evaluationId" gorm:"primaryKey"`
-	SubmissionID  types.SubmissionIDType `json:"submissionId"`
-	JudgeID       *IDType                `json:"judgeId"`
+	SubmissionID  types.SubmissionIDType `json:"submissionId" gorm:"index;uniqueIndex:idx_submission_judge"`
+	JudgeID       *IDType                `json:"judgeId" gorm:"index;uniqueIndex:idx_submission_judge"`
 	ParticipantID IDType                 `json:"participantId"`
 	RoundID       IDType                 `json:"roundId" gorm:"index"`
 	Type          EvaluationType         `json:"type"`

@@ -18,6 +18,7 @@ type MainDatabaseConfiguration struct {
 type CacheDatabaseConfiguration struct {
 	DSN     string `mapstructure:"DSN"`
 	TestDSN string `mapstructure:"TestDSN"`
+	TaskDSN string `mapstructure:"TaskDSN"`
 }
 type DatabaseConfiguration struct {
 	Main  MainDatabaseConfiguration  `mapstructure:"Main"`

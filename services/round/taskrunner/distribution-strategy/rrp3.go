@@ -5,7 +5,9 @@ import (
 	"log"
 	"nokib/campwiz/consts"
 	"nokib/campwiz/models"
+	"nokib/campwiz/query"
 	"nokib/campwiz/repository"
+	"nokib/campwiz/repository/cache"
 	idgenerator "nokib/campwiz/services/idGenerator"
 	"sync"
 
@@ -151,6 +153,32 @@ func distributeImagesBalancedConcurrentv3(numberOfImages, numberOfJury, distinct
 	hp.StopWatchHeapOps()
 	return assignments, nil
 }
+func (strategy *RoundRobinDistributionStrategyV3) importToCache(tx *gorm.DB, taskCacheDB *gorm.DB, round *models.Round) error {
+	var evaluations []*cache.Assignments
+	q := query.Use(tx)
+	evs, err := (q.Evaluation.Where(q.Evaluation.RoundID.Eq(round.RoundID.String())).
+		Where(q.Evaluation.EvaluatedAt.IsNull()).
+		Where(q.Evaluation.Score.IsNull()).
+		Order(q.Evaluation.EvaluationID).
+		Find())
+	if err != nil {
+		return err
+	}
+	if len(evs) == 0 {
+		return nil
+	}
+	totalEvaluations := 0
+	for _, evaluation := range evs {
+		totalEvaluations++
+		evaluations = append(evaluations, &cache.Assignments{
+			EvaluationID: evaluation.EvaluationID,
+			SubmissionID: evaluation.SubmissionID,
+			JudgeID:      evaluation.JudgeID,
+		})
+	}
+	taskCacheDB.Create(evaluations)
+	return nil
+}
 
 func (strategy *RoundRobinDistributionStrategyV3) AssignJuries(tx *gorm.DB, round *models.Round, juries []models.Role) (evaluationCount int, err error) {
 	submission_repo := repository.NewSubmissionRepository()
@@ -162,6 +190,12 @@ func (strategy *RoundRobinDistributionStrategyV3) AssignJuries(tx *gorm.DB, roun
 		return 0, err
 	}
 	success, err := createMissingEvaluations(tx, strategy.TaskId, models.EvaluationTypeScore, round, submissions)
+	if err != nil {
+		return 0, err
+	}
+	taskDB, closeTaskDB := cache.GetTaskCacheDB(strategy.TaskId)
+	defer closeTaskDB()
+	err = strategy.importToCache(tx, taskDB, round)
 	if err != nil {
 		return 0, err
 	}

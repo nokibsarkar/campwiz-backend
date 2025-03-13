@@ -2,15 +2,16 @@ package cache
 
 import (
 	"nokib/campwiz/models"
+	"nokib/campwiz/models/types"
 	idgenerator "nokib/campwiz/services/idGenerator"
 
 	"gorm.io/gorm"
 )
 
 type Assignments struct {
-	EvaluationID       models.IDType ` gorm:"primaryKey"`
-	SubmissionID       models.IDType `gorm:"uniqueIndex:idx_submission_judge"`
-	JudgeID            models.IDType `gorm:"uniqueIndex:idx_submission_judge"`
+	EvaluationID       models.IDType          `gorm:"primaryKey"`
+	SubmissionID       types.SubmissionIDType `gorm:"uniqueIndex:idx_submission_judge"`
+	JudgeID            *models.IDType         `gorm:"null;uniqueIndex:idx_submission_judge"`
 	DistributionTaskID models.IDType
 }
 

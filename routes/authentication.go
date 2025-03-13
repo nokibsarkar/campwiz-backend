@@ -2,7 +2,6 @@ package routes
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"nokib/campwiz/consts"
 	"nokib/campwiz/services"
@@ -62,7 +61,7 @@ func (a *AuthenticationMiddleWare) checkIfUnauthenticatedAllowed(c *gin.Context)
 			}
 		} else {
 			if p == path {
-				fmt.Println("Unrestricted path")
+				log.Println("Unrestricted path")
 				return true
 			}
 		}
@@ -79,7 +78,7 @@ func (a *AuthenticationMiddleWare) Authenticate(c *gin.Context) {
 	if !a.checkIfUnauthenticatedAllowed(c) {
 		token, err := a.extractAccessToken(c)
 		if err != nil {
-			fmt.Println("Error", err)
+			log.Println("Error", err)
 			c.Set("error", err)
 			c.AbortWithStatusJSON(401, ResponseError{Detail: "Unauthorized : No token found"})
 			return
@@ -87,7 +86,7 @@ func (a *AuthenticationMiddleWare) Authenticate(c *gin.Context) {
 			auth_service := services.NewAuthenticationService()
 			accessToken, session, err, setCookie := auth_service.Authenticate(token)
 			if err != nil {
-				fmt.Println("Error", err)
+				log.Println("Error", err)
 				c.Set("error", err)
 				c.AbortWithStatusJSON(401, ResponseError{Detail: "Unauthorized : Invalid token"})
 				return

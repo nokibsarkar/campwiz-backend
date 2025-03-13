@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"fmt"
+	"log"
 	"nokib/campwiz/consts"
 	"nokib/campwiz/models"
 	"nokib/campwiz/query"
@@ -13,11 +13,16 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+func getLogMode() logger.LogLevel {
+	if consts.Config.Server.Mode == "release" {
+		return logger.Warn
+	}
+	return logger.Info
+}
 func GetDB() (db *gorm.DB, close func()) {
 	dsn := consts.Config.Database.Main.DSN
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
-		// Logger: logger.Default.LogMode(logger.Warn),
-		Logger: logger.Default.LogMode(logger.Info),
+		Logger: logger.Default.LogMode(getLogMode()),
 	})
 
 	if err != nil {
@@ -39,8 +44,7 @@ func GetDB() (db *gorm.DB, close func()) {
 func GetDbWithoutDefaultTransaction() (db *gorm.DB, close func()) {
 	dsn := consts.Config.Database.Main.DSN
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
-		// Logger: logger.Default.LogMode(logger.Warn),
-		Logger:                 logger.Default.LogMode(logger.Info),
+		Logger:                 logger.Default.LogMode(getLogMode()),
 		SkipDefaultTransaction: true,
 	})
 	if err != nil {
@@ -57,7 +61,7 @@ func GetDbWithoutDefaultTransaction() (db *gorm.DB, close func()) {
 func GetTestDB() (db *gorm.DB, close func()) {
 	dsn := consts.Config.Database.Main.TestDSN
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Warn),
+		Logger: logger.Default.LogMode(logger.Info),
 	})
 	if err != nil {
 		panic("failed to connect database")
@@ -73,7 +77,7 @@ func GetTestDB() (db *gorm.DB, close func()) {
 func GetDBWithGen() (q *query.Query, close func()) {
 	dsn := consts.Config.Database.Main.DSN
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
+		Logger: logger.Default.LogMode(getLogMode()),
 	})
 	if err != nil {
 		panic("failed to connect database")
@@ -120,6 +124,6 @@ func InitDB(testing bool) {
 	db.AutoMigrate(&models.Role{})
 	db.AutoMigrate(&models.Submission{})
 	db.AutoMigrate(&models.Evaluation{})
-	fmt.Println((db))
+	log.Println((db))
 	db.Commit()
 }

@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	"log"
+	"nokib/campwiz/consts"
 	"nokib/campwiz/repository"
 	"nokib/campwiz/repository/cache"
 	"nokib/campwiz/routes"
@@ -16,7 +18,7 @@ import (
 
 // preRun is a function that will be called before the main function
 func preRun() {
-
+	gin.SetMode(consts.Config.Server.Mode)
 }
 func postRun() {
 }
@@ -29,8 +31,17 @@ func afterSetupRouter(testing bool) {
 func SetupRouter(testing bool) *gin.Engine {
 	beforeSetupRouter(testing)
 	r := gin.Default()
+	Mode := consts.Config.Server.Mode
+	if Mode == "debug" {
+		r.Use(gin.Logger())
+	} else if Mode == "release" {
+		r.Use(gin.Recovery())
+
+	} else {
+		log.Panicf("Invalid mode %s", Mode)
+	}
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
-	// r.StaticFS("/static", http.Dir("static"))
+
 	routes.NewRoutes(r.Group("/"))
 	afterSetupRouter(testing)
 	return r
@@ -56,7 +67,6 @@ func SetupRouter(testing bool) *gin.Engine {
 // @contact.url https://github.com/nokibsarkar
 func main() {
 	RunGormCodeGenerator := false
-	port := flag.String("port", "8081", "Port to run the server on")
 	flag.BoolVar(&RunGormCodeGenerator, "gen", false, "Run Gorm Code Generator")
 	flag.Parse()
 	if RunGormCodeGenerator {
@@ -65,6 +75,7 @@ func main() {
 	}
 	preRun()
 	r := SetupRouter(false)
-	r.Run(":" + *port)
+
+	r.Run("localhost:" + consts.Config.Server.Port)
 	postRun()
 }

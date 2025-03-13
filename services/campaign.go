@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"log"
 	"nokib/campwiz/consts"
 	"nokib/campwiz/models"
 	"nokib/campwiz/repository"
@@ -96,7 +97,7 @@ func (service *CampaignService) GetAllCampaigns(query *models.CampaignFilter) []
 
 	campaigns, err := campaign_repo.ListAllCampaigns(conn, query)
 	if err != nil {
-		fmt.Println("Error: ", err)
+		log.Println("Error: ", err)
 		return []models.Campaign{}
 	}
 	return campaigns
@@ -125,7 +126,7 @@ func (service *CampaignService) GetCampaignByID(id models.IDType, query *SingleC
 	campaign_repo := repository.NewCampaignRepository()
 	campaign, err := campaign_repo.FindByID(conn, id)
 	if err != nil {
-		fmt.Println("Error: ", err)
+		log.Println("Error: ", err)
 		return nil, err
 	}
 	return campaign, nil

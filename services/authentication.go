@@ -71,7 +71,7 @@ func (a *AuthenticationService) VerifyToken(cacheDB *gorm.DB, tokenMap *SessionC
 	}
 	result := cacheDB.First(session)
 	if result.Error != nil {
-		fmt.Println("Error: ", result.Error)
+		log.Println("Error: ", result.Error)
 		return nil, result.Error
 	}
 	return session, nil
@@ -92,7 +92,7 @@ func (a *AuthenticationService) NewSession(tx *gorm.DB, tokenMap *SessionClaims)
 	token := jwt.NewWithClaims(jwt.SigningMethodES256, tokenMap)
 	accessToken, err := token.SignedString(RSAPrivateKey)
 	if err != nil {
-		fmt.Println("Error: ", err)
+		log.Println("Error: ", err)
 		return "", nil, err
 	}
 	return accessToken, session, nil
@@ -111,13 +111,13 @@ func (a *AuthenticationService) NewRefreshToken(tokenMap *SessionClaims) (string
 	token := jwt.NewWithClaims(jwt.SigningMethodES256, refreshClaims)
 	refreshToken, err := token.SignedString(RSAPrivateKey)
 	if err != nil {
-		fmt.Println("Error: ", err)
+		log.Println("Error: ", err)
 		return "", err
 	}
 	return refreshToken, nil
 }
 func (a *AuthenticationService) RefreshSession(cacheDB *gorm.DB, tokenMap *SessionClaims) (accessToken string, session *cache.Session, err error) {
-	fmt.Println("Refreshing session")
+	log.Println("Refreshing session")
 	sessionIDString := tokenMap.ID
 	if sessionIDString == "" {
 		return "", nil, fmt.Errorf("no session ID found")
@@ -132,7 +132,7 @@ func (a *AuthenticationService) RefreshSession(cacheDB *gorm.DB, tokenMap *Sessi
 	tx := cacheDB.Begin()
 	result := tx.First(session, &cache.Session{ID: models.IDType(sessionIDString)})
 	if result.Error != nil {
-		fmt.Println("Error: ", result.Error)
+		log.Println("Error: ", result.Error)
 		tx.Rollback()
 		return "", nil, result.Error
 	}
@@ -140,7 +140,7 @@ func (a *AuthenticationService) RefreshSession(cacheDB *gorm.DB, tokenMap *Sessi
 	log.Println("Session expires at: ", session.ExpiresAt)
 	result = tx.Save(session)
 	if result.Error != nil {
-		fmt.Println("Error: ", result.Error)
+		log.Println("Error: ", result.Error)
 		tx.Rollback()
 		return "", nil, result.Error
 	}

@@ -1,7 +1,7 @@
 package consts
 
 import (
-	"fmt"
+	"log"
 
 	"github.com/spf13/viper"
 )
@@ -28,6 +28,7 @@ type ServerConfiguration struct {
 	Port    string `mapstructure:"Port"`
 	Host    string `mapstructure:"Host"`
 	BaseURL string `mapstructure:"BaseURL"`
+	Mode    string `mapstructure:"Mode"`
 }
 type OAuth2Configuration struct {
 	ClientID     string `mapstructure:"ClientID"`
@@ -75,6 +76,6 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(Config.Auth.OAuth2.RedirectPath)
+	log.Println(Config.Auth.OAuth2.RedirectPath)
 
 }

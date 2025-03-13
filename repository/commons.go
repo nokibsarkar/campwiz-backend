@@ -53,7 +53,7 @@ func (c *CommonsRepository) GetImagesFromCommonsCategories(category string) ([]m
 	}
 	images, err := paginator.Query(params)
 	if err != nil {
-		fmt.Println("Error: ", err)
+		log.Println("Error: ", err)
 		return nil, nil
 	}
 	result := []models.ImageResult{}
@@ -63,7 +63,7 @@ func (c *CommonsRepository) GetImagesFromCommonsCategories(category string) ([]m
 			break
 		}
 		if len(image.Info) == 0 {
-			fmt.Println("No image info found. Skipping")
+			log.Println("No image info found. Skipping")
 			continue
 		}
 		info := image.Info[0]
@@ -119,7 +119,7 @@ func (c *CommonsRepository) GeUsersFromUsernames(usernames []models.WikimediaUse
 		}
 		users, err := paginator.UserList(params)
 		if err != nil {
-			fmt.Println("Error: ", err)
+			log.Println("Error: ", err)
 			return nil, nil
 		}
 		for user := range users {
@@ -128,7 +128,7 @@ func (c *CommonsRepository) GeUsersFromUsernames(usernames []models.WikimediaUse
 				break
 			}
 			if user.Registered.IsZero() {
-				fmt.Println("No registration date found. Skipping")
+				log.Println("No registration date found. Skipping")
 				continue
 			}
 			result = append(result, *user)

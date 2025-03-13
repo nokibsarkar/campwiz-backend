@@ -3,6 +3,7 @@ package distributionstrategy
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"nokib/campwiz/models"
 	"nokib/campwiz/repository"
 
@@ -64,12 +65,12 @@ func (r *RoundRobinDistributionStrategySimulator) AssignJuries(tx *gorm.DB, roun
 	}
 	totalWorkload, averageWorkload, distribution, err := simulateDistributeImagesBalanced(int(numberOfImages), numberOfJury, distinctJuryPerImage, alreadyWorkload)
 	if err != nil {
-		fmt.Println("Error: ", err)
+		log.Println("Error: ", err)
 		return 0, err
 	}
-	fmt.Println("Total Workload: ", totalWorkload)
-	fmt.Println("Average Workload: ", averageWorkload)
-	fmt.Println("Workload Distribution: ", distribution)
+	log.Println("Total Workload: ", totalWorkload)
+	log.Println("Average Workload: ", averageWorkload)
+	log.Println("Workload Distribution: ", distribution)
 	result.TotalWorkLoad = totalWorkload
 	result.AvergaeWorkLoad = averageWorkload
 	result.TotalWorkloadDistribution = make(map[models.IDType]WorkLoadType)

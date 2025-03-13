@@ -131,7 +131,7 @@ func (b *RoundService) ImportFromCommons(roundId models.IDType, categories []str
 		return nil, err
 	}
 	tx.Commit()
-	fmt.Println("Task created with ID: ", task.TaskID)
+	log.Println("Task created with ID: ", task.TaskID)
 	commonsCategorySource := importsources.NewCommonsCategoryListSource(categories)
 	batch_processor := importservice.NewImportTaskRunner(task.TaskID, commonsCategorySource)
 	go batch_processor.Run()
@@ -153,7 +153,7 @@ func (b *RoundService) DistributeTaskAmongExistingJuries(images []models.ImageRe
 	// datasetIndex := 0
 	toleranceCount := 100
 	if toleranceCount == 0 {
-		fmt.Println("Tolerance count cannot be zero. Setting it to 1")
+		log.Println("Tolerance count cannot be zero. Setting it to 1")
 		toleranceCount = 1
 	}
 	sortedJuryByAssigned := ByAssigned(juries)
@@ -200,7 +200,7 @@ func (b *RoundService) DistributeTaskAmongExistingJuries(images []models.ImageRe
 		groupByJuryID[evaluation.JuryID] = append(groupByJuryID[evaluation.JuryID], evaluation)
 	}
 	for j := range juryCount {
-		fmt.Printf("Jury %d has %d images\n", sortedJuryByAssigned[j].ID, len(groupByJuryID[sortedJuryByAssigned[j].ID]))
+		log.Printf("Jury %d has %d images\n", sortedJuryByAssigned[j].ID, len(groupByJuryID[sortedJuryByAssigned[j].ID]))
 	}
 }
 
@@ -290,7 +290,7 @@ func (r *RoundService) DistributeEvaluations(currentUserID models.IDType, roundI
 		return nil, err
 	}
 	tx.Commit()
-	fmt.Println("Task created with ID: ", task.TaskID)
+	log.Println("Task created with ID: ", task.TaskID)
 	strategy := distributionstrategy.NewRoundRobinDistributionStrategyV3(task.TaskID)
 	runner := importservice.NewDistributionTaskRunner(task.TaskID, strategy)
 	go runner.Run()
@@ -329,7 +329,7 @@ func (r *RoundService) SimulateDistributeEvaluations(currentUserID models.IDType
 		return nil, err
 	}
 	tx.Commit()
-	fmt.Println("Task created with ID: ", task.TaskID)
+	log.Println("Task created with ID: ", task.TaskID)
 	strategy := distributionstrategy.NewRoundRobinDistributionStrategySimulator(task.TaskID)
 	runner := importservice.NewDistributionTaskRunner(task.TaskID, strategy)
 	go runner.Run()

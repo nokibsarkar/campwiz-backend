@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"fmt"
 	"log"
 	"nokib/campwiz/consts"
 	"nokib/campwiz/models"
@@ -55,7 +54,7 @@ func HandleOAuth2Callback(c *gin.Context) {
 	user_service := services.NewUserService()
 	db_user, err := user_service.GetUserByUsername(conn, user.Name)
 	if err != nil {
-		fmt.Println("Error: ", err)
+		log.Println("Error: ", err)
 		if err == gorm.ErrRecordNotFound {
 			// Create the user
 			db_user = &models.User{

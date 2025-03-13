@@ -1,7 +1,7 @@
 package services
 
 import (
-	"fmt"
+	"log"
 	"nokib/campwiz/consts"
 	"nokib/campwiz/models"
 	"nokib/campwiz/repository"
@@ -22,7 +22,7 @@ func (u *UserService) GetUserByID_(conn *gorm.DB, id models.IDType) (*models.Use
 	user := &models.User{}
 	result := conn.First(user, userFilter)
 	if result.Error != nil {
-		fmt.Println("Error: ", result.Error)
+		log.Println("Error: ", result.Error)
 		return nil, result.Error
 	}
 	return user, nil

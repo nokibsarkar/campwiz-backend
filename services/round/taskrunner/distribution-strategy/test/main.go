@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -64,14 +64,14 @@ func do() {
 		juryMap[jid] = JurySet(jid)
 		totalExistingWorkload += len(juryMap[jid])
 	}
-	fmt.Printf("Jury Map %v\n", juryMap)
+	log.Printf("Jury Map %v\n", juryMap)
 	candidates := sets.NewString("s1", "s2", "s3", "s4")
 	totalNewWorkload := len(candidates) * maxRound
 	grandTotal := totalExistingWorkload + totalNewWorkload
 	juryCount := len(juryIDs)
 	grandAverage := grandTotal / juryCount
 
-	fmt.Printf("Total : %d Avg : %d\n", grandTotal, grandAverage)
+	log.Printf("Total : %d Avg : %d\n", grandTotal, grandAverage)
 	extra := grandTotal % juryCount
 	for range maxRound {
 		// to be distributed
@@ -86,20 +86,20 @@ func do() {
 					extra--
 				}
 			}
-			fmt.Printf("New workload for Jury %s : %d\n", j, newWorkload)
+			log.Printf("New workload for Jury %s : %d\n", j, newWorkload)
 			for ca := range c {
 				if alreadyAssigned.Has(ca) {
-					fmt.Printf("Submission  %s is already assigned to %s\n", ca, j)
+					log.Printf("Submission  %s is already assigned to %s\n", ca, j)
 				} else {
 					alreadyAssigned.Insert(ca)
 					c.Delete(ca)
 				}
 			}
 		}
-		fmt.Println("Non assignable :", c)
+		log.Println("Non assignable :", c)
 	}
 	for j, v := range juryMap {
-		fmt.Printf("Jury %s has following submissions %v\n", j, v)
+		log.Printf("Jury %s has following submissions %v\n", j, v)
 	}
 }
 

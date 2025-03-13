@@ -9,7 +9,7 @@ import (
 	"net/http"
 )
 
-const URL = "http://localhost:8080/api/v2"
+const URL = "https://campwiz.wikilovesfolklore.org/api/v2"
 
 type Client struct {
 	cl          *http.Client

@@ -39,7 +39,7 @@ func SetupRouter(testing bool) *gin.Engine {
 // @title Campwiz API
 // @version 1
 // @description This is the API documentation for Campwiz
-// @host localhost:8080
+// @host localhost:8081
 // @BasePath /api/v2
 // @schemes http https
 // @produce json
@@ -56,6 +56,7 @@ func SetupRouter(testing bool) *gin.Engine {
 // @contact.url https://github.com/nokibsarkar
 func main() {
 	RunGormCodeGenerator := false
+	port := flag.String("port", "8081", "Port to run the server on")
 	flag.BoolVar(&RunGormCodeGenerator, "gen", false, "Run Gorm Code Generator")
 	flag.Parse()
 	if RunGormCodeGenerator {
@@ -64,6 +65,6 @@ func main() {
 	}
 	preRun()
 	r := SetupRouter(false)
-	r.Run()
+	r.Run(":" + *port)
 	postRun()
 }

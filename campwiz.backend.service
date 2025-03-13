@@ -1,0 +1,10 @@
+[Unit]
+Description=CampWiz Backend
+After=network.target nginx.service
+
+[Service]
+User=campwiz
+WorkingDirectory=/home/campwiz/backend
+ExecStart=/home/campwiz/backend/campwiz
+[Install]
+WantedBy=multi-user.target

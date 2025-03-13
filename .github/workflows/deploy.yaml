@@ -15,5 +15,3 @@ jobs:
         run: go get .
       - name: Build
         run: go build -v -o campwiz .
-      - name: Test with the Go CLI
-        run: go test

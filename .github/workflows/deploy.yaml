@@ -14,3 +14,18 @@ jobs:
         run: go get .
       - name: Build
         run: go build -v -o campwiz .
+      - name: Setup Deployment Environment
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > id_rsa
+          chmod 600 id_rsa
+      - name: Send Build to Server
+        run: |
+          rsync -Pav --no-perms --omit-dir-times -e "ssh -i id_rsa" campwiz "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.SSH_REMOTE_PATH }}"
+      - name: Restart Campwiz
+        run: |
+          ssh -i id_rsa "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" "cd ${{ secrets.SSH_REMOTE_PATH }} && pm2 restart campwiz-backend"
+      - name: Delete SSH Key
+        run: |
+          rm id_rsa

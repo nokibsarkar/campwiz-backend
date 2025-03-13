@@ -1,8 +1,6 @@
 package consts
 
 import (
-	"log"
-
 	"github.com/spf13/viper"
 )
 
@@ -76,6 +74,5 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	log.Println(Config.Auth.OAuth2.RedirectPath)
 
 }

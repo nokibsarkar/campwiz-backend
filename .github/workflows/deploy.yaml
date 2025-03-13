@@ -4,6 +4,7 @@ on: [push]
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment: Test
     steps:
       - uses: actions/checkout@v4
       - name: Setup Go
@@ -15,6 +16,7 @@ jobs:
       - name: Build
         run: go build -v -o campwiz .
       - name: Setup Deployment Environment
+
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts

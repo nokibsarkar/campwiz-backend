@@ -24,7 +24,7 @@ type IImportSource interface {
 	ImportImageResults(failedImageReason *map[string]string) ([]models.ImageResult, *map[string]string)
 }
 type IDistributionStrategy interface {
-	AssignJuries(tx *gorm.DB, round *models.Round, juries []models.Role) (int, error)
+	AssignJuries(tx *gorm.DB, round *models.Round, juries []models.Role) (success int, fail int, err error)
 }
 
 type TaskRunner struct {
@@ -198,7 +198,7 @@ func (b *TaskRunner) updateStatistics(tx *gorm.DB, round *models.Round, successC
 		TotalEvaluatedSubmissions int
 	}
 	var result Result
-	res := tx.Model(&models.Submission{}).Select("count(submission_id) as total_submissions", "sum(assignment_count) as total_assignments").Where(&models.Submission{CurrentRoundID: round.RoundID}).Find(&result)
+	res := tx.Model(&models.Submission{}).Select("count(submission_id) as total_submissions", "sum(assignment_count) as total_evaluations").Where(&models.Submission{CurrentRoundID: round.RoundID}).Find(&result)
 	if res.Error != nil {
 		return res.Error
 	}
@@ -250,7 +250,7 @@ func (b *TaskRunner) distributeEvaluations(tx *gorm.DB, task *models.Task) (succ
 	}
 	log.Printf("Found %d juries\n", len(juries))
 
-	successCount, err = b.DistributionStrategy.AssignJuries(tx, round, juries)
+	successCount, failedCount, err = b.DistributionStrategy.AssignJuries(tx, round, juries)
 	if err != nil {
 		log.Println("Error assigning juries: ", err)
 		tx.Rollback()

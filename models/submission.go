@@ -63,9 +63,9 @@ type Submission struct {
 	DistributionTaskID *IDType    `json:"distributionTaskId" gorm:"null"`
 	ImportTaskID       IDType     `json:"importTaskId" gorm:"null"`
 	// The number of times the submission has been assigned to the juries
-	AssignmentCount uint8 `json:"assignmentCount" gorm:"default:0"`
+	AssignmentCount uint `json:"assignmentCount" gorm:"default:0"`
 	// The number of times the submission has been evaluated by the juries
-	EvaluationCount uint8 `json:"evaluationCount" gorm:"default:0"`
+	EvaluationCount uint `json:"evaluationCount" gorm:"default:0"`
 	// The task that was used to distribute the submission to the juries
 	DistributionTask *Task `json:"-" gorm:"foreignKey:DistributionTaskID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
 	// The task that was used to import the submission from the external source
@@ -73,5 +73,14 @@ type Submission struct {
 	MediaSubmission
 }
 type SubmissionSelectID struct {
-	SubmissionID IDType
+	SubmissionID types.SubmissionIDType
+}
+type SubmissionStatistics struct {
+	SubmissionID    types.SubmissionIDType
+	AssignmentCount int
+	EvaluationCount int
+}
+type SubmissionStatisticsFetcher interface {
+	// SELECT COUNT(*) AS `AssignmentCount`, SUM(`score` IS NOT NULL) AS EvaluationCount, `submission_id`  FROM `evaluations`  WHERE `round_id` = @current_round_id GROUP BY `submission_id`
+	FetchByRoundID(current_round_id string) ([]SubmissionStatistics, error)
 }

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"log"
 	"nokib/campwiz/consts"
 	"nokib/campwiz/repository"
@@ -66,13 +65,6 @@ func SetupRouter(testing bool) *gin.Engine {
 // @contact.email nokibsarkar@gmail.com
 // @contact.url https://github.com/nokibsarkar
 func main() {
-	RunGormCodeGenerator := false
-	flag.BoolVar(&RunGormCodeGenerator, "gen", false, "Run Gorm Code Generator")
-	flag.Parse()
-	if RunGormCodeGenerator {
-		repository.InitGen()
-		return
-	}
 	preRun()
 	r := SetupRouter(false)
 

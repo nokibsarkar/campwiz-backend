@@ -8,7 +8,6 @@ import (
 
 	"github.com/go-gorm/caches/v4"
 	"gorm.io/driver/mysql"
-	"gorm.io/gen"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -91,18 +90,7 @@ func GetDBWithGen() (q *query.Query, close func()) {
 		raw_db.Close()
 	}
 }
-func InitGen() {
-	g := gen.NewGenerator(gen.Config{
-		OutPath: "query",                                                            // output path
-		Mode:    gen.WithoutContext | gen.WithDefaultQuery | gen.WithQueryInterface, // generate mode
-	})
-	conn, close := GetDB()
-	defer close()
-	g.UseDB(conn)
-	g.ApplyBasic(models.Project{}, models.User{}, models.Campaign{}, models.Round{}, models.Task{}, models.Role{}, models.Submission{}, models.Evaluation{})
-	// Generate the code
-	g.Execute()
-}
+
 func InitDB(testing bool) {
 	conn, close := GetDB()
 	if testing {

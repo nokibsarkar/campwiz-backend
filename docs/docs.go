@@ -1009,6 +1009,75 @@ const docTemplate = `{
                 ],
                 "responses": {}
             }
+        },
+        "/user/callback": {
+            "get": {
+                "description": "Handle the OAuth2 callback",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Handle the OAuth2 callback",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The code from the OAuth2 provider",
+                        "name": "code",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "The state",
+                        "name": "state",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "The base URL",
+                        "name": "baseURL",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.ResponseSingle-routes_RedirectResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/login": {
+            "get": {
+                "description": "Redirect to the OAuth2 login",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Redirect to the OAuth2 login",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The callback URL",
+                        "name": "callback",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.ResponseSingle-routes_RedirectResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1838,6 +1907,15 @@ const docTemplate = `{
                 "TaskTypeDistributeEvaluations"
             ]
         },
+        "routes.RedirectResponse": {
+            "type": "object",
+            "properties": {
+                "redirect": {
+                    "description": "Redirect is the URL to redirect to",
+                    "type": "string"
+                }
+            }
+        },
         "routes.ResponseList-models_Campaign": {
             "type": "object",
             "properties": {
@@ -1976,6 +2054,14 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/models.Task"
+                }
+            }
+        },
+        "routes.ResponseSingle-routes_RedirectResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/routes.RedirectResponse"
                 }
             }
         },
@@ -2292,7 +2378,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1",
-	Host:             "localhost:8080",
+	Host:             "localhost:8081",
 	BasePath:         "/api/v2",
 	Schemes:          []string{"http", "https"},
 	Title:            "Campwiz API",

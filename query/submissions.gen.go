@@ -40,8 +40,8 @@ func newSubmission(db *gorm.DB, opts ...gen.DOOption) submission {
 	_submission.CreatedAtExternal = field.NewTime(tableName, "created_at_external")
 	_submission.DistributionTaskID = field.NewString(tableName, "distribution_task_id")
 	_submission.ImportTaskID = field.NewString(tableName, "import_task_id")
-	_submission.AssignmentCount = field.NewUint8(tableName, "assignment_count")
-	_submission.EvaluationCount = field.NewUint8(tableName, "evaluation_count")
+	_submission.AssignmentCount = field.NewUint(tableName, "assignment_count")
+	_submission.EvaluationCount = field.NewUint(tableName, "evaluation_count")
 	_submission.MediaType = field.NewString(tableName, "media_type")
 	_submission.ThumbURL = field.NewString(tableName, "thumb_url")
 	_submission.ThumbWidth = field.NewUint64(tableName, "thumb_width")
@@ -219,8 +219,8 @@ type submission struct {
 	CreatedAtExternal  field.Time
 	DistributionTaskID field.String
 	ImportTaskID       field.String
-	AssignmentCount    field.Uint8
-	EvaluationCount    field.Uint8
+	AssignmentCount    field.Uint
+	EvaluationCount    field.Uint
 	MediaType          field.String
 	ThumbURL           field.String
 	ThumbWidth         field.Uint64
@@ -274,8 +274,8 @@ func (s *submission) updateTableName(table string) *submission {
 	s.CreatedAtExternal = field.NewTime(table, "created_at_external")
 	s.DistributionTaskID = field.NewString(table, "distribution_task_id")
 	s.ImportTaskID = field.NewString(table, "import_task_id")
-	s.AssignmentCount = field.NewUint8(table, "assignment_count")
-	s.EvaluationCount = field.NewUint8(table, "evaluation_count")
+	s.AssignmentCount = field.NewUint(table, "assignment_count")
+	s.EvaluationCount = field.NewUint(table, "evaluation_count")
 	s.MediaType = field.NewString(table, "media_type")
 	s.ThumbURL = field.NewString(table, "thumb_url")
 	s.ThumbWidth = field.NewUint64(table, "thumb_width")

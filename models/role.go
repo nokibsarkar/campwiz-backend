@@ -1,6 +1,8 @@
 package models
 
-import "nokib/campwiz/consts"
+import (
+	"nokib/campwiz/consts"
+)
 
 type RoleType string
 
@@ -53,4 +55,16 @@ func (r *RoleType) GetPermission() consts.PermissionGroup {
 		return consts.PermissionGroupJury
 	}
 	return consts.PermissionGroupUSER
+}
+
+type JuryStatistics struct {
+	JudgeID        IDType `json:"judgeId"`
+	TotalAssigned  int    `json:"totalAssigned"`
+	TotalEvaluated int    `json:"totalEvaluated"`
+}
+type JuryStatisticsUpdater interface {
+	// UPDATE `jury` SET
+	UpdateJuryStatistics(roundID string) error
+	// SELECT COUNT(*) AS TotalAssigned, SUM(IF(evaluated_at IS NOT NULL, 1, 0)) AS TotalEvaluated, judge_id FROM `evaluations` WHERE round_id = @roundID GROUP BY judge_id
+	GetJuryStatistics(roundID string) ([]JuryStatistics, error)
 }

@@ -86,7 +86,7 @@ type RoundWritable struct {
 	DependsOnRoundID *string        `json:"dependsOnRoundId" gorm:"default:null"`
 	DependsOnRound   *Round         `json:"-" gorm:"foreignKey:DependsOnRoundID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	Serial           int            `json:"serial" gorm:"default:0"`
-	Quorum           uint8          `json:"quorum" gorm:"default:1"`
+	Quorum           uint           `json:"quorum" gorm:"default:1"`
 	Type             EvaluationType `json:"type"`
 	RoundRestrictions
 }
@@ -116,4 +116,13 @@ type RoundFilter struct {
 type RoundResult struct {
 	AverageScore    float64 `json:"averageScore"`
 	SubmissionCount int     `json:"submissionCount"`
+}
+type RoundStatistics struct {
+	RoundID         IDType
+	AssignmentCount int
+	EvaluationCount int
+}
+type RoundStatisticsFetcher interface {
+	// SELECT SUM(`assignment_count`) AS `AssignmentCount`, SUM(`evaluation_count`) AS EvaluationCount, `current_round_id` AS `round_id` FROM `submissions` WHERE `current_round_id` = @current_round_id
+	FetchByRoundID(round_id string) ([]RoundStatistics, error)
 }

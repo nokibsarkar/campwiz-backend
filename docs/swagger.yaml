@@ -615,6 +615,12 @@ definitions:
     x-enum-varnames:
     - TaskTypeImportFromCommons
     - TaskTypeDistributeEvaluations
+  routes.RedirectResponse:
+    properties:
+      redirect:
+        description: Redirect is the URL to redirect to
+        type: string
+    type: object
   routes.ResponseList-models_Campaign:
     properties:
       data:
@@ -704,6 +710,11 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/models.Task'
+    type: object
+  routes.ResponseSingle-routes_RedirectResponse:
+    properties:
+      data:
+        $ref: '#/definitions/routes.RedirectResponse'
     type: object
   routes.ResponseSingle-services_TaskResponse:
     properties:
@@ -910,7 +921,7 @@ definitions:
       userId:
         type: string
     type: object
-host: localhost:8080
+host: localhost:8081
 info:
   contact:
     email: nokibsarkar@gmail.com
@@ -1566,6 +1577,51 @@ paths:
       summary: Get a task by ID but stream the response
       tags:
       - Task
+  /user/callback:
+    get:
+      description: Handle the OAuth2 callback
+      parameters:
+      - description: The code from the OAuth2 provider
+        in: query
+        name: code
+        required: true
+        type: string
+      - description: The state
+        in: query
+        name: state
+        type: string
+      - description: The base URL
+        in: query
+        name: baseURL
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.ResponseSingle-routes_RedirectResponse'
+      summary: Handle the OAuth2 callback
+      tags:
+      - User
+  /user/login:
+    get:
+      description: Redirect to the OAuth2 login
+      parameters:
+      - description: The callback URL
+        in: query
+        name: callback
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.ResponseSingle-routes_RedirectResponse'
+      summary: Redirect to the OAuth2 login
+      tags:
+      - User
 produces:
 - application/json
 schemes:

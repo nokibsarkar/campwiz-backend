@@ -230,7 +230,9 @@ func (r *RoundService) UpdateRoundDetails(roundID models.IDType, req *RoundReque
 		RoundID:    &roundID,
 		CampaignID: &round.CampaignID,
 		Type:       &juryType,
+		ProjectID:  round.ProjectID,
 	}
+	log.Print("Filter: ", filter)
 	addedRoles, removedRoles, err := role_service.CalculateRoleDifference(tx, models.RoleTypeJury, filter, req.Juries)
 	if err != nil {
 		log.Println(err)
@@ -238,7 +240,7 @@ func (r *RoundService) UpdateRoundDetails(roundID models.IDType, req *RoundReque
 		return nil, err
 	}
 	if len(addedRoles) > 0 {
-		res := tx.Save(addedRoles)
+		res := tx.Create(addedRoles)
 		if res.Error != nil {
 			tx.Rollback()
 			return nil, res.Error
@@ -330,9 +332,9 @@ func (r *RoundService) SimulateDistributeEvaluations(currentUserID models.IDType
 	}
 	tx.Commit()
 	log.Println("Task created with ID: ", task.TaskID)
-	strategy := distributionstrategy.NewRoundRobinDistributionStrategySimulator(task.TaskID)
-	runner := importservice.NewDistributionTaskRunner(task.TaskID, strategy)
-	go runner.Run()
+	// strategy := distributionstrategy.NewRoundRobinDistributionStrategySimulator(task.TaskID)
+	// runner := importservice.NewDistributionTaskRunner(task.TaskID, strategy)
+	// go runner.Run()
 	return task, nil
 }
 func (r *RoundService) GetResults(roundID models.IDType) (results []models.EvaluationResult, err error) {

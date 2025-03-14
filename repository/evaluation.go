@@ -68,7 +68,7 @@ func (r *EvaluationRepository) ListAllEvaluations(tx *gorm.DB, filter *models.Ev
 	return evaluations, result.Error
 }
 func (r *EvaluationRepository) UpdateEvaluation(tx *gorm.DB, evaluation *models.Evaluation) error {
-	result := tx.Save(evaluation)
+	result := tx.Updates(evaluation)
 	return result.Error
 }
 func (r *EvaluationRepository) ListSubmissionIDWithEvaluationCount(tx *gorm.DB, filter *models.EvaluationFilter) ([]models.NewEvaluationRequest, error) {

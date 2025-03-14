@@ -6,6 +6,7 @@ package query
 
 import (
 	"context"
+	"strings"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -17,6 +18,9 @@ import (
 	"gorm.io/plugin/dbresolver"
 
 	"nokib/campwiz/models"
+	"nokib/campwiz/repository/cache"
+
+	"nokib/campwiz/models/types"
 )
 
 func newEvaluation(db *gorm.DB, opts ...gen.DOOption) evaluation {
@@ -670,6 +674,56 @@ type IEvaluationDo interface {
 	Returning(value interface{}, columns ...string) IEvaluationDo
 	UnderlyingDB() *gorm.DB
 	schema.Tabler
+
+	DistributeAssigments(judge_id models.IDType, limit int) (rowsAffected int64, err error)
+	CountAssignedEvaluations() (result []cache.Evaluation, err error)
+	SelectUnAssignedJudges(submission_id types.SubmissionIDType, limit int) (result []*cache.Evaluation, err error)
+}
+
+// UPDATE `evaluations` SET `judge_id` = @judge_id WHERE `evaluations`.`judge_id` IS NULL AND `evaluations`.`evaluation_id` IN (SELECT MAX(`evaluation_id`) FROM `evaluations` WHERE `submission_id` NOT IN (SELECT DISTINCT submission_id FROM evaluations WHERE `judge_id` = @judge_id) AND `judge_id` IS NULL GROUP BY `submission_id` LIMIT @limit)
+func (e evaluationDo) DistributeAssigments(judge_id models.IDType, limit int) (rowsAffected int64, err error) {
+	var params []interface{}
+
+	var generateSQL strings.Builder
+	params = append(params, judge_id)
+	params = append(params, judge_id)
+	params = append(params, limit)
+	generateSQL.WriteString("UPDATE `evaluations` SET `judge_id` = ? WHERE `evaluations`.`judge_id` IS NULL AND `evaluations`.`evaluation_id` IN (SELECT MAX(`evaluation_id`) FROM `evaluations` WHERE `submission_id` NOT IN (SELECT DISTINCT submission_id FROM evaluations WHERE `judge_id` = ?) AND `judge_id` IS NULL GROUP BY `submission_id` LIMIT ?) ")
+
+	var executeSQL *gorm.DB
+	executeSQL = e.UnderlyingDB().Exec(generateSQL.String(), params...) // ignore_security_alert
+	rowsAffected = executeSQL.RowsAffected
+	err = executeSQL.Error
+
+	return
+}
+
+// SELECT COUNT(`evaluation_id`) AS Count, `judge_id` FROM `evaluations` GROUP BY `judge_id`
+func (e evaluationDo) CountAssignedEvaluations() (result []cache.Evaluation, err error) {
+	var generateSQL strings.Builder
+	generateSQL.WriteString("SELECT COUNT(`evaluation_id`) AS Count, `judge_id` FROM `evaluations` GROUP BY `judge_id` ")
+
+	var executeSQL *gorm.DB
+	executeSQL = e.UnderlyingDB().Raw(generateSQL.String()).Find(&result) // ignore_security_alert
+	err = executeSQL.Error
+
+	return
+}
+
+// SELECT * FROM `evaluations` WHERE `judge_id` NOT IN (SELECT judge_id FROM evaluations WHERE `submission_id` = @submission_id AND `judge_id` IS NOT NULL) LIMIT @limit
+func (e evaluationDo) SelectUnAssignedJudges(submission_id types.SubmissionIDType, limit int) (result []*cache.Evaluation, err error) {
+	var params []interface{}
+
+	var generateSQL strings.Builder
+	params = append(params, submission_id)
+	params = append(params, limit)
+	generateSQL.WriteString("SELECT * FROM `evaluations` WHERE `judge_id` NOT IN (SELECT judge_id FROM evaluations WHERE `submission_id` = ? AND `judge_id` IS NOT NULL) LIMIT ? ")
+
+	var executeSQL *gorm.DB
+	executeSQL = e.UnderlyingDB().Raw(generateSQL.String(), params...).Find(&result) // ignore_security_alert
+	err = executeSQL.Error
+
+	return
 }
 
 func (e evaluationDo) Debug() IEvaluationDo {

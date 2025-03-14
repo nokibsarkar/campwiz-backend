@@ -16,6 +16,22 @@ import (
 	"gorm.io/gorm"
 )
 
+type RedirectResponse struct {
+	// Redirect is the URL to redirect to
+	Redirect string `json:"redirect"`
+}
+
+// HandleOAuth2Callback godoc
+// @Summary Handle the OAuth2 callback
+// @Description Handle the OAuth2 callback
+// @Produce  json
+// @Success 200 {object} ResponseSingle[RedirectResponse]
+// @Router /user/callback [get]
+// @Tags User
+// @Param code query string true "The code from the OAuth2 provider"
+// @Param state query string false "The state"
+// @Param baseURL query string false "The base URL"
+// @Error 400 {object} ResponseError
 func HandleOAuth2Callback(c *gin.Context) {
 	query := c.Request.URL.Query()
 	code := query.Get("code")
@@ -117,9 +133,19 @@ func HandleOAuth2Callback(c *gin.Context) {
 	}
 	c.SetCookie(AuthenticationCookieName, newAccessToken, consts.Config.Auth.Expiry*60, "/", "", false, false)
 	c.SetCookie(RefreshCookieName, newRefreshToken, consts.Config.Auth.Refresh*60, "/", "", false, false)
-	c.Redirect(302, state)
+	c.JSON(200, ResponseSingle[RedirectResponse]{Data: RedirectResponse{Redirect: state}})
 	tx.Commit()
 }
+
+// RedirectForLogin godoc
+// @Summary Redirect to the OAuth2 login
+// @Description Redirect to the OAuth2 login
+// @Produce  json
+// @Success 200 {object} ResponseSingle[RedirectResponse]
+// @Router /user/login [get]
+// @Tags User
+// @Param callback query string false "The callback URL"
+// @Error 400 {object} ResponseError
 func RedirectForLogin(c *gin.Context) {
 	oauth2_service := services.NewOAuth2Service()
 	callback, ok := c.GetQuery("callback")
@@ -127,7 +153,7 @@ func RedirectForLogin(c *gin.Context) {
 		callback = "/"
 	}
 	redirect_uri := oauth2_service.Init(callback)
-	c.Redirect(302, redirect_uri)
+	c.JSON(200, ResponseSingle[RedirectResponse]{Data: RedirectResponse{Redirect: redirect_uri}})
 }
 
 func NewUserAuthenticationRoutes(parent *gin.RouterGroup) {

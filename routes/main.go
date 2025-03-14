@@ -46,9 +46,10 @@ func GetCurrentUser(c *gin.Context) *models.User {
 func NewRoutes(nonAPIParent *gin.RouterGroup) *gin.RouterGroup {
 	r := nonAPIParent.Group("/api/v2")
 	authenticatorService := NewAuthenticationService()
+
+	NewUserAuthenticationRoutes(r)
 	r.Use(authenticatorService.Authenticate)
 	NewPermissionRoutes(nonAPIParent)
-	NewUserAuthenticationRoutes(nonAPIParent)
 	NewCampaignRoutes(r)
 	NewRoundRoutes(r)
 	NewSubmissionRoutes(r)

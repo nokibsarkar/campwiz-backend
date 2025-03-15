@@ -79,7 +79,7 @@ func ImportFromCommons(c *gin.Context, sess *cache.Session) {
 		c.JSON(400, ResponseError{Detail: "Invalid request : Round ID is required"})
 	}
 	req := &services.ImportFromCommonsPayload{}
-	err := c.ShouldBind(req)
+	err := c.ShouldBindBodyWithJSON(req)
 	if err != nil {
 		c.JSON(400, ResponseError{Detail: "Error Decoding : " + err.Error()})
 		return

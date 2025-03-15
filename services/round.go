@@ -30,7 +30,7 @@ type DistributionRequest struct {
 }
 type ImportFromCommonsPayload struct {
 	// Categories from which images will be fetched
-	Categories []string `json:"categories"`
+	Categories []string `json:"categories" binding:"required"`
 }
 
 type Jury struct {
@@ -69,6 +69,8 @@ func (s *RoundService) CreateRound(request *RoundRequest) (*models.Round, error)
 		CreatedByID:   request.CreatedByID,
 		CampaignID:    campaign.CampaignID,
 		RoundWritable: request.RoundWritable,
+		Status:        models.RoundStatusPending,
+		ProjectID:     campaign.ProjectID,
 	}
 	round, err = round_repo.Create(tx, round)
 	if err != nil {

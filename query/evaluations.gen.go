@@ -43,6 +43,7 @@ func newEvaluation(db *gorm.DB, opts ...gen.DOOption) evaluation {
 	_evaluation.CreatedAt = field.NewTime(tableName, "created_at")
 	_evaluation.UpdatedAt = field.NewTime(tableName, "updated_at")
 	_evaluation.EvaluatedAt = field.NewTime(tableName, "evaluated_at")
+	_evaluation.SkipExpirationAt = field.NewTime(tableName, "skip_expiration_at")
 	_evaluation.DistributionTaskID = field.NewString(tableName, "distribution_task_id")
 	_evaluation.Submission = evaluationBelongsToSubmission{
 		db: db.Session(&gorm.Session{}),
@@ -203,10 +204,10 @@ func newEvaluation(db *gorm.DB, opts ...gen.DOOption) evaluation {
 				RelationField: field.NewRelation("Submission.Campaign.Rounds", "models.Round"),
 			},
 		},
-		CurrentRound: struct {
+		Round: struct {
 			field.RelationField
 		}{
-			RelationField: field.NewRelation("Submission.CurrentRound", "models.Round"),
+			RelationField: field.NewRelation("Submission.Round", "models.Round"),
 		},
 		DistributionTask: struct {
 			field.RelationField
@@ -261,6 +262,7 @@ type evaluation struct {
 	CreatedAt          field.Time
 	UpdatedAt          field.Time
 	EvaluatedAt        field.Time
+	SkipExpirationAt   field.Time
 	DistributionTaskID field.String
 	Submission         evaluationBelongsToSubmission
 
@@ -295,6 +297,7 @@ func (e *evaluation) updateTableName(table string) *evaluation {
 	e.CreatedAt = field.NewTime(table, "created_at")
 	e.UpdatedAt = field.NewTime(table, "updated_at")
 	e.EvaluatedAt = field.NewTime(table, "evaluated_at")
+	e.SkipExpirationAt = field.NewTime(table, "skip_expiration_at")
 	e.DistributionTaskID = field.NewString(table, "distribution_task_id")
 
 	e.fillFieldMap()
@@ -312,7 +315,7 @@ func (e *evaluation) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (e *evaluation) fillFieldMap() {
-	e.fieldMap = make(map[string]field.Expr, 16)
+	e.fieldMap = make(map[string]field.Expr, 17)
 	e.fieldMap["evaluation_id"] = e.EvaluationID
 	e.fieldMap["submission_id"] = e.SubmissionID
 	e.fieldMap["judge_id"] = e.JudgeID
@@ -325,6 +328,7 @@ func (e *evaluation) fillFieldMap() {
 	e.fieldMap["created_at"] = e.CreatedAt
 	e.fieldMap["updated_at"] = e.UpdatedAt
 	e.fieldMap["evaluated_at"] = e.EvaluatedAt
+	e.fieldMap["skip_expiration_at"] = e.SkipExpirationAt
 	e.fieldMap["distribution_task_id"] = e.DistributionTaskID
 
 }
@@ -392,7 +396,7 @@ type evaluationBelongsToSubmission struct {
 			field.RelationField
 		}
 	}
-	CurrentRound struct {
+	Round struct {
 		field.RelationField
 	}
 	DistributionTask struct {

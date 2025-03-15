@@ -123,6 +123,6 @@ type RoundStatistics struct {
 	EvaluationCount int
 }
 type RoundStatisticsFetcher interface {
-	// SELECT SUM(`assignment_count`) AS `AssignmentCount`, SUM(`evaluation_count`) AS EvaluationCount, `current_round_id` AS `round_id` FROM `submissions` WHERE `current_round_id` = @current_round_id
+	// SELECT SUM(`assignment_count`) AS `AssignmentCount`, SUM(`evaluation_count`) AS EvaluationCount, `round_id` AS `round_id` FROM `submissions` WHERE `round_id` = @round_id
 	FetchByRoundID(round_id string) ([]RoundStatistics, error)
 }

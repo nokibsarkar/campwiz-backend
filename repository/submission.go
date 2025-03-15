@@ -30,7 +30,7 @@ func (r *SubmissionRepository) ListAllSubmissions(tx *gorm.DB, filter *models.Su
 			condition.CampaignID = filter.CampaignID
 		}
 		if filter.RoundID != "" {
-			condition.CurrentRoundID = filter.RoundID
+			condition.RoundID = filter.RoundID
 		}
 		if filter.ParticipantID != "" {
 			condition.ParticipantID = filter.ParticipantID
@@ -55,7 +55,7 @@ func (r *SubmissionRepository) GetSubmissionCount(tx *gorm.DB, filter *models.Su
 			condition.CampaignID = filter.CampaignID
 		}
 		if filter.RoundID != "" {
-			condition.CurrentRoundID = filter.RoundID
+			condition.RoundID = filter.RoundID
 		}
 		if filter.ParticipantID != "" {
 			condition.ParticipantID = filter.ParticipantID
@@ -73,7 +73,7 @@ func (r *SubmissionRepository) ListAllSubmissionIDs(tx *gorm.DB, filter *models.
 			condition.CampaignID = filter.CampaignID
 		}
 		if filter.RoundID != "" {
-			condition.CurrentRoundID = filter.RoundID
+			condition.RoundID = filter.RoundID
 		}
 		if filter.ParticipantID != "" {
 			condition.ParticipantID = filter.ParticipantID
@@ -110,7 +110,7 @@ func (r *SubmissionRepository) FindNextUnevaluatedSubmissionForPublicJury(tx *go
 	q := query.Use(tx)
 	s := q.Submission
 	submission, error := (s.
-		Where(s.CurrentRoundID.Eq(round.RoundID.String())).
+		Where(s.RoundID.Eq(round.RoundID.String())).
 		Where(s.SubmissionID.NotIn(alreadyCoveredSubmissionIDs...)).
 		Where(s.EvaluationCount.Lt(round.Quorum)).
 		Order(s.EvaluationCount).

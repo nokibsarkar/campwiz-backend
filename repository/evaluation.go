@@ -25,15 +25,18 @@ func (r *EvaluationRepository) ListAllEvaluations(tx *gorm.DB, filter *models.Ev
 	condition := &models.Evaluation{}
 	stmt := tx
 	if filter != nil {
+		if filter.IncludeSubmission {
+			stmt = tx.Preload("Submission")
+		}
 		s := &models.Submission{}
-		if filter.RoundID != "" || filter.CampaignID != "" {
-			if filter.RoundID != "" {
-				s.CurrentRoundID = filter.RoundID
-			}
+		if filter.CampaignID != "" {
 			if filter.CampaignID != "" {
 				s.CampaignID = filter.CampaignID
 			}
-			stmt = tx.Joins("Submission", tx.Where(s))
+			stmt = stmt.Joins("Submission", tx.Where(s))
+		}
+		if filter.RoundID != "" {
+			condition.RoundID = filter.RoundID
 		}
 		if filter.ParticipantID != "" {
 			condition.ParticipantID = filter.ParticipantID

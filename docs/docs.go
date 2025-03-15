@@ -223,6 +223,24 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "boolean",
+                        "description": "whether to include the submissions that were evaluated",
+                        "name": "includeEvaluated",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "whether to include the submissions that were skipped",
+                        "name": "includeSkipped",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Whether to embed the submission object",
+                        "name": "includeSubmission",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
                         "name": "juryId",
                         "in": "query"
@@ -1397,6 +1415,13 @@ const docTemplate = `{
                 "serial": {
                     "type": "integer"
                 },
+                "skipExpirationAt": {
+                    "description": "SkipExpirationAt is the time when the skip request will expire",
+                    "type": "string"
+                },
+                "submission": {
+                    "$ref": "#/definitions/models.Submission"
+                },
                 "submissionId": {
                     "type": "string"
                 },
@@ -2208,6 +2233,9 @@ const docTemplate = `{
         },
         "services.ImportFromCommonsPayload": {
             "type": "object",
+            "required": [
+                "categories"
+            ],
             "properties": {
                 "categories": {
                     "description": "Categories from which images will be fetched",

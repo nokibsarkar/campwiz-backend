@@ -35,7 +35,7 @@ func newSubmission(db *gorm.DB, opts ...gen.DOOption) submission {
 	_submission.Author = field.NewString(tableName, "author")
 	_submission.SubmittedByID = field.NewString(tableName, "submitted_by_id")
 	_submission.ParticipantID = field.NewString(tableName, "participant_id")
-	_submission.CurrentRoundID = field.NewString(tableName, "current_round_id")
+	_submission.RoundID = field.NewString(tableName, "round_id")
 	_submission.SubmittedAt = field.NewTime(tableName, "submitted_at")
 	_submission.CreatedAtExternal = field.NewTime(tableName, "created_at_external")
 	_submission.DistributionTaskID = field.NewString(tableName, "distribution_task_id")
@@ -174,10 +174,10 @@ func newSubmission(db *gorm.DB, opts ...gen.DOOption) submission {
 		},
 	}
 
-	_submission.CurrentRound = submissionBelongsToCurrentRound{
+	_submission.Round = submissionBelongsToRound{
 		db: db.Session(&gorm.Session{}),
 
-		RelationField: field.NewRelation("CurrentRound", "models.Round"),
+		RelationField: field.NewRelation("Round", "models.Round"),
 	}
 
 	_submission.DistributionTask = submissionBelongsToDistributionTask{
@@ -214,7 +214,7 @@ type submission struct {
 	Author             field.String
 	SubmittedByID      field.String
 	ParticipantID      field.String
-	CurrentRoundID     field.String
+	RoundID            field.String
 	SubmittedAt        field.Time
 	CreatedAtExternal  field.Time
 	DistributionTaskID field.String
@@ -240,7 +240,7 @@ type submission struct {
 
 	Campaign submissionBelongsToCampaign
 
-	CurrentRound submissionBelongsToCurrentRound
+	Round submissionBelongsToRound
 
 	DistributionTask submissionBelongsToDistributionTask
 
@@ -269,7 +269,7 @@ func (s *submission) updateTableName(table string) *submission {
 	s.Author = field.NewString(table, "author")
 	s.SubmittedByID = field.NewString(table, "submitted_by_id")
 	s.ParticipantID = field.NewString(table, "participant_id")
-	s.CurrentRoundID = field.NewString(table, "current_round_id")
+	s.RoundID = field.NewString(table, "round_id")
 	s.SubmittedAt = field.NewTime(table, "submitted_at")
 	s.CreatedAtExternal = field.NewTime(table, "created_at_external")
 	s.DistributionTaskID = field.NewString(table, "distribution_task_id")
@@ -314,7 +314,7 @@ func (s *submission) fillFieldMap() {
 	s.fieldMap["author"] = s.Author
 	s.fieldMap["submitted_by_id"] = s.SubmittedByID
 	s.fieldMap["participant_id"] = s.ParticipantID
-	s.fieldMap["current_round_id"] = s.CurrentRoundID
+	s.fieldMap["round_id"] = s.RoundID
 	s.fieldMap["submitted_at"] = s.SubmittedAt
 	s.fieldMap["created_at_external"] = s.CreatedAtExternal
 	s.fieldMap["distribution_task_id"] = s.DistributionTaskID
@@ -601,13 +601,13 @@ func (a submissionBelongsToCampaignTx) Count() int64 {
 	return a.tx.Count()
 }
 
-type submissionBelongsToCurrentRound struct {
+type submissionBelongsToRound struct {
 	db *gorm.DB
 
 	field.RelationField
 }
 
-func (a submissionBelongsToCurrentRound) Where(conds ...field.Expr) *submissionBelongsToCurrentRound {
+func (a submissionBelongsToRound) Where(conds ...field.Expr) *submissionBelongsToRound {
 	if len(conds) == 0 {
 		return &a
 	}
@@ -620,27 +620,27 @@ func (a submissionBelongsToCurrentRound) Where(conds ...field.Expr) *submissionB
 	return &a
 }
 
-func (a submissionBelongsToCurrentRound) WithContext(ctx context.Context) *submissionBelongsToCurrentRound {
+func (a submissionBelongsToRound) WithContext(ctx context.Context) *submissionBelongsToRound {
 	a.db = a.db.WithContext(ctx)
 	return &a
 }
 
-func (a submissionBelongsToCurrentRound) Session(session *gorm.Session) *submissionBelongsToCurrentRound {
+func (a submissionBelongsToRound) Session(session *gorm.Session) *submissionBelongsToRound {
 	a.db = a.db.Session(session)
 	return &a
 }
 
-func (a submissionBelongsToCurrentRound) Model(m *models.Submission) *submissionBelongsToCurrentRoundTx {
-	return &submissionBelongsToCurrentRoundTx{a.db.Model(m).Association(a.Name())}
+func (a submissionBelongsToRound) Model(m *models.Submission) *submissionBelongsToRoundTx {
+	return &submissionBelongsToRoundTx{a.db.Model(m).Association(a.Name())}
 }
 
-type submissionBelongsToCurrentRoundTx struct{ tx *gorm.Association }
+type submissionBelongsToRoundTx struct{ tx *gorm.Association }
 
-func (a submissionBelongsToCurrentRoundTx) Find() (result *models.Round, err error) {
+func (a submissionBelongsToRoundTx) Find() (result *models.Round, err error) {
 	return result, a.tx.Find(&result)
 }
 
-func (a submissionBelongsToCurrentRoundTx) Append(values ...*models.Round) (err error) {
+func (a submissionBelongsToRoundTx) Append(values ...*models.Round) (err error) {
 	targetValues := make([]interface{}, len(values))
 	for i, v := range values {
 		targetValues[i] = v
@@ -648,7 +648,7 @@ func (a submissionBelongsToCurrentRoundTx) Append(values ...*models.Round) (err 
 	return a.tx.Append(targetValues...)
 }
 
-func (a submissionBelongsToCurrentRoundTx) Replace(values ...*models.Round) (err error) {
+func (a submissionBelongsToRoundTx) Replace(values ...*models.Round) (err error) {
 	targetValues := make([]interface{}, len(values))
 	for i, v := range values {
 		targetValues[i] = v
@@ -656,7 +656,7 @@ func (a submissionBelongsToCurrentRoundTx) Replace(values ...*models.Round) (err
 	return a.tx.Replace(targetValues...)
 }
 
-func (a submissionBelongsToCurrentRoundTx) Delete(values ...*models.Round) (err error) {
+func (a submissionBelongsToRoundTx) Delete(values ...*models.Round) (err error) {
 	targetValues := make([]interface{}, len(values))
 	for i, v := range values {
 		targetValues[i] = v
@@ -664,11 +664,11 @@ func (a submissionBelongsToCurrentRoundTx) Delete(values ...*models.Round) (err 
 	return a.tx.Delete(targetValues...)
 }
 
-func (a submissionBelongsToCurrentRoundTx) Clear() error {
+func (a submissionBelongsToRoundTx) Clear() error {
 	return a.tx.Clear()
 }
 
-func (a submissionBelongsToCurrentRoundTx) Count() int64 {
+func (a submissionBelongsToRoundTx) Count() int64 {
 	return a.tx.Count()
 }
 

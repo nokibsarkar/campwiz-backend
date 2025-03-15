@@ -53,13 +53,13 @@ type Submission struct {
 	// The User who submitted the article on behalf of the participant
 	SubmittedByID      IDType     `json:"submittedById" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	ParticipantID      IDType     `json:"participantId" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	CurrentRoundID     IDType     `json:"currentRoundId" gorm:"index;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	RoundID            IDType     `json:"currentRoundId" gorm:"index"`
 	SubmittedAt        time.Time  `json:"submittedAt" gorm:"type:datetime"`
 	Participant        User       `json:"-" gorm:"foreignKey:ParticipantID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	Submitter          User       `json:"-" gorm:"foreignKey:SubmittedByID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	Campaign           *Campaign  `json:"-"  gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	CreatedAtExternal  *time.Time `json:"createdAtServer"`
-	CurrentRound       *Round     `json:"-" gorm:"foreignKey:CurrentRoundID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Round              *Round     `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	DistributionTaskID *IDType    `json:"distributionTaskId" gorm:"null"`
 	ImportTaskID       IDType     `json:"importTaskId" gorm:"null"`
 	// The number of times the submission has been assigned to the juries
@@ -81,6 +81,6 @@ type SubmissionStatistics struct {
 	EvaluationCount int
 }
 type SubmissionStatisticsFetcher interface {
-	// SELECT COUNT(*) AS `AssignmentCount`, SUM(`score` IS NOT NULL) AS EvaluationCount, `submission_id`  FROM `evaluations`  WHERE `round_id` = @current_round_id GROUP BY `submission_id`
-	FetchByRoundID(current_round_id string) ([]SubmissionStatistics, error)
+	// SELECT COUNT(*) AS `AssignmentCount`, SUM(`score` IS NOT NULL) AS EvaluationCount, `submission_id`  FROM `evaluations`  WHERE `round_id` = @round_id GROUP BY `submission_id`
+	FetchByRoundID(round_id string) ([]SubmissionStatistics, error)
 }

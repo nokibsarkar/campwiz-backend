@@ -127,3 +127,8 @@ func (service *RoleService) FetchChangeRoles(tx *gorm.DB, roleType models.RoleTy
 	}
 	return currentRoles, nil
 }
+
+func (service *RoleService) ListRoles(tx *gorm.DB, filter *models.RoleFilter) ([]models.Role, error) {
+	role_repo := repository.NewRoleRepository()
+	return role_repo.ListAllRoles(tx, filter)
+}

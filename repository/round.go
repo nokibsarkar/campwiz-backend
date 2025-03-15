@@ -50,7 +50,7 @@ func (r *RoundRepository) GetResults(conn *gorm.DB, roundID models.IDType) (resu
 	results = []models.EvaluationResult{}
 	stmt := (conn.Model(&models.Submission{}).
 		Select("score as AverageScore, count(submission_id) as SubmissionCount").
-		Where(&models.Submission{CurrentRoundID: roundID}).Group("score").Order("score").
+		Where(&models.Submission{RoundID: roundID}).Group("score").Order("score").
 		Limit(100).
 		Find(&results))
 	if stmt.Error != nil {
@@ -70,7 +70,7 @@ func (r *RoundRepository) GetResultsV2(conn *gorm.DB, roundID models.IDType) (re
 	// }
 	stmt := (conn.Model(&models.Submission{}).
 		Select("score as AverageScore, count(submission_id) as SubmissionCount").
-		Where(&models.Submission{CurrentRoundID: roundID}).Group("score").Order("score").
+		Where(&models.Submission{RoundID: roundID}).Group("score").Order("score").
 		Limit(100).
 		Find(&results))
 	if stmt.Error != nil {

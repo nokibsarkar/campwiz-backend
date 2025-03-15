@@ -28,12 +28,19 @@ func ListEvaluations(c *gin.Context, sess *cache.Session) {
 		return
 	}
 	evaluation_service := services.NewEvaluationService()
-	evaluations, err := evaluation_service.ListEvaluations(filter)
+	evaluations, err := evaluation_service.GetNextEvaluations(sess.UserID, filter)
 	if err != nil {
 		c.JSON(400, ResponseError{Detail: "Error listing evaluations : " + err.Error()})
 		return
 	}
-	c.JSON(200, ResponseList[models.Evaluation]{Data: evaluations})
+	previousToken := ""
+	nextToken := ""
+	if len(evaluations) > 0 {
+		previousToken = evaluations[0].EvaluationID.String()
+		nextToken = evaluations[len(evaluations)-1].EvaluationID.String()
+	}
+
+	c.JSON(200, ResponseList[models.Evaluation]{Data: evaluations, ContinueToken: nextToken, PreviousToken: previousToken})
 }
 
 // Update Evaluation godoc

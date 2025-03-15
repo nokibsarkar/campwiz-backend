@@ -24,12 +24,14 @@ type Evaluation struct {
 	Score         *ScoreType             `json:"score" gorm:"default:null;constraint:check:(score >= 0 AND score <= 100)"`
 	Comment       string                 `json:"comment" gorm:"default:null"`
 	Serial        uint                   `json:"serial"`
-	Submission    *Submission            `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Submission    *Submission            `json:"submission" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	Participant   *User                  `json:"-" gorm:"foreignKey:ParticipantID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	Judge         *Role                  `json:"-" gorm:"foreignKey:JudgeID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	CreatedAt     *time.Time             `json:"createdAt" gorm:"autoCreateTime"`
 	UpdatedAt     *time.Time             `json:"updatedAt" gorm:"autoUpdateTime"`
 	EvaluatedAt   *time.Time             `json:"evaluatedAt" gorm:"type:datetime"`
+	// SkipExpirationAt is the time when the skip request will expire
+	SkipExpirationAt *time.Time `json:"skipExpirationAt" gorm:"type:datetime"`
 	// Round              *Round         `json:"-" gorm:"foreignKey:RoundID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	DistributionTaskID IDType `json:"distributionTaskId" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }
@@ -41,6 +43,16 @@ type EvaluationFilter struct {
 	Evaluated     *bool                  `form:"status"`
 	SubmissionID  types.SubmissionIDType `form:"submissionId"`
 	JuryRoleID    IDType                 `form:"juryId"`
+	// whether to include the submissions that were evaluated
+	IncludeEvaluated *bool `form:"includeEvaluated"`
+	// whether to include the submissions that were skipped
+	IncludeSkipped *bool `form:"includeSkipped"`
+	// Whether to embed the submission object
+	IncludeSubmission bool `form:"includeSubmission"`
+	CommonFilter
+}
+type GetEvaluationQueryFilter struct {
+	IncludeSkipped bool `form:"includeSkipped"`
 	CommonFilter
 }
 type NewEvaluationRequest struct {

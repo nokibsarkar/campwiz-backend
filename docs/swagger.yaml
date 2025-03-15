@@ -260,6 +260,11 @@ definitions:
         $ref: '#/definitions/models.ScoreType'
       serial:
         type: integer
+      skipExpirationAt:
+        description: SkipExpirationAt is the time when the skip request will expire
+        type: string
+      submission:
+        $ref: '#/definitions/models.Submission'
       submissionId:
         type: string
       type:
@@ -818,6 +823,8 @@ definitions:
         items:
           type: string
         type: array
+    required:
+    - categories
     type: object
   services.RoundRequest:
     properties:
@@ -1058,6 +1065,18 @@ paths:
       - in: query
         name: campaignId
         type: string
+      - description: whether to include the submissions that were evaluated
+        in: query
+        name: includeEvaluated
+        type: boolean
+      - description: whether to include the submissions that were skipped
+        in: query
+        name: includeSkipped
+        type: boolean
+      - description: Whether to embed the submission object
+        in: query
+        name: includeSubmission
+        type: boolean
       - in: query
         name: juryId
         type: string

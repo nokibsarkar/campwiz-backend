@@ -157,15 +157,15 @@ type ISubmissionStatisticsDo interface {
 	UnderlyingDB() *gorm.DB
 	schema.Tabler
 
-	FetchByRoundID(current_round_id string) (result []models.SubmissionStatistics, err error)
+	FetchByRoundID(round_id string) (result []models.SubmissionStatistics, err error)
 }
 
-// SELECT COUNT(*) AS `AssignmentCount`, SUM(`score` IS NOT NULL) AS EvaluationCount, `submission_id`  FROM `evaluations`  WHERE `round_id` = @current_round_id GROUP BY `submission_id`
-func (s submissionStatisticsDo) FetchByRoundID(current_round_id string) (result []models.SubmissionStatistics, err error) {
+// SELECT COUNT(*) AS `AssignmentCount`, SUM(`score` IS NOT NULL) AS EvaluationCount, `submission_id`  FROM `evaluations`  WHERE `round_id` = @round_id GROUP BY `submission_id`
+func (s submissionStatisticsDo) FetchByRoundID(round_id string) (result []models.SubmissionStatistics, err error) {
 	var params []interface{}
 
 	var generateSQL strings.Builder
-	params = append(params, current_round_id)
+	params = append(params, round_id)
 	generateSQL.WriteString("SELECT COUNT(*) AS `AssignmentCount`, SUM(`score` IS NOT NULL) AS EvaluationCount, `submission_id` FROM `evaluations` WHERE `round_id` = ? GROUP BY `submission_id` ")
 
 	var executeSQL *gorm.DB

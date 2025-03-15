@@ -126,7 +126,7 @@ func (b *TaskRunner) importImages(conn *gorm.DB, task *models.Task) (successCoun
 				ParticipantID:     uploaderId,
 				SubmittedAt:       image.SubmittedAt,
 				CreatedAtExternal: &image.SubmittedAt,
-				CurrentRoundID:    round.RoundID,
+				RoundID:           round.RoundID,
 				ImportTaskID:      task.TaskID,
 				MediaSubmission: models.MediaSubmission{
 					MediaType:   models.MediaType(image.MediaType),
@@ -198,7 +198,7 @@ func (b *TaskRunner) updateStatistics(tx *gorm.DB, round *models.Round, successC
 		TotalEvaluatedSubmissions int
 	}
 	var result Result
-	res := tx.Model(&models.Submission{}).Select("count(submission_id) as total_submissions", "sum(assignment_count) as total_evaluations").Where(&models.Submission{CurrentRoundID: round.RoundID}).Find(&result)
+	res := tx.Model(&models.Submission{}).Select("count(submission_id) as total_submissions", "sum(assignment_count) as total_evaluations").Where(&models.Submission{RoundID: round.RoundID}).Find(&result)
 	if res.Error != nil {
 		return res.Error
 	}

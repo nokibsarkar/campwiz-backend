@@ -5,6 +5,7 @@ import (
 	"nokib/campwiz/models"
 	"nokib/campwiz/repository/cache"
 	"nokib/campwiz/services"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -71,6 +72,7 @@ func GetTaskByIDStream(c *gin.Context, sess *cache.Session) {
 			// No need to stream anymore
 			return false
 		}
+		time.Sleep(5 * time.Second)
 		return true
 	})
 }

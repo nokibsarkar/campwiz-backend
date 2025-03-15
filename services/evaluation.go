@@ -81,7 +81,7 @@ func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluation
 			return nil, errors.New("user can't evaluate his/her own submission")
 		}
 		if currentRound == nil {
-			currentRound, err = round_repo.FindByID(tx.Preload("Campaign"), submission.CurrentRoundID)
+			currentRound, err = round_repo.FindByID(tx.Preload("Campaign"), submission.RoundID)
 			if err != nil {
 				tx.Rollback()
 				return nil, err
@@ -96,7 +96,7 @@ func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluation
 				return nil, errors.New("campaign is not active")
 			}
 		}
-		if submission.CurrentRoundID != currentRound.RoundID {
+		if submission.RoundID != currentRound.RoundID {
 			tx.Rollback()
 			return nil, errors.New("all submissions must be from the same round")
 		}
@@ -173,7 +173,7 @@ func (e *EvaluationService) Evaluate(currentUserID models.IDType, evaluationID m
 	defer close()
 	tx := conn.Begin()
 	// first check if user
-	evaluation, err := ev_repo.FindEvaluationByID(tx.Preload("Submission").Preload("Submission.CurrentRound").Preload("Submission.CurrentRound.Campaign"), evaluationID)
+	evaluation, err := ev_repo.FindEvaluationByID(tx.Preload("Submission").Preload("Submission.Round").Preload("Submission.Round.Campaign"), evaluationID)
 	if err != nil {
 		tx.Rollback()
 		return nil, err
@@ -207,7 +207,7 @@ func (e *EvaluationService) Evaluate(currentUserID models.IDType, evaluationID m
 		tx.Rollback()
 		return nil, errors.New("user can't evaluate his/her own submission")
 	}
-	round := submission.CurrentRound
+	round := submission.Round
 	campaign := round.Campaign
 	juries, err := jury_repo.ListAllRoles(tx, &models.RoleFilter{RoundID: &round.RoundID, CampaignID: &campaign.CampaignID})
 	if err != nil {
@@ -237,6 +237,11 @@ func (e *EvaluationService) Evaluate(currentUserID models.IDType, evaluationID m
 		tx.Rollback()
 		return nil, res.Error
 	}
+	// trigger submission score counting
+	if err := e.triggerEvaluationScoreCount(tx, []types.SubmissionIDType{evaluation.SubmissionID}); err != nil {
+		tx.Rollback()
+		return nil, err
+	}
 	tx.Commit()
 	return evaluation, nil
 }
@@ -255,7 +260,7 @@ func (e *EvaluationService) PublicEvaluate(currentUserID models.IDType, submissi
 	conn, close := repository.GetDB()
 	defer close()
 	tx := conn.Begin()
-	submision, err := submission_repo.FindSubmissionByID(tx.Preload("CurrentRound"), submissionID)
+	submision, err := submission_repo.FindSubmissionByID(tx.Preload("Round"), submissionID)
 	if err != nil {
 		tx.Rollback()
 		return nil, err
@@ -265,7 +270,7 @@ func (e *EvaluationService) PublicEvaluate(currentUserID models.IDType, submissi
 		return nil, errors.New("submission not found")
 	}
 	// first check if the round exists
-	round := submision.CurrentRound
+	round := submision.Round
 	// now round exists, check if jury exists
 	juryRole, err := jury_repo.FindRoleByUserIDAndRoundID(tx, currentUserID, round.RoundID, models.RoleTypeJury)
 	if err != nil {
@@ -303,7 +308,7 @@ func (e *EvaluationService) PublicEvaluate(currentUserID models.IDType, submissi
 		Type:          models.EvaluationTypeScore,
 		EvaluatedAt:   &now,
 		ParticipantID: submision.ParticipantID,
-		RoundID:       submision.CurrentRoundID,
+		RoundID:       submision.RoundID,
 	}
 	res := tx.Save(evaluation)
 	if res.Error != nil {
@@ -325,5 +330,39 @@ func (e *EvaluationService) ListEvaluations(filter *models.EvaluationFilter) ([]
 	ev_repo := repository.NewEvaluationRepository()
 	conn, close := repository.GetDB()
 	defer close()
+	return ev_repo.ListAllEvaluations(conn, filter)
+}
+
+// First get the roleID and round ID of the current user
+// if not found, return error
+// check if the role has judge permission
+// if not, return error
+// now list all the submissions where the roundID is the same as the current round and
+// - if includeEvaluated is true,  evaluated_at is not null
+// - if includeEvaluated is false, evaluated_at is null
+// - if includeEvaluated is nil, no condition
+// - if includeSkipped is true, include skipped submissions
+// - if includeSkipped is false, exclude skipped submissions
+func (e *EvaluationService) GetNextEvaluations(currenUserID models.IDType, filter *models.EvaluationFilter) ([]models.Evaluation, error) {
+	ev_repo := repository.NewEvaluationRepository()
+	roleRepo := repository.NewRoleRepository()
+	conn, close := repository.GetDB()
+	defer close()
+	juryType := models.RoleTypeJury
+	roles, err := roleRepo.ListAllRoles(conn, &models.RoleFilter{UserID: &currenUserID, RoundID: &filter.RoundID, Type: &juryType})
+	if err != nil {
+		return nil, err
+	}
+	if len(roles) == 0 {
+		return nil, errors.New("user is not a jury")
+	}
+	juryRole := roles[0]
+	if !juryRole.IsAllowed {
+		return nil, errors.New("user is not allowed to evaluate")
+	}
+	juryRoleID := juryRole.RoleID
+	filter.JuryRoleID = juryRoleID
+	falsey := false
+	filter.Evaluated = &falsey
 	return ev_repo.ListAllEvaluations(conn, filter)
 }

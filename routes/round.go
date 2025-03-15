@@ -256,6 +256,19 @@ func NextPublicSubmission(c *gin.Context, sess *cache.Session) {
 	}
 	c.JSON(200, ResponseSingle[*models.Submission]{Data: submission})
 }
+func NextSubmissionEvaluation(c *gin.Context, sess *cache.Session) {
+	roundID := c.Param("roundId")
+	if roundID == "" {
+		c.JSON(400, ResponseError{Detail: "Invalid request : Round ID is required"})
+	}
+	q := models.GetEvaluationQueryFilter{}
+	err := c.ShouldBindQuery(&q)
+	if err != nil {
+		c.JSON(400, ResponseError{Detail: "Invalid request : " + err.Error()})
+		return
+	}
+	ListEvaluations(c, sess)
+}
 func NewRoundRoutes(parent *gin.RouterGroup) {
 	r := parent.Group("/round")
 	r.GET("/", WithSession(ListAllRounds))

@@ -69,7 +69,7 @@ func (s *RoundService) CreateRound(request *RoundRequest) (*models.Round, error)
 		CreatedByID:   request.CreatedByID,
 		CampaignID:    campaign.CampaignID,
 		RoundWritable: request.RoundWritable,
-		Status:        models.RoundStatusPending,
+		Status:        models.RoundStatusActive,
 		ProjectID:     campaign.ProjectID,
 	}
 	round, err = round_repo.Create(tx, round)

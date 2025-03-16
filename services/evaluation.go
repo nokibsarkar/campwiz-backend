@@ -51,6 +51,7 @@ func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluation
 	evaluationRequestMap := map[models.IDType]EvaluationRequest{}
 	var currentRound *models.Round
 	var campaign *models.Campaign
+	var juryRole *models.Role
 	for _, evaluationRequest := range evaluationRequests {
 		if evaluationRequest.Score == nil {
 			tx.Rollback()
@@ -81,7 +82,7 @@ func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluation
 			return nil, errors.New("user can't evaluate his/her own submission")
 		}
 		if currentRound == nil {
-			currentRound, err = round_repo.FindByID(tx.Preload("Campaign"), submission.RoundID)
+			currentRound, err = round_repo.FindByID(tx.Preload("Campaign").Preload(("Roles")), submission.RoundID)
 			if err != nil {
 				tx.Rollback()
 				return nil, err
@@ -91,9 +92,24 @@ func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluation
 				tx.Rollback()
 				return nil, errors.New("campaign not found")
 			}
-			if false {
+			if campaign.Status != models.RoundStatusActive {
 				tx.Rollback()
 				return nil, errors.New("campaign is not active")
+			}
+			roles := currentRound.Roles
+			for _, role := range roles {
+				if role.UserID == currentUser.UserID {
+					juryRole = &role
+					break
+				}
+			}
+			if juryRole == nil {
+				tx.Rollback()
+				return nil, errors.New("user is not a jury")
+			}
+			if !juryRole.IsAllowed {
+				tx.Rollback()
+				return nil, errors.New("user is not allowed to evaluate")
 			}
 		}
 		if submission.RoundID != currentRound.RoundID {

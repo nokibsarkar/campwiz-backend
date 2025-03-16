@@ -29,7 +29,6 @@ func ListEvaluations(c *gin.Context, sess *cache.Session) {
 		return
 	}
 	evaluation_service := services.NewEvaluationService()
-	log.Println(sess.UserID)
 	evaluations, err := evaluation_service.GetNextEvaluations(sess.UserID, filter)
 	if err != nil {
 		c.JSON(400, ResponseError{Detail: "Error listing evaluations : " + err.Error()})

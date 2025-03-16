@@ -104,9 +104,10 @@ func (service *CampaignService) GetAllCampaigns(query *models.CampaignFilter) []
 }
 
 type SingleCampaignQuery struct {
-	IncludeRounds  bool `form:"includeRounds"`
-	IncludeRoles   bool `form:"includeRoles"`
-	IncludeProject bool `form:"includeProject"`
+	IncludeRounds     bool `form:"includeRounds"`
+	IncludeRoles      bool `form:"includeRoles"`
+	IncludeProject    bool `form:"includeProject"`
+	IncludeRoundRoles bool `form:"includeRoundRoles"`
 }
 
 func (service *CampaignService) GetCampaignByID(id models.IDType, query *SingleCampaignQuery) (*models.Campaign, error) {
@@ -115,6 +116,9 @@ func (service *CampaignService) GetCampaignByID(id models.IDType, query *SingleC
 	if query != nil {
 		if query.IncludeRounds {
 			conn = conn.Preload("Rounds")
+			if query.IncludeRoundRoles {
+				conn = conn.Preload("Rounds.Roles").Preload("Rounds.Roles.User")
+			}
 		}
 		if query.IncludeRoles {
 			conn = conn.Preload("Roles").Preload("Roles.User")

@@ -105,7 +105,8 @@ type Round struct {
 	Creator                   *User       `json:"-" gorm:"foreignKey:CreatedByID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
 	LatestDistributionTaskID  *IDType     `json:"latestTaskId" gorm:"default:null"`
 	RoundWritable
-	Roles []Role `json:"roles"`
+	Roles []Role                           `json:"roles"`
+	Jury  map[IDType]WikimediaUsernameType `json:"jury" gorm:"-"`
 	// Project Project `json:"-" gorm:"foreignKey:ProjectID;constraint:OnUpdate:CASCADE,OnDelete:Cascade"`
 }
 type RoundFilter struct {

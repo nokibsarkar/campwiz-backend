@@ -130,6 +130,24 @@ func GetSingleCampaign(c *gin.Context, sess *cache.Session) {
 			}
 		}
 	}
+	if q.IncludeRounds && q.IncludeRoundRoles {
+		if campaign.IsPublic {
+			for i, round := range campaign.Rounds {
+				// No need to show the roles for public campaigns
+				// round.Roles = []models.Role{}
+				campaign.Rounds[i] = round
+			}
+		}
+		for i, round := range campaign.Rounds {
+			round.Jury = map[models.IDType]models.WikimediaUsernameType{}
+			for _, role := range round.Roles {
+				if role.Type == models.RoleTypeJury {
+					round.Jury[role.UserID] = role.User.Username
+				}
+			}
+			campaign.Rounds[i] = round
+		}
+	}
 	c.JSON(200, ResponseSingle[*models.CampaignExtended]{Data: ex})
 }
 

@@ -49,3 +49,9 @@ type CampaignFilter struct {
 	IsClosed *bool `form:"isClosed"`
 	CommonFilter
 }
+type SingleCampaaignFilter struct {
+	IncludeRounds          bool `form:"includeRounds"`
+	IncludeRoundRoles      bool `form:"includeRoundRoles"`
+	IncludeRoundRolesUsers bool `form:"includeRoundRolesUsers"`
+	IncludeProject         bool `form:"includeProject"`
+}

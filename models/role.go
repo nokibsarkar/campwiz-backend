@@ -67,4 +67,6 @@ type JuryStatisticsUpdater interface {
 	UpdateJuryStatistics(roundID string) error
 	// SELECT COUNT(*) AS TotalAssigned, SUM(IF(evaluated_at IS NOT NULL, 1, 0)) AS TotalEvaluated, judge_id FROM `evaluations` WHERE round_id = @roundID GROUP BY judge_id
 	GetJuryStatistics(roundID string) ([]JuryStatistics, error)
+	// UPDATE roles AS jury JOIN ( SELECT         judge_id,         COUNT(*) AS c,         SUM(evaluated_at IS NOT NULL) AS ev     FROM         evaluations     WHERE         round_id = @roundID    GROUP BY         judge_id ) AS d ON jury.role_id = d.judge_id SET     jury.total_evaluated = d.ev,     jury.total_assigned = d.c WHERE     jury.round_id = @roundID
+	TriggerByRoundID(roundID string) error
 }

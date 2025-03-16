@@ -159,6 +159,7 @@ type IJuryStatisticsDo interface {
 
 	UpdateJuryStatistics(roundID string) (err error)
 	GetJuryStatistics(roundID string) (result []models.JuryStatistics, err error)
+	TriggerByRoundID(roundID string) (err error)
 }
 
 // UPDATE `jury` SET
@@ -183,6 +184,22 @@ func (j juryStatisticsDo) GetJuryStatistics(roundID string) (result []models.Jur
 
 	var executeSQL *gorm.DB
 	executeSQL = j.UnderlyingDB().Raw(generateSQL.String(), params...).Find(&result) // ignore_security_alert
+	err = executeSQL.Error
+
+	return
+}
+
+// UPDATE roles AS jury JOIN ( SELECT         judge_id,         COUNT(*) AS c,         SUM(evaluated_at IS NOT NULL) AS ev     FROM         evaluations     WHERE         round_id = @roundID    GROUP BY         judge_id ) AS d ON jury.role_id = d.judge_id SET     jury.total_evaluated = d.ev,     jury.total_assigned = d.c WHERE     jury.round_id = @roundID
+func (j juryStatisticsDo) TriggerByRoundID(roundID string) (err error) {
+	var params []interface{}
+
+	var generateSQL strings.Builder
+	params = append(params, roundID)
+	params = append(params, roundID)
+	generateSQL.WriteString("UPDATE roles AS jury JOIN ( SELECT judge_id, COUNT(*) AS c, SUM(evaluated_at IS NOT NULL) AS ev FROM evaluations WHERE round_id = ? GROUP BY judge_id ) AS d ON jury.role_id = d.judge_id SET jury.total_evaluated = d.ev, jury.total_assigned = d.c WHERE jury.round_id = ? ")
+
+	var executeSQL *gorm.DB
+	executeSQL = j.UnderlyingDB().Exec(generateSQL.String(), params...) // ignore_security_alert
 	err = executeSQL.Error
 
 	return

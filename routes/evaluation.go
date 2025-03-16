@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"log"
 	"nokib/campwiz/consts"
 	"nokib/campwiz/models"
 	"nokib/campwiz/models/types"
@@ -28,6 +29,7 @@ func ListEvaluations(c *gin.Context, sess *cache.Session) {
 		return
 	}
 	evaluation_service := services.NewEvaluationService()
+	log.Println(sess.UserID)
 	evaluations, err := evaluation_service.GetNextEvaluations(sess.UserID, filter)
 	if err != nil {
 		c.JSON(400, ResponseError{Detail: "Error listing evaluations : " + err.Error()})
@@ -68,6 +70,7 @@ func UpdateEvaluation(c *gin.Context, sess *cache.Session) {
 		c.JSON(400, ResponseError{Detail: "Invalid request : " + err.Error()})
 		return
 	}
+	log.Println("Requested evaluation : ", requestedEvaluation)
 	evaluation_service := services.NewEvaluationService()
 	evaluation, err := evaluation_service.Evaluate(sess.UserID, models.IDType(evaluationId), &requestedEvaluation)
 	if err != nil {
@@ -96,6 +99,7 @@ func BulkEvaluate(c *gin.Context, sess *cache.Session) {
 		c.JSON(400, ResponseError{Detail: "Invalid request : " + err.Error()})
 		return
 	}
+	log.Println("Requested evaluations : ", requestedEvaluations)
 	evaluation_service := services.NewEvaluationService()
 	evaluations, err := evaluation_service.BulkEvaluate(sess.UserID, requestedEvaluations)
 	if err != nil {
@@ -143,7 +147,7 @@ func SubmitNewPublicEvaluation(c *gin.Context, sess *cache.Session) {
 func NewEvaluationRoutes(r *gin.RouterGroup) {
 	route := r.Group("/evaluation")
 	route.GET("/", WithSession(ListEvaluations))
-	route.POST("/", WithPermission(consts.PermissionCreateCampaign, BulkEvaluate))
+	route.POST("/", WithSession(BulkEvaluate))
 	route.POST("/:evaluationId", WithPermission(consts.PermissionCreateCampaign, UpdateEvaluation))
 	route.POST("/public/:roundId/:submissionId", WithPermission(consts.PermissionCreateCampaign, SubmitNewPublicEvaluation))
 }

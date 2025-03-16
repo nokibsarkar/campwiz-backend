@@ -127,7 +127,7 @@ func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluation
 
 	}
 	// trigger submission score counting
-	if err := e.triggerEvaluationScoreCount(tx, submissionIds); err != nil {
+	if err := e.triggerEvaluationScoreCount(tx, currentRound.RoundID, submissionIds); err != nil {
 		tx.Rollback()
 		return nil, err
 	}
@@ -136,7 +136,7 @@ func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluation
 }
 
 // This function would be used to trigger the evaluation score counting
-func (e *EvaluationService) triggerEvaluationScoreCount(tx *gorm.DB, submissionIds []types.SubmissionIDType) error {
+func (e *EvaluationService) triggerEvaluationScoreCount(tx *gorm.DB, roundID models.IDType, submissionIds []types.SubmissionIDType) error {
 	// This function would be used to trigger the evaluation score counting
 	q := query.Use(tx)
 	submission := q.Submission
@@ -160,6 +160,10 @@ func (e *EvaluationService) triggerEvaluationScoreCount(tx *gorm.DB, submissionI
 	}
 	if stmt.Error != nil {
 		return stmt.Error
+	}
+	err = q.JuryStatistics.TriggerByRoundID(roundID.String())
+	if err != nil {
+		return err
 	}
 	log.Println("triggerEvaluationScoreCount", stmt.RowsAffected)
 	return nil
@@ -238,7 +242,7 @@ func (e *EvaluationService) Evaluate(currentUserID models.IDType, evaluationID m
 		return nil, res.Error
 	}
 	// trigger submission score counting
-	if err := e.triggerEvaluationScoreCount(tx, []types.SubmissionIDType{evaluation.SubmissionID}); err != nil {
+	if err := e.triggerEvaluationScoreCount(tx, round.RoundID, []types.SubmissionIDType{evaluation.SubmissionID}); err != nil {
 		tx.Rollback()
 		return nil, err
 	}
@@ -316,7 +320,7 @@ func (e *EvaluationService) PublicEvaluate(currentUserID models.IDType, submissi
 		return nil, res.Error
 	}
 	// trigger submission score counting
-	if err := e.triggerEvaluationScoreCount(tx, []types.SubmissionIDType{submision.SubmissionID}); err != nil {
+	if err := e.triggerEvaluationScoreCount(tx, submision.RoundID, []types.SubmissionIDType{submision.SubmissionID}); err != nil {
 		tx.Rollback()
 		return nil, err
 	}
@@ -353,6 +357,7 @@ func (e *EvaluationService) GetNextEvaluations(currenUserID models.IDType, filte
 	if err != nil {
 		return nil, err
 	}
+	log.Println("roles", roles)
 	if len(roles) == 0 {
 		return nil, errors.New("user is not a jury")
 	}

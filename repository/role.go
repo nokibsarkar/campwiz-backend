@@ -43,6 +43,12 @@ func (r *RoleRepository) ListAllRoles(tx *gorm.DB, filter *models.RoleFilter) ([
 		if filter.Type != nil {
 			stmt = stmt.Where(&models.Role{Type: *filter.Type})
 		}
+		if filter.UserID != nil {
+			stmt = stmt.Where(&models.Role{UserID: *filter.UserID})
+		}
+		if filter.Limit > 0 {
+			stmt = stmt.Limit(filter.Limit)
+		}
 
 	}
 	result := stmt.Find(&juries)

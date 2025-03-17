@@ -3,7 +3,7 @@ package models
 import (
 	"nokib/campwiz/consts"
 
-	"gorm.io/plugin/soft_delete"
+	"gorm.io/gorm"
 )
 
 type RoleType string
@@ -24,8 +24,6 @@ type Role struct {
 	TargetProjectID *IDType                `json:"targetProjectId" gorm:"null;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	CampaignID      *IDType                `json:"campaignId" gorm:"null;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	RoundID         *IDType                `json:"roundId" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	IsAllowed       bool                   `json:"isAllowed" gorm:"default:false"`
-	IsDeleted       soft_delete.DeletedAt  `gorm:"softDelete:flag"`
 	TotalAssigned   int                    `json:"totalAssigned"`
 	TotalEvaluated  int                    `json:"totalEvaluated"`
 	TotalScore      int                    `json:"totalScore"`
@@ -34,6 +32,7 @@ type Role struct {
 	User            *User                  `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	Round           *Round                 `json:"-"  gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	Project         *Project               `json:"-"  gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	DeletedAt       *gorm.DeletedAt        `json:"deletedAt"`
 }
 type RoleFilter struct {
 	CommonFilter
@@ -68,7 +67,7 @@ type JuryStatistics struct {
 type JuryStatisticsUpdater interface {
 	// UPDATE `jury` SET
 	UpdateJuryStatistics(roundID string) error
-	// SELECT COUNT(*) AS TotalAssigned, SUM(IF(evaluated_at IS NOT NULL, 1, 0)) AS TotalEvaluated, judge_id FROM `evaluations` WHERE round_id = @roundID GROUP BY judge_id
+	// SELECT COUNT(*) AS TotalAssigned, SUM(IF(evaluated_at IS NOT NULL, 1, 0)) AS TotalEvaluated, judge_id FROM `evaluations` WHERE round_id = @roundID AND `judge_id` IS NOT NULL GROUP  BY judge_id
 	GetJuryStatistics(roundID string) ([]JuryStatistics, error)
 	// UPDATE roles AS jury JOIN ( SELECT         judge_id,         COUNT(*) AS c,         SUM(evaluated_at IS NOT NULL) AS ev     FROM         evaluations     WHERE         round_id = @roundID    GROUP BY         judge_id ) AS d ON jury.role_id = d.judge_id SET     jury.total_evaluated = d.ev,     jury.total_assigned = d.c WHERE     jury.round_id = @roundID
 	TriggerByRoundID(roundID string) error

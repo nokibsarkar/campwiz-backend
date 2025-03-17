@@ -17,7 +17,7 @@ func NewRoleService() *RoleService {
 func (r *RoleService) CalculateRoleDifference(tx *gorm.DB, Type models.RoleType, filter *models.RoleFilter, updatedRoleUsernames []models.WikimediaUsernameType) (addedRoles []models.Role, removedRoles []models.IDType, err error) {
 	role_repo := repository.NewRoleRepository()
 	user_repo := repository.NewUserRepository()
-	existingRoles, err := role_repo.ListAllRoles(tx, filter)
+	existingRoles, err := role_repo.ListAllRoles(tx.Unscoped(), filter)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -34,11 +34,12 @@ func (r *RoleService) CalculateRoleDifference(tx *gorm.DB, Type models.RoleType,
 		userId := username2IDMap[username]
 		userId2NameMap[userId] = username
 	}
+	log.Printf("Existing roles: %v", existingRoles)
 
 	id2RoleMap := map[models.IDType]models.Role{}
 	for _, existingRole := range existingRoles {
 		id2RoleMap[existingRole.UserID] = existingRole
-		if !existingRole.IsAllowed {
+		if existingRole.DeletedAt != nil {
 			// Already soft deleted, so either way, pretend it does not exist
 			log.Printf("Soft %s", existingRole.UserID)
 			continue
@@ -58,7 +59,7 @@ func (r *RoleService) CalculateRoleDifference(tx *gorm.DB, Type models.RoleType,
 
 	for userId := range userId2NameMap {
 		role, ok := id2RoleMap[userId]
-		if !ok || !role.IsAllowed {
+		if !ok || role.DeletedAt != nil {
 			// Newly added
 			newRole := models.Role{
 				RoleID:          idgenerator.GenerateID("j"),
@@ -68,7 +69,6 @@ func (r *RoleService) CalculateRoleDifference(tx *gorm.DB, Type models.RoleType,
 				CampaignID:      filter.CampaignID,
 				RoundID:         filter.RoundID,
 				TargetProjectID: filter.TargetProjectID,
-				IsAllowed:       true,
 				Permission:      Type.GetPermission(),
 			}
 			if ok {
@@ -114,7 +114,7 @@ func (service *RoleService) FetchChangeRoles(tx *gorm.DB, roleType models.RoleTy
 	}
 	if len(removedRoles) > 0 {
 		for _, roleID := range removedRoles {
-			res := tx.Model(&models.Role{RoleID: roleID}).Update("is_allowed", false)
+			res := tx.Delete(&models.Role{RoleID: roleID})
 			if res.Error != nil {
 				return nil, nil, res.Error
 			}

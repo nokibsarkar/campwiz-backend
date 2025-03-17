@@ -174,13 +174,13 @@ func (j juryStatisticsDo) UpdateJuryStatistics(roundID string) (err error) {
 	return
 }
 
-// SELECT COUNT(*) AS TotalAssigned, SUM(IF(evaluated_at IS NOT NULL, 1, 0)) AS TotalEvaluated, judge_id FROM `evaluations` WHERE round_id = @roundID GROUP BY judge_id
+// SELECT COUNT(*) AS TotalAssigned, SUM(IF(evaluated_at IS NOT NULL, 1, 0)) AS TotalEvaluated, judge_id FROM `evaluations` WHERE round_id = @roundID AND `judge_id` IS NOT NULL GROUP  BY judge_id
 func (j juryStatisticsDo) GetJuryStatistics(roundID string) (result []models.JuryStatistics, err error) {
 	var params []interface{}
 
 	var generateSQL strings.Builder
 	params = append(params, roundID)
-	generateSQL.WriteString("SELECT COUNT(*) AS TotalAssigned, SUM(IF(evaluated_at IS NOT NULL, 1, 0)) AS TotalEvaluated, judge_id FROM `evaluations` WHERE round_id = ? GROUP BY judge_id ")
+	generateSQL.WriteString("SELECT COUNT(*) AS TotalAssigned, SUM(IF(evaluated_at IS NOT NULL, 1, 0)) AS TotalEvaluated, judge_id FROM `evaluations` WHERE round_id = ? AND `judge_id` IS NOT NULL GROUP BY judge_id ")
 
 	var executeSQL *gorm.DB
 	executeSQL = j.UnderlyingDB().Raw(generateSQL.String(), params...).Find(&result) // ignore_security_alert

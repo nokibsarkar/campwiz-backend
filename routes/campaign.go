@@ -69,7 +69,7 @@ func ListAllCampaigns(c *gin.Context) {
 				hasRoles := false
 				for _, role := range roles {
 					if role.Type == models.RoleTypeCoordinator || role.Type == models.RoleTypeJury {
-						if role.IsAllowed {
+						if role.DeletedAt == nil {
 							hasRoles = true
 							break
 						}

@@ -14,6 +14,7 @@ type Evaluation struct {
 	SubmissionID       types.SubmissionIDType `gorm:"uniqueIndex:idx_submission_judge"`
 	JudgeID            *models.IDType         `gorm:"index;null;uniqueIndex:idx_submission_judge"`
 	DistributionTaskID models.IDType
+	Score              *models.ScoreType `gorm:"type:FLOAT"`
 }
 
 type Dirtributor interface {

@@ -34,11 +34,11 @@ func newRole(db *gorm.DB, opts ...gen.DOOption) role {
 	_role.TargetProjectID = field.NewString(tableName, "target_project_id")
 	_role.CampaignID = field.NewString(tableName, "campaign_id")
 	_role.RoundID = field.NewString(tableName, "round_id")
-	_role.IsAllowed = field.NewBool(tableName, "is_allowed")
 	_role.TotalAssigned = field.NewInt(tableName, "total_assigned")
 	_role.TotalEvaluated = field.NewInt(tableName, "total_evaluated")
 	_role.TotalScore = field.NewInt(tableName, "total_score")
 	_role.Permission = field.NewField(tableName, "permission")
+	_role.DeletedAt = field.NewField(tableName, "deleted_at")
 	_role.Campaign = roleBelongsToCampaign{
 		db: db.Session(&gorm.Session{}),
 
@@ -183,11 +183,11 @@ type role struct {
 	TargetProjectID field.String
 	CampaignID      field.String
 	RoundID         field.String
-	IsAllowed       field.Bool
 	TotalAssigned   field.Int
 	TotalEvaluated  field.Int
 	TotalScore      field.Int
 	Permission      field.Field
+	DeletedAt       field.Field
 	Campaign        roleBelongsToCampaign
 
 	User roleBelongsToUser
@@ -218,11 +218,11 @@ func (r *role) updateTableName(table string) *role {
 	r.TargetProjectID = field.NewString(table, "target_project_id")
 	r.CampaignID = field.NewString(table, "campaign_id")
 	r.RoundID = field.NewString(table, "round_id")
-	r.IsAllowed = field.NewBool(table, "is_allowed")
 	r.TotalAssigned = field.NewInt(table, "total_assigned")
 	r.TotalEvaluated = field.NewInt(table, "total_evaluated")
 	r.TotalScore = field.NewInt(table, "total_score")
 	r.Permission = field.NewField(table, "permission")
+	r.DeletedAt = field.NewField(table, "deleted_at")
 
 	r.fillFieldMap()
 
@@ -247,11 +247,11 @@ func (r *role) fillFieldMap() {
 	r.fieldMap["target_project_id"] = r.TargetProjectID
 	r.fieldMap["campaign_id"] = r.CampaignID
 	r.fieldMap["round_id"] = r.RoundID
-	r.fieldMap["is_allowed"] = r.IsAllowed
 	r.fieldMap["total_assigned"] = r.TotalAssigned
 	r.fieldMap["total_evaluated"] = r.TotalEvaluated
 	r.fieldMap["total_score"] = r.TotalScore
 	r.fieldMap["permission"] = r.Permission
+	r.fieldMap["deleted_at"] = r.DeletedAt
 
 }
 

@@ -211,7 +211,7 @@ func (b *RoundService) DistributeTaskAmongExistingJuries(images []models.ImageRe
 	}
 }
 
-func (r *RoundService) UpdateRoundDetails(roundID models.IDType, req *RoundRequest) (*models.Round, error) {
+func (r *RoundService) UpdateRoundDetails(roundID models.IDType, req *RoundRequest, qry *models.SingleCampaaignFilter) (*models.Round, error) {
 	round_repo := repository.NewRoundRepository()
 	role_service := NewRoleService()
 	conn, close := repository.GetDB()
@@ -247,7 +247,7 @@ func (r *RoundService) UpdateRoundDetails(roundID models.IDType, req *RoundReque
 		return nil, err
 	}
 	if len(addedRoles) > 0 {
-		res := tx.Create(addedRoles)
+		res := tx.Save(addedRoles)
 		if res.Error != nil {
 			tx.Rollback()
 			return nil, res.Error
@@ -257,7 +257,7 @@ func (r *RoundService) UpdateRoundDetails(roundID models.IDType, req *RoundReque
 		r := []string{}
 		for _, roleID := range removedRoleIDs {
 			log.Println("Banning role: ", roleID)
-			res := tx.Updates(&models.Role{RoleID: roleID, IsAllowed: false})
+			res := tx.Delete(&models.Role{RoleID: roleID})
 			if res.Error != nil {
 				tx.Rollback()
 				return nil, res.Error
@@ -393,7 +393,7 @@ func (e *RoundService) UpdateStatus(currenUserID models.IDType, roundID models.I
 		return nil, errors.New("user is not a coordinator")
 	}
 	coordinatorRole := coordinatorRoles[0]
-	if !coordinatorRole.IsAllowed {
+	if coordinatorRole.DeletedAt != nil {
 		tx.Rollback()
 		return nil, errors.New("user is not allowed to update the round")
 	}

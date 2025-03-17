@@ -682,6 +682,7 @@ type IEvaluationDo interface {
 	DistributeAssigments(judge_id models.IDType, limit int) (rowsAffected int64, err error)
 	CountAssignedEvaluations() (result []cache.Evaluation, err error)
 	SelectUnAssignedJudges(submission_id types.SubmissionIDType, limit int) (result []*cache.Evaluation, err error)
+	RemoveRedundantEvaluation(roundID string, quorum int)
 }
 
 // UPDATE `evaluations` SET `judge_id` = @judge_id WHERE `evaluations`.`judge_id` IS NULL AND `evaluations`.`evaluation_id` IN (SELECT MAX(`evaluation_id`) FROM `evaluations` WHERE `submission_id` NOT IN (SELECT DISTINCT submission_id FROM evaluations WHERE `judge_id` = @judge_id) AND `judge_id` IS NULL GROUP BY `submission_id` LIMIT @limit)
@@ -726,6 +727,23 @@ func (e evaluationDo) SelectUnAssignedJudges(submission_id types.SubmissionIDTyp
 	var executeSQL *gorm.DB
 	executeSQL = e.UnderlyingDB().Raw(generateSQL.String(), params...).Find(&result) // ignore_security_alert
 	err = executeSQL.Error
+
+	return
+}
+
+// DELETE FROM `evaluations` WHERE `evaluations`.`evaluated_at` IS NULL AND `round_id` = @roundID AND `submission_id` IN (SELECT `submission_id` FROM `submissions` WHERE `evaluation_count` <= @quorum` AND `round_id` = @roundID)
+func (e evaluationDo) RemoveRedundantEvaluation(roundID string, quorum int) {
+	var params []interface{}
+
+	var generateSQL strings.Builder
+	params = append(params, roundID)
+	params = append(params, quorum)
+	params = append(params, roundID)
+	generateSQL.WriteString("DELETE FROM `evaluations` WHERE `evaluations`.`evaluated_at` IS NULL AND `round_id` = ? AND `submission_id` IN (SELECT `submission_id` FROM `submissions` WHERE `evaluation_count` <= ?` AND `round_id` = ?) ")
+
+	var executeSQL *gorm.DB
+	executeSQL = e.UnderlyingDB().Exec(generateSQL.String(), params...) // ignore_security_alert
+	_ = executeSQL
 
 	return
 }

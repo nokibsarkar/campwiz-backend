@@ -93,6 +93,7 @@ func (strategy *RoundRobinDistributionStrategyV3) AssignJuries(tx *gorm.DB, roun
 }
 func (strategy *RoundRobinDistributionStrategyV3) createMissingEvaluations(tx *gorm.DB, evtype models.EvaluationType, round *models.Round, req []models.Submission) (int, error) {
 	evaluations := []models.Evaluation{}
+	log.Println("Creating missing evaluations", len(req))
 	for _, submission := range req {
 		rest := round.Quorum - submission.AssignmentCount
 		for _ = range rest {
@@ -127,10 +128,11 @@ func (strategy *RoundRobinDistributionStrategyV3) createMissingEvaluations(tx *g
 func (strategy *RoundRobinDistributionStrategyV3) importToCache(tx *gorm.DB, taskCacheDB *gorm.DB, round *models.Round) (totalEvaluations int, err error) {
 	var evaluations []*cache.Evaluation
 	q := query.Use(tx)
+	log.Println("Importing to cache")
 	evs, err := (q.Evaluation.Where(q.Evaluation.RoundID.Eq(round.RoundID.String())).
-		Where(q.Evaluation.EvaluatedAt.IsNull()).
-		Where(q.Evaluation.Score.IsNull()).
-		Order(q.Evaluation.EvaluationID).
+		// Where(q.Evaluation.EvaluatedAt.IsNull()).
+		// Where(q.Evaluation.Score.IsNull()).
+		// Order(q.Evaluation.EvaluationID).
 		Find())
 	if err != nil {
 		return 0, err
@@ -144,9 +146,11 @@ func (strategy *RoundRobinDistributionStrategyV3) importToCache(tx *gorm.DB, tas
 			EvaluationID: evaluation.EvaluationID,
 			SubmissionID: evaluation.SubmissionID,
 			JudgeID:      evaluation.JudgeID,
+			Score:        evaluation.Score,
 		})
 	}
 	taskCacheDB.Create(evaluations)
+	log.Println("Total evaluations: ", totalEvaluations)
 	return totalEvaluations, nil
 }
 
@@ -233,11 +237,17 @@ func (strategy *RoundRobinDistributionStrategyV3) calculateWorkloadQuota(cache *
 	Assignment := q.Evaluation
 
 	workload := MinimumWorkloadHeapV3{}
-	err = Assignment.Select(Assignment.JudgeID, Assignment.EvaluationID.Count().As("Count")).Where(Assignment.JudgeID.In(juryIDs...)).Group(Assignment.JudgeID).Scan(&workload)
+	err = Assignment.Select(Assignment.JudgeID, Assignment.EvaluationID.Count().As("Count")).Where(Assignment.Score.IsNotNull()).Where(Assignment.JudgeID.In(juryIDs...)).Group(Assignment.JudgeID).Scan(&workload)
 	if err != nil {
 		return nil, err
 	}
 	totalJuryCount := len(juryIDs)
+	totalAlreadyEvaluatedCount := WorkLoadTypeV3(0)
+	for _, workload := range workload {
+		totalAlreadyEvaluatedCount += workload.Count
+		existingWorkLoadMap[workload.JudgeID] = WorkLoadTypeV3(workload.Count)
+	}
+
 	averageWorkload := WorkLoadTypeV3(totalEvaluations / totalJuryCount)
 	extraWorkload := totalEvaluations % totalJuryCount
 	log.Println("Exisiting workload: ", workload)
@@ -246,9 +256,6 @@ func (strategy *RoundRobinDistributionStrategyV3) calculateWorkloadQuota(cache *
 	log.Println("Average workload: ", averageWorkload)
 	log.Println("Extra workload: ", extraWorkload)
 
-	for _, workload := range workload {
-		existingWorkLoadMap[workload.JudgeID] = WorkLoadTypeV3(workload.Count)
-	}
 	k := MinimumWorkloadHeapV3{}
 	// Calculate the new workload for each juror
 	for _, jurId := range juryIDs {
@@ -317,10 +324,12 @@ func (strategy *RoundRobinDistributionStrategyV3) triggerStatisticsUpdateByRound
 	if err != nil {
 		return err
 	}
+	log.Println(jMap)
 	for _, stat := range jMap {
 		log.Println("Updating jury statistics: ", stat)
-		res := tx.Updates(&models.Role{
-			RoleID:         stat.JudgeID,
+		res := tx.Unscoped().Where(&models.Role{
+			RoleID: stat.JudgeID,
+		}).Updates(&models.Role{
 			TotalAssigned:  stat.TotalAssigned,
 			TotalEvaluated: stat.TotalEvaluated,
 		})

@@ -107,7 +107,7 @@ func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluation
 				tx.Rollback()
 				return nil, errors.New("user is not a jury")
 			}
-			if !juryRole.IsAllowed {
+			if juryRole.DeletedAt != nil {
 				tx.Rollback()
 				return nil, errors.New("user is not allowed to evaluate")
 			}
@@ -306,7 +306,6 @@ func (e *EvaluationService) PublicEvaluate(currentUserID models.IDType, submissi
 			RoleID:         idgenerator.GenerateID("j"),
 			ProjectID:      round.ProjectID,
 			CampaignID:     &round.CampaignID,
-			IsAllowed:      true,
 			TotalAssigned:  1,
 			TotalEvaluated: 1,
 			TotalScore:     0,
@@ -378,7 +377,7 @@ func (e *EvaluationService) GetNextEvaluations(currenUserID models.IDType, filte
 		return nil, errors.New("user is not a jury")
 	}
 	juryRole := roles[0]
-	if !juryRole.IsAllowed {
+	if juryRole.DeletedAt != nil {
 		return nil, errors.New("user is not allowed to evaluate")
 	}
 	juryRoleID := juryRole.RoleID

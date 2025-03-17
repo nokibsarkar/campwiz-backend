@@ -43,7 +43,7 @@ func newRound(db *gorm.DB, opts ...gen.DOOption) round {
 	_round.StartDate = field.NewTime(tableName, "start_date")
 	_round.EndDate = field.NewTime(tableName, "end_date")
 	_round.IsOpen = field.NewBool(tableName, "is_open")
-	_round.IsPublic = field.NewBool(tableName, "is_public")
+	_round.IsPublicJury = field.NewBool(tableName, "is_public_jury")
 	_round.DependsOnRoundID = field.NewString(tableName, "depends_on_round_id")
 	_round.Serial = field.NewInt(tableName, "serial")
 	_round.Quorum = field.NewUint(tableName, "quorum")
@@ -223,7 +223,7 @@ type round struct {
 	StartDate                        field.Time
 	EndDate                          field.Time
 	IsOpen                           field.Bool
-	IsPublic                         field.Bool
+	IsPublicJury                     field.Bool
 	DependsOnRoundID                 field.String
 	Serial                           field.Int
 	Quorum                           field.Uint
@@ -286,7 +286,7 @@ func (r *round) updateTableName(table string) *round {
 	r.StartDate = field.NewTime(table, "start_date")
 	r.EndDate = field.NewTime(table, "end_date")
 	r.IsOpen = field.NewBool(table, "is_open")
-	r.IsPublic = field.NewBool(table, "is_public")
+	r.IsPublicJury = field.NewBool(table, "is_public_jury")
 	r.DependsOnRoundID = field.NewString(table, "depends_on_round_id")
 	r.Serial = field.NewInt(table, "serial")
 	r.Quorum = field.NewUint(table, "quorum")
@@ -343,7 +343,7 @@ func (r *round) fillFieldMap() {
 	r.fieldMap["start_date"] = r.StartDate
 	r.fieldMap["end_date"] = r.EndDate
 	r.fieldMap["is_open"] = r.IsOpen
-	r.fieldMap["is_public"] = r.IsPublic
+	r.fieldMap["is_public_jury"] = r.IsPublicJury
 	r.fieldMap["depends_on_round_id"] = r.DependsOnRoundID
 	r.fieldMap["serial"] = r.Serial
 	r.fieldMap["quorum"] = r.Quorum

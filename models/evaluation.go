@@ -26,10 +26,11 @@ type Evaluation struct {
 	Serial        uint                   `json:"serial"`
 	Submission    *Submission            `json:"submission" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	Participant   *User                  `json:"-" gorm:"foreignKey:ParticipantID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	Judge         *Role                  `json:"-" gorm:"foreignKey:JudgeID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	CreatedAt     *time.Time             `json:"createdAt" gorm:"autoCreateTime"`
-	UpdatedAt     *time.Time             `json:"updatedAt" gorm:"autoUpdateTime"`
-	EvaluatedAt   *time.Time             `json:"evaluatedAt" gorm:"type:datetime"`
+	// This would be null when any judge is deleted
+	Judge       *Role      `json:"-" gorm:"foreignKey:JudgeID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
+	CreatedAt   *time.Time `json:"createdAt" gorm:"autoCreateTime"`
+	UpdatedAt   *time.Time `json:"updatedAt" gorm:"autoUpdateTime"`
+	EvaluatedAt *time.Time `json:"evaluatedAt" gorm:"type:datetime"`
 	// SkipExpirationAt is the time when the skip request will expire
 	SkipExpirationAt *time.Time `json:"skipExpirationAt" gorm:"type:datetime"`
 	// Round              *Round         `json:"-" gorm:"foreignKey:RoundID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`

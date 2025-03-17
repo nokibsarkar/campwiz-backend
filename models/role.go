@@ -2,6 +2,8 @@ package models
 
 import (
 	"nokib/campwiz/consts"
+
+	"gorm.io/plugin/soft_delete"
 )
 
 type RoleType string
@@ -23,6 +25,7 @@ type Role struct {
 	CampaignID      *IDType                `json:"campaignId" gorm:"null;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	RoundID         *IDType                `json:"roundId" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	IsAllowed       bool                   `json:"isAllowed" gorm:"default:false"`
+	IsDeleted       soft_delete.DeletedAt  `gorm:"softDelete:flag"`
 	TotalAssigned   int                    `json:"totalAssigned"`
 	TotalEvaluated  int                    `json:"totalEvaluated"`
 	TotalScore      int                    `json:"totalScore"`

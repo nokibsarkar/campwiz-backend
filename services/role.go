@@ -86,7 +86,7 @@ func (r *RoleService) CalculateRoleDifference(tx *gorm.DB, Type models.RoleType,
 	log.Println("Remove ", removedRoles)
 	return addedRoles, removedRoles, nil
 }
-func (service *RoleService) FetchChangeRoles(tx *gorm.DB, roleType models.RoleType, projectID models.IDType, targetProjectID *models.IDType, campaignId *models.IDType, roundID *models.IDType, updatedRoleUsernames []models.WikimediaUsernameType) ([]models.Role, error) {
+func (service *RoleService) FetchChangeRoles(tx *gorm.DB, roleType models.RoleType, projectID models.IDType, targetProjectID *models.IDType, campaignId *models.IDType, roundID *models.IDType, updatedRoleUsernames []models.WikimediaUsernameType) (currentRoles []models.Role, removedRoles []models.IDType, err error) {
 	filter := &models.RoleFilter{
 		ProjectID: projectID,
 		Type:      &roleType,
@@ -103,29 +103,29 @@ func (service *RoleService) FetchChangeRoles(tx *gorm.DB, roleType models.RoleTy
 	addedRoles, removedRoles, err := service.CalculateRoleDifference(tx, roleType, filter, updatedRoleUsernames)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return
 	}
 	if len(addedRoles) > 0 {
 		res := tx.Save(addedRoles)
 		if res.Error != nil {
 			log.Println(res.Error)
-			return nil, res.Error
+			return nil, nil, res.Error
 		}
 	}
 	if len(removedRoles) > 0 {
 		for _, roleID := range removedRoles {
 			res := tx.Model(&models.Role{RoleID: roleID}).Update("is_allowed", false)
 			if res.Error != nil {
-				return nil, res.Error
+				return nil, nil, res.Error
 			}
 		}
 	}
-	currentRoles := []models.Role{}
+	currentRoles = []models.Role{}
 	res := tx.Where(filter).Find(&currentRoles)
 	if res.Error != nil {
-		return nil, res.Error
+		return nil, nil, res.Error
 	}
-	return currentRoles, nil
+	return currentRoles, removedRoles, nil
 }
 
 func (service *RoleService) ListRoles(tx *gorm.DB, filter *models.RoleFilter) ([]models.Role, error) {

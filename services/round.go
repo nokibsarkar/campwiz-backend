@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand/v2"
 	"nokib/campwiz/models"
+	"nokib/campwiz/query"
 	"nokib/campwiz/repository"
 	idgenerator "nokib/campwiz/services/idGenerator"
 	importservice "nokib/campwiz/services/round/taskrunner"
@@ -82,7 +83,7 @@ func (s *RoundService) CreateRound(request *RoundRequest) (*models.Round, error)
 		return nil, err
 	}
 
-	currentRoles, err := role_service.FetchChangeRoles(tx, models.RoleTypeJury, campaign.ProjectID, nil, &campaign.CampaignID, &round.RoundID, request.Juries)
+	currentRoles, _, err := role_service.FetchChangeRoles(tx, models.RoleTypeJury, campaign.ProjectID, nil, &campaign.CampaignID, &round.RoundID, request.Juries)
 	if err != nil {
 		tx.Rollback()
 		return nil, err
@@ -216,6 +217,7 @@ func (r *RoundService) UpdateRoundDetails(roundID models.IDType, req *RoundReque
 	conn, close := repository.GetDB()
 	defer close()
 	tx := conn.Begin()
+	q := query.Use(tx)
 	round, err := round_repo.FindByID(tx, roundID)
 	if err != nil {
 		tx.Rollback()
@@ -238,7 +240,7 @@ func (r *RoundService) UpdateRoundDetails(roundID models.IDType, req *RoundReque
 		Type:       &juryType,
 		ProjectID:  round.ProjectID,
 	}
-	addedRoles, removedRoles, err := role_service.CalculateRoleDifference(tx, models.RoleTypeJury, filter, req.Juries)
+	addedRoles, removedRoleIDs, err := role_service.CalculateRoleDifference(tx, models.RoleTypeJury, filter, req.Juries)
 	if err != nil {
 		log.Println(err)
 		tx.Rollback()
@@ -251,14 +253,23 @@ func (r *RoundService) UpdateRoundDetails(roundID models.IDType, req *RoundReque
 			return nil, res.Error
 		}
 	}
-	if len(removedRoles) > 0 {
-		for _, roleID := range removedRoles {
+	if len(removedRoleIDs) > 0 {
+		r := []string{}
+		for _, roleID := range removedRoleIDs {
 			log.Println("Banning role: ", roleID)
 			res := tx.Updates(&models.Role{RoleID: roleID, IsAllowed: false})
 			if res.Error != nil {
 				tx.Rollback()
 				return nil, res.Error
 			}
+			r = append(r, roleID.String())
+		}
+		// make all the unevaluated evaluations available for re-assignment to other juries
+		_, err = q.Evaluation.Where(q.Evaluation.RoundID.Eq(roundID.String())).Where(q.Evaluation.JudgeID.In(r...)).
+			Where(q.Evaluation.EvaluatedAt.IsNull()).Update(q.Evaluation.JudgeID, nil)
+		if err != nil {
+			tx.Rollback()
+			return nil, err
 		}
 	}
 	tx.Commit()

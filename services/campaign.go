@@ -68,6 +68,7 @@ func (service *CampaignService) CreateCampaign(campaignRequest *CampaignCreateRe
 			Image:       campaignRequest.Image,
 			ProjectID:   *currentUser.LeadingProjectID,
 			IsPublic:    campaignRequest.IsPublic,
+			Status:      models.RoundStatusActive,
 		},
 		CreatedByID: campaignRequest.CreatedByID,
 	}
@@ -77,7 +78,7 @@ func (service *CampaignService) CreateCampaign(campaignRequest *CampaignCreateRe
 		tx.Rollback()
 		return nil, err
 	}
-	_, err = role_service.FetchChangeRoles(tx, models.RoleTypeCoordinator, campaign.ProjectID, nil, &campaign.CampaignID, nil, campaignRequest.Coordinators)
+	_, _, err = role_service.FetchChangeRoles(tx, models.RoleTypeCoordinator, campaign.ProjectID, nil, &campaign.CampaignID, nil, campaignRequest.Coordinators)
 	if err != nil {
 		tx.Rollback()
 		return nil, err
@@ -163,7 +164,7 @@ func (service *CampaignService) UpdateCampaign(ID models.IDType, campaignRequest
 	// 	tx.Rollback()
 	// 	return nil, err
 	// }
-	_, err = roleService.FetchChangeRoles(tx, models.RoleTypeCoordinator, campaign.ProjectID, nil, &campaign.CampaignID, nil, campaignRequest.Coordinators)
+	_, _, err = roleService.FetchChangeRoles(tx, models.RoleTypeCoordinator, campaign.ProjectID, nil, &campaign.CampaignID, nil, campaignRequest.Coordinators)
 	if err != nil {
 		tx.Rollback()
 		return nil, err

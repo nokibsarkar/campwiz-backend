@@ -149,6 +149,11 @@ const docTemplate = `{
                     },
                     {
                         "type": "boolean",
+                        "name": "includeRoundRoles",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
                         "name": "includeRounds",
                         "in": "query"
                     }
@@ -697,44 +702,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/round/distribute/{roundId}/simulate": {
-            "post": {
-                "description": "Simulate distributing evaluations to juries",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Round"
-                ],
-                "summary": "Simulate distributing evaluations to juries",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "The round ID",
-                        "name": "roundId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "The distribution request",
-                        "name": "DistributionRequest",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/services.DistributionRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/routes.ResponseSingle-models_Task"
-                        }
-                    }
-                }
-            }
-        },
         "/round/import/{roundId}/commons": {
             "post": {
                 "description": "The user would provide a round ID and a list of commons categories and the system would import images from those categories",
@@ -891,6 +858,49 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/routes.ResponseList-models_EvaluationResult"
+                        }
+                    }
+                }
+            }
+        },
+        "/round/{roundId}/status": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Update the status of a round",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Round"
+                ],
+                "summary": "Update the status of a round",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The round ID",
+                        "name": "roundId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "The status request",
+                        "name": "UpdateStatusRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.UpdateStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.ResponseSingle-models_Round"
                         }
                     }
                 }
@@ -1657,6 +1667,12 @@ const docTemplate = `{
                 "isPublic": {
                     "type": "boolean"
                 },
+                "jury": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
                 "latestTaskId": {
                     "type": "string"
                 },
@@ -2095,6 +2111,14 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/services.TaskResponse"
+                }
+            }
+        },
+        "routes.UpdateStatusRequest": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "$ref": "#/definitions/models.RoundStatus"
                 }
             }
         },

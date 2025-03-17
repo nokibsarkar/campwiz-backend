@@ -427,6 +427,10 @@ definitions:
         type: boolean
       isPublic:
         type: boolean
+      jury:
+        additionalProperties:
+          type: string
+        type: object
       latestTaskId:
         type: string
       name:
@@ -726,6 +730,11 @@ definitions:
       data:
         $ref: '#/definitions/services.TaskResponse'
     type: object
+  routes.UpdateStatusRequest:
+    properties:
+      status:
+        $ref: '#/definitions/models.RoundStatus'
+    type: object
   services.CampaignCreateRequest:
     properties:
       coordinators:
@@ -1019,6 +1028,9 @@ paths:
         type: boolean
       - in: query
         name: includeRoles
+        type: boolean
+      - in: query
+        name: includeRoundRoles
         type: boolean
       - in: query
         name: includeRounds
@@ -1434,6 +1446,33 @@ paths:
       summary: Get results of a round
       tags:
       - Round
+  /round/{roundId}/status:
+    post:
+      description: Update the status of a round
+      parameters:
+      - description: The round ID
+        in: path
+        name: roundId
+        required: true
+        type: string
+      - description: The status request
+        in: body
+        name: UpdateStatusRequest
+        required: true
+        schema:
+          $ref: '#/definitions/routes.UpdateStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.ResponseSingle-models_Round'
+      security:
+      - ApiKeyAuth: []
+      summary: Update the status of a round
+      tags:
+      - Round
   /round/distribute/{roundId}:
     post:
       description: Distribute evaluations to juries
@@ -1457,31 +1496,6 @@ paths:
           schema:
             $ref: '#/definitions/routes.ResponseSingle-models_Task'
       summary: Distribute evaluations to juries
-      tags:
-      - Round
-  /round/distribute/{roundId}/simulate:
-    post:
-      description: Simulate distributing evaluations to juries
-      parameters:
-      - description: The round ID
-        in: path
-        name: roundId
-        required: true
-        type: string
-      - description: The distribution request
-        in: body
-        name: DistributionRequest
-        required: true
-        schema:
-          $ref: '#/definitions/services.DistributionRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/routes.ResponseSingle-models_Task'
-      summary: Simulate distributing evaluations to juries
       tags:
       - Round
   /round/import/{roundId}/commons:

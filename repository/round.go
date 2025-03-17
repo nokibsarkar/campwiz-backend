@@ -19,7 +19,7 @@ func (r *RoundRepository) Create(conn *gorm.DB, round *models.Round) (*models.Ro
 	return round, nil
 }
 func (r *RoundRepository) Update(conn *gorm.DB, round *models.Round) (*models.Round, error) {
-	result := conn.Save(round)
+	result := conn.Updates(round)
 	if result.Error != nil {
 		return nil, result.Error
 	}

@@ -127,6 +127,42 @@ func UpdateRoundDetails(c *gin.Context, sess *cache.Session) {
 	c.JSON(200, ResponseSingle[*models.Round]{Data: round})
 }
 
+type UpdateStatusRequest struct {
+	Status models.RoundStatus `json:"status"`
+}
+
+// UpdateStatus godoc
+// @Summary Update the status of a round
+// @Description Update the status of a round
+// @Produce  json
+// @Success 200 {object} ResponseSingle[models.Round]
+// @Router /round/{roundId}/status [post]
+// @Param roundId path string true "The round ID"
+// @Param UpdateStatusRequest body UpdateStatusRequest true "The status request"
+// @Tags Round
+// @Error 400 {object} ResponseError
+// @Security ApiKeyAuth
+func UpdateStatus(c *gin.Context, sess *cache.Session) {
+	roundId := c.Param("roundId")
+	if roundId == "" {
+		c.JSON(400, ResponseError{Detail: "Invalid request : Round ID is required"})
+	}
+	req := &UpdateStatusRequest{}
+	err := c.ShouldBind(req)
+	if err != nil {
+		c.JSON(400, ResponseError{Detail: "Error Decoding : " + err.Error()})
+		return
+	}
+	round_service := services.NewRoundService()
+	round, err := round_service.UpdateStatus(sess.UserID, models.IDType(roundId), req.Status)
+	if err != nil {
+		c.JSON(400, ResponseError{Detail: "Failed to update round : " + err.Error()})
+		return
+	}
+	c.JSON(200, ResponseSingle[*models.Round]{Data: round})
+
+}
+
 // DistributeEvaluations godoc
 // @Summary Distribute evaluations to juries
 // @Description Distribute evaluations to juries
@@ -150,36 +186,6 @@ func DistributeEvaluations(c *gin.Context, sess *cache.Session) {
 	}
 	round_service := services.NewRoundService()
 	task, err := round_service.DistributeEvaluations(sess.UserID, models.IDType(roundId), distributionReq)
-	if err != nil {
-		c.JSON(400, ResponseError{Detail: "Failed to distribute evaluations : " + err.Error()})
-		return
-	}
-	c.JSON(200, ResponseSingle[*models.Task]{Data: task})
-}
-
-// SimulateDistributeEvaluations godoc
-// @Summary Simulate distributing evaluations to juries
-// @Description Simulate distributing evaluations to juries
-// @Produce  json
-// @Success 200 {object} ResponseSingle[models.Task]
-// @Router /round/distribute/{roundId}/simulate [post]
-// @Param roundId path string true "The round ID"
-// @Param DistributionRequest body services.DistributionRequest true "The distribution request"
-// @Tags Round
-// @Error 400 {object} ResponseError
-func SimulateDistributeEvaluations(c *gin.Context, sess *cache.Session) {
-	roundId := c.Param("roundId")
-	if roundId == "" {
-		c.JSON(400, ResponseError{Detail: "Invalid request : Round ID is required"})
-	}
-	round_service := services.NewRoundService()
-	distributionReq := &services.DistributionRequest{}
-	err := c.ShouldBind(distributionReq)
-	if err != nil {
-		c.JSON(400, ResponseError{Detail: "Error Decoding : " + err.Error()})
-		return
-	}
-	task, err := round_service.SimulateDistributeEvaluations(sess.UserID, models.IDType(roundId), distributionReq)
 	if err != nil {
 		c.JSON(400, ResponseError{Detail: "Failed to distribute evaluations : " + err.Error()})
 		return
@@ -275,9 +281,9 @@ func NewRoundRoutes(parent *gin.RouterGroup) {
 	r.GET("/:roundId", GetRound)
 	r.GET("/:roundId/next/public", WithSession(NextPublicSubmission))
 	r.GET("/:roundId/results", WithSession(GetResults))
+	r.POST("/:roundId/status", WithSession(UpdateStatus))
 	r.POST("/", WithPermission(consts.PermissionCreateCampaign, CreateRound))
 	r.POST("/:roundId", WithPermission(consts.PermissionCreateCampaign, UpdateRoundDetails))
 	r.POST("/import/:roundId/commons", WithPermission(consts.PermissionLogin, ImportFromCommons))
 	r.POST("/distribute/:roundId", WithPermission(consts.PermissionCreateCampaign, DistributeEvaluations))
-	r.POST("/distribute/:roundId/simulate", WithPermission(consts.PermissionCreateCampaign, SimulateDistributeEvaluations))
 }

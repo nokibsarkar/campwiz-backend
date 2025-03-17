@@ -64,6 +64,10 @@ func (s *RoundService) CreateRound(request *RoundRequest) (*models.Round, error)
 		tx.Rollback()
 		return nil, errors.New("campaign not found")
 	}
+	if campaign.Status != models.RoundStatusActive {
+		tx.Rollback()
+		return nil, errors.New("campaign is not active")
+	}
 	round := &models.Round{
 		RoundID:       idgenerator.GenerateID("r"),
 		CreatedByID:   request.CreatedByID,
@@ -234,7 +238,6 @@ func (r *RoundService) UpdateRoundDetails(roundID models.IDType, req *RoundReque
 		Type:       &juryType,
 		ProjectID:  round.ProjectID,
 	}
-	log.Print("Filter: ", filter)
 	addedRoles, removedRoles, err := role_service.CalculateRoleDifference(tx, models.RoleTypeJury, filter, req.Juries)
 	if err != nil {
 		log.Println(err)
@@ -275,6 +278,10 @@ func (r *RoundService) DistributeEvaluations(currentUserID models.IDType, roundI
 		tx.Rollback()
 		return nil, fmt.Errorf("round not found")
 	}
+	if round.Status == models.RoundStatusActive {
+		tx.Rollback()
+		return nil, errors.New("please pause the round before distributing evaluations")
+	}
 	taskReq := &models.Task{
 		TaskID:               idgenerator.GenerateID("t"),
 		Type:                 models.TaskTypeDistributeEvaluations,
@@ -298,45 +305,6 @@ func (r *RoundService) DistributeEvaluations(currentUserID models.IDType, roundI
 	strategy := distributionstrategy.NewRoundRobinDistributionStrategyV3(task.TaskID)
 	runner := importservice.NewDistributionTaskRunner(task.TaskID, strategy)
 	go runner.Run()
-	return task, nil
-}
-func (r *RoundService) SimulateDistributeEvaluations(currentUserID models.IDType, roundId models.IDType, distributionReq *DistributionRequest) (*models.Task, error) {
-	round_repo := repository.NewRoundRepository()
-	task_repo := repository.NewTaskRepository()
-	conn, close := repository.GetDB()
-	defer close()
-	tx := conn.Begin()
-	round, err := round_repo.FindByID(tx, roundId)
-	if err != nil {
-		tx.Rollback()
-		return nil, err
-	} else if round == nil {
-		tx.Rollback()
-		return nil, fmt.Errorf("round not found")
-	}
-	taskReq := &models.Task{
-		TaskID:               idgenerator.GenerateID("t"),
-		Type:                 models.TaskTypeDistributeEvaluations,
-		Status:               models.TaskStatusPending,
-		AssociatedRoundID:    &roundId,
-		AssociatedUserID:     &currentUserID,
-		CreatedByID:          currentUserID,
-		AssociatedCampaignID: &round.CampaignID,
-		SuccessCount:         0,
-		FailedCount:          0,
-		FailedIds:            &datatypes.JSONType[map[string]string]{},
-		RemainingCount:       0,
-	}
-	task, err := task_repo.Create(tx, taskReq)
-	if err != nil {
-		tx.Rollback()
-		return nil, err
-	}
-	tx.Commit()
-	log.Println("Task created with ID: ", task.TaskID)
-	// strategy := distributionstrategy.NewRoundRobinDistributionStrategySimulator(task.TaskID)
-	// runner := importservice.NewDistributionTaskRunner(task.TaskID, strategy)
-	// go runner.Run()
 	return task, nil
 }
 func (r *RoundService) GetResults(roundID models.IDType) (results []models.EvaluationResult, err error) {
@@ -377,4 +345,97 @@ func (e *RoundService) GetNextUnevaluatedSubmissionForPublicJury(userID models.I
 		return nil, err
 	}
 	return submission, nil
+}
+func (e *RoundService) UpdateStatus(currenUserID models.IDType, roundID models.IDType, status models.RoundStatus) (*models.Round, error) {
+	round_repo := repository.NewRoundRepository()
+	role_repo := repository.NewRoleRepository()
+	conn, close := repository.GetDB()
+	defer close()
+	tx := conn.Begin()
+
+	round, err := round_repo.FindByID(tx, roundID)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	if round == nil {
+		tx.Rollback()
+		return nil, errors.New("round not found")
+	}
+	if round.Status == status {
+		tx.Rollback()
+		return round, nil
+	}
+	coordinatorType := models.RoleTypeCoordinator
+	coordinatorRoles, err := role_repo.ListAllRoles(tx, &models.RoleFilter{
+		UserID:     &currenUserID,
+		Type:       &coordinatorType,
+		ProjectID:  round.ProjectID,
+		CampaignID: &round.CampaignID,
+	})
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	if len(coordinatorRoles) == 0 {
+		tx.Rollback()
+		return nil, errors.New("user is not a coordinator")
+	}
+	coordinatorRole := coordinatorRoles[0]
+	if !coordinatorRole.IsAllowed {
+		tx.Rollback()
+		return nil, errors.New("user is not allowed to update the round")
+	}
+	// if a round is completed, it cannot be set to any other status
+	switch round.Status {
+	case models.RoundStatusCompleted:
+		tx.Rollback()
+		return nil, errors.New("round is completed")
+	case models.RoundStatusActive:
+		if status != models.RoundStatusCompleted && status != models.RoundStatusPaused {
+			tx.Rollback()
+			return nil, errors.New("round can only be set to completed from the backend")
+		}
+	case models.RoundStatusPaused:
+		if status != models.RoundStatusActive && status != models.RoundStatusCompleted {
+			tx.Rollback()
+			return nil, errors.New("round can only be set to active or completed from paused")
+		}
+	case models.RoundStatusImporting:
+		tx.Rollback()
+		return nil, errors.New("nothing from frontend can change the status of a round from importing")
+	case models.RoundStatusDistributing:
+		return nil, errors.New("nothing from frontend can change the status of a round from distributing")
+	case models.RoundStatusEvaluating:
+		if status != models.RoundStatusPaused && status != models.RoundStatusCompleted {
+			tx.Rollback()
+			return nil, errors.New("round can only be set to paused or completed from evaluating")
+		}
+	case models.RoundStatusPending:
+		if status != models.RoundStatusActive && status != models.RoundStatusRejected {
+			tx.Rollback()
+			return nil, errors.New("round can only be set to active or rejected from pending")
+		}
+	case models.RoundStatusScheduled:
+		if status != models.RoundStatusActive && status != models.RoundStatusCancelled {
+			tx.Rollback()
+			return nil, errors.New("round can only be set to active or cancelled from scheduled")
+		}
+	case models.RoundStatusRejected:
+		tx.Rollback()
+		return nil, errors.New("round cannot be set to any other status from rejected")
+	case models.RoundStatusCancelled:
+		tx.Rollback()
+		return nil, errors.New("round cannot be set to any other status from cancelled")
+	}
+	round, err = round_repo.Update(tx, &models.Round{
+		RoundID: roundID,
+		Status:  status,
+	})
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	tx.Commit()
+	return round, nil
 }

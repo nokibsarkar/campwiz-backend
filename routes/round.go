@@ -19,13 +19,17 @@ import (
 // @Tags Round
 // @Error 400 {object} ResponseError
 func CreateRound(c *gin.Context, sess *cache.Session) {
-	defer HandleError("BulkAddRound")
+	defer HandleError("Create Round")
 	requestedRounds := services.RoundRequest{
 		CreatedByID: sess.UserID,
 	}
 	err := c.ShouldBindJSON(&requestedRounds)
 	if err != nil {
 		c.JSON(400, ResponseError{Detail: "Invalid request : " + err.Error()})
+		return
+	}
+	if len(requestedRounds.Juries) == 0 {
+		c.JSON(400, ResponseError{Detail: "Invalid request : At least one jury is required"})
 		return
 	}
 	round_service := services.NewRoundService()

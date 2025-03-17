@@ -2,6 +2,7 @@ package repository
 
 import (
 	"nokib/campwiz/models"
+	"nokib/campwiz/query"
 	"strings"
 
 	"gorm.io/gorm"
@@ -18,9 +19,9 @@ func (c *CampaignRepository) Create(conn *gorm.DB, campaign *models.Campaign) er
 }
 func (c *CampaignRepository) FindByID(conn *gorm.DB, id models.IDType) (*models.Campaign, error) {
 	campaign := &models.Campaign{}
-	where := &models.Campaign{CampaignID: id}
-	result := conn.First(campaign, where)
-	return campaign, result.Error
+	q := query.Use(conn)
+	campaign, err := q.Campaign.Where(q.Campaign.CampaignID.Eq(id.String())).First()
+	return campaign, err
 }
 func (c *CampaignRepository) ListAllCampaigns(conn *gorm.DB, query *models.CampaignFilter) ([]models.Campaign, error) {
 	var campaigns []models.Campaign

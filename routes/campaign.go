@@ -182,6 +182,7 @@ func CreateCampaign(c *gin.Context, sess *cache.Session) {
 	createRequest.EndDate = time.Date(endDate.Year(), endDate.Month(), endDate.Day(), 23, 59, 59, 0, time.UTC)
 
 	camapign_service := services.NewCampaignService()
+	createRequest.Status = models.RoundStatusActive
 	campaign, err := camapign_service.CreateCampaign(createRequest)
 	if err != nil {
 		c.JSON(400, ResponseError{Detail: "Failed to create campaign : " + err.Error()})

@@ -272,6 +272,26 @@ func (r *RoundService) UpdateRoundDetails(roundID models.IDType, req *RoundReque
 			return nil, err
 		}
 	}
+	if qry != nil {
+		stmt := tx
+		if qry.IncludeRoundRoles {
+			stmt = stmt.Preload("Roles")
+			if qry.IncludeRoundRolesUsers {
+				stmt = stmt.Preload("Roles.User")
+			}
+			round, err = round_repo.FindByID(stmt, roundID)
+			if err != nil {
+				tx.Rollback()
+				return nil, err
+			}
+			if qry.IncludeRoundRolesUsers {
+				round.Jury = map[models.IDType]models.WikimediaUsernameType{}
+				for _, role := range round.Roles {
+					round.Jury[role.UserID] = role.User.Username
+				}
+			}
+		}
+	}
 	tx.Commit()
 	return round, nil
 }

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"nokib/campwiz/models"
+	"nokib/campwiz/query"
 
 	"gorm.io/gorm"
 )
@@ -61,21 +62,9 @@ func (r *RoundRepository) GetResults(conn *gorm.DB, roundID models.IDType) (resu
 }
 func (r *RoundRepository) GetResultsV2(conn *gorm.DB, roundID models.IDType) (results []models.EvaluationResult, err error) {
 	results = []models.EvaluationResult{}
-	// query, close := GetDBWithGen()
-	// defer close()
-	// k, err := query.Submission
-	// log.Printf("k: %v", k)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	stmt := (conn.Model(&models.Submission{}).
-		Select("score as AverageScore, count(submission_id) as SubmissionCount").
-		Where(&models.Submission{RoundID: roundID}).Group("score").Order("score").
-		Limit(100).
-		Find(&results))
-	if stmt.Error != nil {
-		return nil, stmt.Error
-	}
-	return results, nil
+	q := query.Use(conn)
+	stmt := q.Submission.Select(q.Submission.Score.As("AverageScore"), q.Submission.SubmissionID.Count().As("SubmissionCount")).Group(q.Submission.Score).Order(q.Submission.Score.Desc()).Limit(100)
+	err = stmt.Scan(&results)
+	return results, err
 
 }

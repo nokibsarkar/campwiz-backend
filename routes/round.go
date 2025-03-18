@@ -116,15 +116,16 @@ func UpdateRoundDetails(c *gin.Context, sess *cache.Session) {
 	if roundId == "" {
 		c.JSON(400, ResponseError{Detail: "Invalid request : Round ID is required"})
 	}
-	q := &models.SingleCampaaignFilter{}
+	q := &models.SingleCampaaignFilter{
+		IncludeRoundRoles:      true,
+		IncludeRoundRolesUsers: true,
+	}
 	// err := c.ShouldBindQuery(q)
 	// if err != nil {
 	// 	c.JSON(400, ResponseError{Detail: "Invalid request : " + err.Error()})
 	// 	return
 	// }
 	req := &services.RoundRequest{}
-
-	//
 	err := c.ShouldBindBodyWithJSON(req)
 	if err != nil {
 		c.JSON(400, ResponseError{Detail: "Error Decoding : " + err.Error()})

@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"log"
 	"nokib/campwiz/models"
 
 	"gorm.io/gorm"
@@ -26,7 +25,7 @@ func (r *RoleRepository) FindRoleByID(tx *gorm.DB, juryID models.IDType) (*model
 	return jury, result.Error
 }
 func (r *RoleRepository) ListAllRoles(tx *gorm.DB, filter *models.RoleFilter) ([]models.Role, error) {
-	var juries []models.Role
+	var roles []models.Role
 	stmt := tx
 	if filter != nil {
 		// if filter.IncludeDeleted != nil {
@@ -57,9 +56,8 @@ func (r *RoleRepository) ListAllRoles(tx *gorm.DB, filter *models.RoleFilter) ([
 		}
 
 	}
-	result := stmt.Find(&juries)
-	log.Println("ListAllRoles: ", juries)
-	return juries, result.Error
+	result := stmt.Find(&roles)
+	return roles, result.Error
 }
 func (r *RoleRepository) FindRoleByUserIDAndRoundID(tx *gorm.DB, userID models.IDType, roundID models.IDType, roleType models.RoleType) (*models.Role, error) {
 	jury := &models.Role{}

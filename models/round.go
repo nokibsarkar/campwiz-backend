@@ -17,8 +17,8 @@ type EvaluationResult struct {
 type ResultExportFormat string
 
 const (
-	ResultExportFormatCSV  ResultExportFormat = "CSV"
-	ResultExportFormatJSON ResultExportFormat = "JSON"
+	ResultExportFormatCSV  ResultExportFormat = "csv"
+	ResultExportFormatJSON ResultExportFormat = "json"
 	// ResultExportFormatXLSX     ResultExportFormat = "XLSX"
 	// ResultExportFormatWIKITEXT ResultExportFormat = "WIKITEXT"
 )

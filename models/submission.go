@@ -86,7 +86,7 @@ type SubmissionResult struct {
 }
 type SubmissionResultQuery struct {
 	CommonFilter
-	Type []MediaType `form:"type"`
+	Type []MediaType `form:"type" collectionFormat:"multi"`
 }
 type SubmissionStatistics struct {
 	SubmissionID    types.SubmissionIDType

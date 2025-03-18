@@ -7,7 +7,6 @@ import (
 	"nokib/campwiz/models"
 	"nokib/campwiz/repository/cache"
 	"nokib/campwiz/services"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -302,7 +301,7 @@ func GetResultSummary(c *gin.Context, sess *cache.Session) {
 // @Description Get results of a round
 // @Produce  json
 // @Success 200 {object} ResponseList[models.SubmissionResult]
-// @Produce  application/csv
+// @Produce  text/csv
 // @Router /round/{roundId}/results/{format} [get]
 // @Param roundId path string true "The round ID"
 // @Param format path models.ResultExportFormat true "The format of the results"
@@ -326,19 +325,9 @@ func GetResults(c *gin.Context, sess *cache.Session) {
 		c.JSON(400, ResponseError{Detail: "Invalid request : " + err.Error()})
 		return
 	}
-	if len(q.Type) > 0 {
-		k := []models.MediaType{}
-		for _, t := range q.Type {
-			if strings.Contains(string(t), ",") {
-				for _, tt := range strings.Split(string(t), ",") {
-					k = append(k, models.MediaType(tt))
-				}
-			}
-		}
-		q.Type = k
-	}
+
 	round_service := services.NewRoundService()
-	results, err := round_service.GetResults(models.IDType(roundId), q)
+	results, err := round_service.GetResults(sess.UserID, models.IDType(roundId), q)
 	if err != nil {
 		c.JSON(404, ResponseError{Detail: "Failed to get round results : " + err.Error()})
 		return
@@ -352,7 +341,7 @@ func GetResults(c *gin.Context, sess *cache.Session) {
 		c.JSON(200, result)
 	} else if format == models.ResultExportFormatCSV {
 		c.Writer.Header().Set("Content-Type", "text/csv")
-		c.Writer.Header().Set("Content-Disposition", "attachment;filename=results.csv")
+		c.Writer.Header().Set("Content-Disposition", fmt.Sprintf("attachment;filename=round-%s-results.csv", roundId))
 		csvWriter := csv.NewWriter(c.Writer)
 		csvWriter.Write([]string{"Submission ID", "Name", "Score", "Author", "Evaluation Count", "Media Type"})
 		for _, result := range results {

@@ -1010,7 +1010,7 @@ paths:
     get:
       description: get all campaigns
       parameters:
-      - collectionFormat: csv
+      - collectionFormat: multi
         in: query
         items:
           type: string
@@ -1494,8 +1494,8 @@ paths:
         type: string
       - description: The format of the results
         enum:
-        - CSV
-        - JSON
+        - csv
+        - json
         in: path
         name: format
         required: true
@@ -1509,7 +1509,7 @@ paths:
       - in: query
         name: prev
         type: string
-      - collectionFormat: csv
+      - collectionFormat: multi
         in: query
         items:
           enum:
@@ -1523,7 +1523,7 @@ paths:
         type: array
       produces:
       - application/json
-      - application/csv
+      - text/csv
       responses:
         "200":
           description: OK

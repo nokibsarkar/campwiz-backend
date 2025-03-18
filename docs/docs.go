@@ -42,7 +42,7 @@ const docTemplate = `{
                         "items": {
                             "type": "string"
                         },
-                        "collectionFormat": "csv",
+                        "collectionFormat": "multi",
                         "name": "ids",
                         "in": "query"
                     },
@@ -911,7 +911,7 @@ const docTemplate = `{
                 "description": "Get results of a round",
                 "produces": [
                     "application/json",
-                    "application/csv"
+                    "text/csv"
                 ],
                 "tags": [
                     "Round"
@@ -927,8 +927,8 @@ const docTemplate = `{
                     },
                     {
                         "enum": [
-                            "CSV",
-                            "JSON"
+                            "csv",
+                            "json"
                         ],
                         "type": "string",
                         "description": "The format of the results",
@@ -963,7 +963,7 @@ const docTemplate = `{
                             ],
                             "type": "string"
                         },
-                        "collectionFormat": "csv",
+                        "collectionFormat": "multi",
                         "name": "type",
                         "in": "query"
                     }

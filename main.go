@@ -64,6 +64,7 @@ func SetupRouter(testing bool) *gin.Engine {
 // @contact.name Nokib Sarkar
 // @contact.email nokibsarkar@gmail.com
 // @contact.url https://github.com/nokibsarkar
+// @query.collection.format multi
 func main() {
 	preRun()
 	r := SetupRouter(false)

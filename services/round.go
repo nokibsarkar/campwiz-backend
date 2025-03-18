@@ -588,9 +588,32 @@ func (e *RoundService) UpdateStatus(currenUserID models.IDType, roundID models.I
 	return round, nil
 }
 
-func (e *RoundService) GetResults(roundID models.IDType, q *models.SubmissionResultQuery) ([]models.SubmissionResult, error) {
+func (e *RoundService) GetResults(currentUserID models.IDType, roundID models.IDType, q *models.SubmissionResultQuery) ([]models.SubmissionResult, error) {
 	round_repo := repository.NewRoundRepository()
 	conn, close := repository.GetDB()
 	defer close()
+	round, err := round_repo.FindByID(conn, roundID)
+	if err != nil {
+		return nil, err
+	}
+	if round == nil {
+		return nil, errors.New("round not found")
+	}
+	if round.Status != models.RoundStatusCompleted {
+		return nil, errors.New("round is not completed")
+	}
+	role_repo := repository.NewRoleRepository()
+	coordinatorType := models.RoleTypeCoordinator
+	role, err := role_repo.ListAllRoles(conn, &models.RoleFilter{
+		UserID:     &currentUserID,
+		CampaignID: &round.CampaignID,
+		Type:       &coordinatorType,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(role) == 0 {
+		return nil, errors.New("user is not a coordinator")
+	}
 	return round_repo.GetResults(conn, roundID, q)
 }

@@ -872,13 +872,8 @@ const docTemplate = `{
                 }
             }
         },
-        "/round/{roundId}/results": {
+        "/round/{roundId}/results/summary": {
             "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
                 "description": "Get results of a round",
                 "produces": [
                     "application/json"
@@ -892,6 +887,52 @@ const docTemplate = `{
                         "type": "string",
                         "description": "The round ID",
                         "name": "roundId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.ResponseList-models_EvaluationResult"
+                        }
+                    }
+                }
+            }
+        },
+        "/round/{roundId}/results/{format}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get results of a round",
+                "produces": [
+                    "application/json",
+                    "application/csv"
+                ],
+                "tags": [
+                    "Round"
+                ],
+                "summary": "Get results of a round",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The round ID",
+                        "name": "roundId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "CSV",
+                            "JSON"
+                        ],
+                        "type": "string",
+                        "description": "The format of the results",
+                        "name": "format",
                         "in": "path",
                         "required": true
                     },
@@ -932,35 +973,6 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/routes.ResponseList-models_SubmissionResult"
-                        }
-                    }
-                }
-            }
-        },
-        "/round/{roundId}/results/summary": {
-            "get": {
-                "description": "Get results of a round",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Round"
-                ],
-                "summary": "Get results of a round",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "The round ID",
-                        "name": "roundId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/routes.ResponseList-models_EvaluationResult"
                         }
                     }
                 }

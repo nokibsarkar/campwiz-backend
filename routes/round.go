@@ -1,6 +1,8 @@
 package routes
 
 import (
+	"encoding/csv"
+	"fmt"
 	"nokib/campwiz/consts"
 	"nokib/campwiz/models"
 	"nokib/campwiz/repository/cache"
@@ -300,8 +302,10 @@ func GetResultSummary(c *gin.Context, sess *cache.Session) {
 // @Description Get results of a round
 // @Produce  json
 // @Success 200 {object} ResponseList[models.SubmissionResult]
-// @Router /round/{roundId}/results [get]
+// @Produce  application/csv
+// @Router /round/{roundId}/results/{format} [get]
 // @Param roundId path string true "The round ID"
+// @Param format path models.ResultExportFormat true "The format of the results"
 // @Param SubmissionResultQuery query models.SubmissionResultQuery false "The query to filter the results"
 // @Tags Round
 // @Error 400 {object} ResponseError
@@ -310,6 +314,11 @@ func GetResults(c *gin.Context, sess *cache.Session) {
 	roundId := c.Param("roundId")
 	if roundId == "" {
 		c.JSON(400, ResponseError{Detail: "Invalid request : Round ID is required"})
+	}
+	format := models.ResultExportFormatJSON
+	formatString := c.Param("format")
+	if formatString != "" {
+		format = models.ResultExportFormat(formatString)
 	}
 	q := &models.SubmissionResultQuery{}
 	err := c.ShouldBindQuery(&q)
@@ -334,12 +343,35 @@ func GetResults(c *gin.Context, sess *cache.Session) {
 		c.JSON(404, ResponseError{Detail: "Failed to get round results : " + err.Error()})
 		return
 	}
-	result := ResponseList[models.SubmissionResult]{Data: results}
-	if len(results) > 0 {
-		result.ContinueToken = results[len(results)-1].SubmissionID.String()
-		result.PreviousToken = results[0].SubmissionID.String()
+	if format == models.ResultExportFormatJSON {
+		result := ResponseList[models.SubmissionResult]{Data: results}
+		if len(results) > 0 {
+			result.ContinueToken = results[len(results)-1].SubmissionID.String()
+			result.PreviousToken = results[0].SubmissionID.String()
+		}
+		c.JSON(200, result)
+	} else if format == models.ResultExportFormatCSV {
+		c.Writer.Header().Set("Content-Type", "text/csv")
+		c.Writer.Header().Set("Content-Disposition", "attachment;filename=results.csv")
+		csvWriter := csv.NewWriter(c.Writer)
+		csvWriter.Write([]string{"Submission ID", "Name", "Score", "Author", "Evaluation Count", "Media Type"})
+		for _, result := range results {
+			csvWriter.Write([]string{result.SubmissionID.String(),
+				result.Name, fmt.Sprintf("%f", result.Score),
+				result.Author,
+				fmt.Sprintf("%d", result.EvaluationCount),
+				string(result.MediaType)})
+
+		}
+		csvWriter.Flush()
+		if err := csvWriter.Error(); err != nil {
+			c.JSON(400, ResponseError{Detail: "Failed to write CSV : " + err.Error()})
+			return
+		}
+	} else {
+		c.JSON(400, ResponseError{Detail: "Invalid request : Invalid format"})
+		return
 	}
-	c.JSON(200, result)
 }
 
 // NextPublicSubmission godoc
@@ -384,7 +416,7 @@ func NewRoundRoutes(parent *gin.RouterGroup) {
 	r.GET("/:roundId", GetRound)
 	r.GET("/:roundId/next/public", WithSession(NextPublicSubmission))
 	r.GET("/:roundId/results/summary", WithSession(GetResultSummary))
-	r.GET("/:roundId/results", WithSession(GetResults))
+	r.GET("/:roundId/results/:format", WithSession(GetResults))
 	r.POST("/:roundId/status", WithSession(UpdateStatus))
 	r.POST("/", WithPermission(consts.PermissionCreateCampaign, CreateRound))
 	r.POST("/:roundId", WithPermission(consts.PermissionCreateCampaign, UpdateRoundDetails))

@@ -14,7 +14,14 @@ type EvaluationResult struct {
 	AverageScore    float64 `json:"averageScore"`
 	SubmissionCount int     `json:"submissionCount"`
 }
+type ResultExportFormat string
 
+const (
+	ResultExportFormatCSV  ResultExportFormat = "CSV"
+	ResultExportFormatJSON ResultExportFormat = "JSON"
+	// ResultExportFormatXLSX     ResultExportFormat = "XLSX"
+	// ResultExportFormatWIKITEXT ResultExportFormat = "WIKITEXT"
+)
 const (
 	// RoundStatusPending is the status when the round is created but not yet approved by the admin
 	RoundStatusPending RoundStatus = "PENDING"

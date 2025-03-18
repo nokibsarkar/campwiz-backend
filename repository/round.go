@@ -20,9 +20,18 @@ func (r *RoundRepository) Create(conn *gorm.DB, round *models.Round) (*models.Ro
 	return round, nil
 }
 func (r *RoundRepository) Update(conn *gorm.DB, round *models.Round) (*models.Round, error) {
+	IsPublic := round.IsPublicJury
 	result := conn.Updates(round)
 	if result.Error != nil {
 		return nil, result.Error
+	}
+	q := query.Use(conn)
+	res, err := q.Round.Where(q.Round.RoundID.Eq(round.RoundID.String())).Update(q.Round.IsPublicJury, IsPublic)
+	if err != nil {
+		return nil, err
+	}
+	if res.Error != nil {
+		return nil, res.Error
 	}
 	return round, nil
 }
@@ -83,6 +92,7 @@ func (r *RoundRepository) GetResultSummary(conn *gorm.DB, roundID models.IDType)
 	results = []models.EvaluationResult{}
 	q := query.Use(conn)
 	stmt := q.Submission.Select(q.Submission.Score.As("AverageScore"), q.Submission.SubmissionID.Count().As("SubmissionCount")).
+		Where(q.Submission.RoundID.Eq(roundID.String())).
 		Group(q.Submission.Score).Order(q.Submission.Score.Desc()).Limit(100)
 	err = stmt.Scan(&results)
 	return results, err

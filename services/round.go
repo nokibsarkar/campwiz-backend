@@ -335,7 +335,7 @@ func (r *RoundService) UpdateRoundDetails(roundID models.IDType, req *RoundReque
 	defer close()
 	tx := conn.Begin()
 	q := query.Use(tx)
-	round, err := round_repo.FindByID(tx, roundID)
+	round, err := round_repo.FindByID(tx.Preload("DependsOnRound"), roundID)
 	if err != nil {
 		tx.Rollback()
 		return nil, err
@@ -343,7 +343,37 @@ func (r *RoundService) UpdateRoundDetails(roundID models.IDType, req *RoundReque
 		tx.Rollback()
 		return nil, fmt.Errorf("round not found")
 	}
-	// round.CampaignID = req.CampaignID // CampaignID is not updatable
+	if round.Status != models.RoundStatusPaused {
+		tx.Rollback()
+		return nil, errors.New("round is not paused")
+	}
+	previousRound := round.DependsOnRound
+	if previousRound != nil {
+		log.Println("Previous round found with ID: ", previousRound.RoundID)
+		if previousRound.Status != models.RoundStatusCompleted {
+			tx.Rollback()
+			return nil, errors.New("previous round is not completed yet")
+		}
+		if req.RoundWritable.Serial != previousRound.Serial+1 {
+			tx.Rollback()
+			return nil, errors.New("serial must be one more than the previous round")
+		}
+		if req.IsPublicJury && !previousRound.IsPublicJury {
+			tx.Rollback()
+			return nil, errors.New("public jury cannot be created after private jury on the same campaign")
+		}
+		log.Println("Previous round found with ID: ", previousRound.RoundID, req.IsPublicJury)
+
+	}
+	res, err := q.Campaign.Where(q.Campaign.CampaignID.Eq(round.CampaignID.String())).Update(q.Campaign.IsPublic, req.IsPublicJury)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	if res.Error != nil {
+		tx.Rollback()
+		return nil, res.Error
+	}
 	round.RoundWritable = req.RoundWritable
 	round, err = round_repo.Update(tx, round)
 	if err != nil {
@@ -373,7 +403,6 @@ func (r *RoundService) UpdateRoundDetails(roundID models.IDType, req *RoundReque
 	if len(removedRoleIDs) > 0 {
 		r := []string{}
 		for _, roleID := range removedRoleIDs {
-			log.Println("Banning role: ", roleID)
 			res := tx.Delete(&models.Role{RoleID: roleID})
 			if res.Error != nil {
 				tx.Rollback()

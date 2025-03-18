@@ -2,6 +2,7 @@ package services
 
 import (
 	"log"
+	"nokib/campwiz/consts"
 	"nokib/campwiz/models"
 	"nokib/campwiz/repository"
 	idgenerator "nokib/campwiz/services/idGenerator"
@@ -131,4 +132,15 @@ func (service *RoleService) FetchChangeRoles(tx *gorm.DB, roleType models.RoleTy
 func (service *RoleService) ListRoles(tx *gorm.DB, filter *models.RoleFilter) ([]models.Role, error) {
 	role_repo := repository.NewRoleRepository()
 	return role_repo.ListAllRoles(tx, filter)
+}
+func (service *RoleService) CheckPermissionByUserID(targetPermission consts.Permission, against any) bool {
+	sourcePermission := consts.Permission(0)
+	ok := false
+	if sourcePermission, ok = against.(consts.Permission); ok {
+		return sourcePermission&targetPermission == targetPermission
+	}
+	if sourcePermissionGroup, ok := against.(consts.PermissionGroup); ok {
+		return sourcePermissionGroup.HasPermission(targetPermission)
+	}
+	return false
 }

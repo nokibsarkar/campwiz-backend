@@ -50,6 +50,9 @@ func (c *CommonsRepository) GetImagesFromCommonsCategories(category string) ([]m
 		"gcmtype":   {"file"},
 		"iiprop":    {"timestamp|user|url|size|mediatype|dimensions|extmetadata|canonicaltitle"},
 		"limit":     {"max"},
+		// "iiurlwidth":          {"640"},
+		// "iiurlheight":         {"480"},
+		"iiextmetadatafilter": {"License|ImageDescription|Credit|Artist|LicenseShortName|UsageTerms|AttributionRequired|Copyrighted"},
 	}
 	images, err := paginator.Query(params)
 	if err != nil {
@@ -78,7 +81,7 @@ func (c *CommonsRepository) GetImagesFromCommonsCategories(category string) ([]m
 			Size:             info.Size,
 			MediaType:        info.MediaType,
 			Duration:         uint64(info.Duration * 1e3), // Convert to milliseconds
-
+			Resolution:       info.Width * info.Height,
 		}
 		if info.ExtMetadata != nil {
 			img.License = info.ExtMetadata.GetLicense()

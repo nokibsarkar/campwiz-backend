@@ -4,6 +4,7 @@ import "time"
 
 type ImageResult struct {
 	ID               uint64 `json:"pageid"`
+	SubmissionID     IDType `json:"-"`
 	Name             string `json:"title"`
 	URL              string
 	SubmittedAt      time.Time
@@ -17,6 +18,9 @@ type ImageResult struct {
 	Description      string
 	CreditHTML       string
 	Resolution       uint64
+	ThumbURL         *string
+	ThumbWidth       *uint64
+	ThumbHeight      *uint64
 }
 type GContinue struct {
 	Gcmcontinue string `json:"gcmcontinue"`
@@ -37,7 +41,11 @@ type KeyValue struct {
 	Name  string `json:"name"`
 	Value any    `json:"value"`
 }
-
+type Thumbnail struct {
+	ThumbURL    string `json:"thumburl"`
+	ThumbWidth  uint64 `json:"thumbwidth"`
+	ThumbHeight uint64 `json:"thumbheight"`
+}
 type ImageInfo struct {
 	Info []struct {
 		Timestamp      time.Time             `json:"timestamp"`
@@ -51,6 +59,7 @@ type ImageInfo struct {
 		MediaType      string                `json:"mediatype"`
 		Duration       float64               `json:"duration"`
 		ExtMetadata    *ExtMetadata          `json:"extmetadata"`
+		*Thumbnail
 	} `json:"imageinfo"`
 }
 type Page struct {

@@ -61,86 +61,91 @@ func newRole(db *gorm.DB, opts ...gen.DOOption) role {
 		}{
 			RelationField: field.NewRelation("Campaign.Project", "models.Project"),
 		},
-		Roles: struct {
+		LatestRound: struct {
 			field.RelationField
 			Campaign struct {
 				field.RelationField
 			}
-			User struct {
+			Creator struct {
 				field.RelationField
 			}
-			Round struct {
+			DependsOnRound struct {
+				field.RelationField
+			}
+			Roles struct {
 				field.RelationField
 				Campaign struct {
 					field.RelationField
 				}
-				Creator struct {
+				User struct {
 					field.RelationField
 				}
-				DependsOnRound struct {
+				Round struct {
 					field.RelationField
 				}
-				Roles struct {
+				Project struct {
 					field.RelationField
 				}
-			}
-			Project struct {
-				field.RelationField
 			}
 		}{
-			RelationField: field.NewRelation("Campaign.Roles", "models.Role"),
+			RelationField: field.NewRelation("Campaign.LatestRound", "models.Round"),
 			Campaign: struct {
 				field.RelationField
 			}{
-				RelationField: field.NewRelation("Campaign.Roles.Campaign", "models.Campaign"),
+				RelationField: field.NewRelation("Campaign.LatestRound.Campaign", "models.Campaign"),
 			},
-			User: struct {
+			Creator: struct {
 				field.RelationField
 			}{
-				RelationField: field.NewRelation("Campaign.Roles.User", "models.User"),
+				RelationField: field.NewRelation("Campaign.LatestRound.Creator", "models.User"),
 			},
-			Round: struct {
+			DependsOnRound: struct {
+				field.RelationField
+			}{
+				RelationField: field.NewRelation("Campaign.LatestRound.DependsOnRound", "models.Round"),
+			},
+			Roles: struct {
 				field.RelationField
 				Campaign struct {
 					field.RelationField
 				}
-				Creator struct {
+				User struct {
 					field.RelationField
 				}
-				DependsOnRound struct {
+				Round struct {
 					field.RelationField
 				}
-				Roles struct {
+				Project struct {
 					field.RelationField
 				}
 			}{
-				RelationField: field.NewRelation("Campaign.Roles.Round", "models.Round"),
+				RelationField: field.NewRelation("Campaign.LatestRound.Roles", "models.Role"),
 				Campaign: struct {
 					field.RelationField
 				}{
-					RelationField: field.NewRelation("Campaign.Roles.Round.Campaign", "models.Campaign"),
+					RelationField: field.NewRelation("Campaign.LatestRound.Roles.Campaign", "models.Campaign"),
 				},
-				Creator: struct {
+				User: struct {
 					field.RelationField
 				}{
-					RelationField: field.NewRelation("Campaign.Roles.Round.Creator", "models.User"),
+					RelationField: field.NewRelation("Campaign.LatestRound.Roles.User", "models.User"),
 				},
-				DependsOnRound: struct {
+				Round: struct {
 					field.RelationField
 				}{
-					RelationField: field.NewRelation("Campaign.Roles.Round.DependsOnRound", "models.Round"),
+					RelationField: field.NewRelation("Campaign.LatestRound.Roles.Round", "models.Round"),
 				},
-				Roles: struct {
+				Project: struct {
 					field.RelationField
 				}{
-					RelationField: field.NewRelation("Campaign.Roles.Round.Roles", "models.Role"),
+					RelationField: field.NewRelation("Campaign.LatestRound.Roles.Project", "models.Project"),
 				},
 			},
-			Project: struct {
-				field.RelationField
-			}{
-				RelationField: field.NewRelation("Campaign.Roles.Project", "models.Project"),
-			},
+		},
+		Roles: struct {
+			field.RelationField
+		}{
+			RelationField: field.NewRelation("Campaign.Roles", "models.Role"),
 		},
 		Rounds: struct {
 			field.RelationField
@@ -279,32 +284,35 @@ type roleBelongsToCampaign struct {
 	Project struct {
 		field.RelationField
 	}
-	Roles struct {
+	LatestRound struct {
 		field.RelationField
 		Campaign struct {
 			field.RelationField
 		}
-		User struct {
+		Creator struct {
 			field.RelationField
 		}
-		Round struct {
+		DependsOnRound struct {
+			field.RelationField
+		}
+		Roles struct {
 			field.RelationField
 			Campaign struct {
 				field.RelationField
 			}
-			Creator struct {
+			User struct {
 				field.RelationField
 			}
-			DependsOnRound struct {
+			Round struct {
 				field.RelationField
 			}
-			Roles struct {
+			Project struct {
 				field.RelationField
 			}
 		}
-		Project struct {
-			field.RelationField
-		}
+	}
+	Roles struct {
+		field.RelationField
 	}
 	Rounds struct {
 		field.RelationField

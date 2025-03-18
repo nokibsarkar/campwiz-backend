@@ -21,7 +21,7 @@ func getLogMode() logger.LogLevel {
 func GetDB() (db *gorm.DB, close func()) {
 	dsn := consts.Config.Database.Main.DSN
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
-		// Logger: logger.Default.LogMode(getLogMode()),
+		Logger: logger.Default.LogMode(getLogMode()),
 	})
 
 	if err != nil {

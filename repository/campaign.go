@@ -60,6 +60,6 @@ func (c *CampaignRepository) ListAllCampaigns(conn *gorm.DB, query *models.Campa
 	return campaigns, result.Error
 }
 func (c *CampaignRepository) Update(conn *gorm.DB, campaign *models.Campaign) error {
-	result := conn.Save(campaign)
+	result := conn.Updates(campaign)
 	return result.Error
 }

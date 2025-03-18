@@ -40,6 +40,7 @@ func newCampaign(db *gorm.DB, opts ...gen.DOOption) campaign {
 	_campaign.IsPublic = field.NewBool(tableName, "is_public")
 	_campaign.ProjectID = field.NewString(tableName, "project_id")
 	_campaign.Status = field.NewString(tableName, "status")
+	_campaign.LatestRoundID = field.NewString(tableName, "latest_round_id")
 	_campaign.Roles = campaignHasManyRoles{
 		db: db.Session(&gorm.Session{}),
 
@@ -55,10 +56,7 @@ func newCampaign(db *gorm.DB, opts ...gen.DOOption) campaign {
 			Project struct {
 				field.RelationField
 			}
-			Roles struct {
-				field.RelationField
-			}
-			Rounds struct {
+			LatestRound struct {
 				field.RelationField
 				Campaign struct {
 					field.RelationField
@@ -72,6 +70,12 @@ func newCampaign(db *gorm.DB, opts ...gen.DOOption) campaign {
 				Roles struct {
 					field.RelationField
 				}
+			}
+			Roles struct {
+				field.RelationField
+			}
+			Rounds struct {
+				field.RelationField
 			}
 		}{
 			RelationField: field.NewRelation("Roles.Campaign", "models.Campaign"),
@@ -93,12 +97,7 @@ func newCampaign(db *gorm.DB, opts ...gen.DOOption) campaign {
 			}{
 				RelationField: field.NewRelation("Roles.Campaign.Project", "models.Project"),
 			},
-			Roles: struct {
-				field.RelationField
-			}{
-				RelationField: field.NewRelation("Roles.Campaign.Roles", "models.Role"),
-			},
-			Rounds: struct {
+			LatestRound: struct {
 				field.RelationField
 				Campaign struct {
 					field.RelationField
@@ -113,27 +112,37 @@ func newCampaign(db *gorm.DB, opts ...gen.DOOption) campaign {
 					field.RelationField
 				}
 			}{
-				RelationField: field.NewRelation("Roles.Campaign.Rounds", "models.Round"),
+				RelationField: field.NewRelation("Roles.Campaign.LatestRound", "models.Round"),
 				Campaign: struct {
 					field.RelationField
 				}{
-					RelationField: field.NewRelation("Roles.Campaign.Rounds.Campaign", "models.Campaign"),
+					RelationField: field.NewRelation("Roles.Campaign.LatestRound.Campaign", "models.Campaign"),
 				},
 				Creator: struct {
 					field.RelationField
 				}{
-					RelationField: field.NewRelation("Roles.Campaign.Rounds.Creator", "models.User"),
+					RelationField: field.NewRelation("Roles.Campaign.LatestRound.Creator", "models.User"),
 				},
 				DependsOnRound: struct {
 					field.RelationField
 				}{
-					RelationField: field.NewRelation("Roles.Campaign.Rounds.DependsOnRound", "models.Round"),
+					RelationField: field.NewRelation("Roles.Campaign.LatestRound.DependsOnRound", "models.Round"),
 				},
 				Roles: struct {
 					field.RelationField
 				}{
-					RelationField: field.NewRelation("Roles.Campaign.Rounds.Roles", "models.Role"),
+					RelationField: field.NewRelation("Roles.Campaign.LatestRound.Roles", "models.Role"),
 				},
+			},
+			Roles: struct {
+				field.RelationField
+			}{
+				RelationField: field.NewRelation("Roles.Campaign.Roles", "models.Role"),
+			},
+			Rounds: struct {
+				field.RelationField
+			}{
+				RelationField: field.NewRelation("Roles.Campaign.Rounds", "models.Round"),
 			},
 		},
 		User: struct {
@@ -171,6 +180,12 @@ func newCampaign(db *gorm.DB, opts ...gen.DOOption) campaign {
 		RelationField: field.NewRelation("Project", "models.Project"),
 	}
 
+	_campaign.LatestRound = campaignBelongsToLatestRound{
+		db: db.Session(&gorm.Session{}),
+
+		RelationField: field.NewRelation("LatestRound", "models.Round"),
+	}
+
 	_campaign.fillFieldMap()
 
 	return _campaign
@@ -179,27 +194,30 @@ func newCampaign(db *gorm.DB, opts ...gen.DOOption) campaign {
 type campaign struct {
 	campaignDo
 
-	ALL         field.Asterisk
-	CampaignID  field.String
-	CreatedAt   field.Time
-	CreatedByID field.String
-	Name        field.String
-	Description field.String
-	StartDate   field.Time
-	EndDate     field.Time
-	Language    field.String
-	Rules       field.String
-	Image       field.String
-	IsPublic    field.Bool
-	ProjectID   field.String
-	Status      field.String
-	Roles       campaignHasManyRoles
+	ALL           field.Asterisk
+	CampaignID    field.String
+	CreatedAt     field.Time
+	CreatedByID   field.String
+	Name          field.String
+	Description   field.String
+	StartDate     field.Time
+	EndDate       field.Time
+	Language      field.String
+	Rules         field.String
+	Image         field.String
+	IsPublic      field.Bool
+	ProjectID     field.String
+	Status        field.String
+	LatestRoundID field.String
+	Roles         campaignHasManyRoles
 
 	Rounds campaignHasManyRounds
 
 	CreatedBy campaignBelongsToCreatedBy
 
 	Project campaignBelongsToProject
+
+	LatestRound campaignBelongsToLatestRound
 
 	fieldMap map[string]field.Expr
 }
@@ -229,6 +247,7 @@ func (c *campaign) updateTableName(table string) *campaign {
 	c.IsPublic = field.NewBool(table, "is_public")
 	c.ProjectID = field.NewString(table, "project_id")
 	c.Status = field.NewString(table, "status")
+	c.LatestRoundID = field.NewString(table, "latest_round_id")
 
 	c.fillFieldMap()
 
@@ -245,7 +264,7 @@ func (c *campaign) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (c *campaign) fillFieldMap() {
-	c.fieldMap = make(map[string]field.Expr, 17)
+	c.fieldMap = make(map[string]field.Expr, 19)
 	c.fieldMap["campaign_id"] = c.CampaignID
 	c.fieldMap["created_at"] = c.CreatedAt
 	c.fieldMap["created_by_id"] = c.CreatedByID
@@ -259,6 +278,7 @@ func (c *campaign) fillFieldMap() {
 	c.fieldMap["is_public"] = c.IsPublic
 	c.fieldMap["project_id"] = c.ProjectID
 	c.fieldMap["status"] = c.Status
+	c.fieldMap["latest_round_id"] = c.LatestRoundID
 
 }
 
@@ -288,10 +308,7 @@ type campaignHasManyRoles struct {
 		Project struct {
 			field.RelationField
 		}
-		Roles struct {
-			field.RelationField
-		}
-		Rounds struct {
+		LatestRound struct {
 			field.RelationField
 			Campaign struct {
 				field.RelationField
@@ -305,6 +322,12 @@ type campaignHasManyRoles struct {
 			Roles struct {
 				field.RelationField
 			}
+		}
+		Roles struct {
+			field.RelationField
+		}
+		Rounds struct {
+			field.RelationField
 		}
 	}
 	User struct {
@@ -593,6 +616,77 @@ func (a campaignBelongsToProjectTx) Clear() error {
 }
 
 func (a campaignBelongsToProjectTx) Count() int64 {
+	return a.tx.Count()
+}
+
+type campaignBelongsToLatestRound struct {
+	db *gorm.DB
+
+	field.RelationField
+}
+
+func (a campaignBelongsToLatestRound) Where(conds ...field.Expr) *campaignBelongsToLatestRound {
+	if len(conds) == 0 {
+		return &a
+	}
+
+	exprs := make([]clause.Expression, 0, len(conds))
+	for _, cond := range conds {
+		exprs = append(exprs, cond.BeCond().(clause.Expression))
+	}
+	a.db = a.db.Clauses(clause.Where{Exprs: exprs})
+	return &a
+}
+
+func (a campaignBelongsToLatestRound) WithContext(ctx context.Context) *campaignBelongsToLatestRound {
+	a.db = a.db.WithContext(ctx)
+	return &a
+}
+
+func (a campaignBelongsToLatestRound) Session(session *gorm.Session) *campaignBelongsToLatestRound {
+	a.db = a.db.Session(session)
+	return &a
+}
+
+func (a campaignBelongsToLatestRound) Model(m *models.Campaign) *campaignBelongsToLatestRoundTx {
+	return &campaignBelongsToLatestRoundTx{a.db.Model(m).Association(a.Name())}
+}
+
+type campaignBelongsToLatestRoundTx struct{ tx *gorm.Association }
+
+func (a campaignBelongsToLatestRoundTx) Find() (result *models.Round, err error) {
+	return result, a.tx.Find(&result)
+}
+
+func (a campaignBelongsToLatestRoundTx) Append(values ...*models.Round) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Append(targetValues...)
+}
+
+func (a campaignBelongsToLatestRoundTx) Replace(values ...*models.Round) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Replace(targetValues...)
+}
+
+func (a campaignBelongsToLatestRoundTx) Delete(values ...*models.Round) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Delete(targetValues...)
+}
+
+func (a campaignBelongsToLatestRoundTx) Clear() error {
+	return a.tx.Clear()
+}
+
+func (a campaignBelongsToLatestRoundTx) Count() int64 {
 	return a.tx.Count()
 }
 

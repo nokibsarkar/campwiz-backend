@@ -33,7 +33,12 @@ type ImportFromCommonsPayload struct {
 	// Categories from which images will be fetched
 	Categories []string `json:"categories" binding:"required"`
 }
-
+type ImportFromPreviousRoundPayload struct {
+	// RoundID from which images will be fetched
+	RoundID models.IDType `json:"roundId" binding:"required"`
+	// Scores of the images to be fetched
+	Scores []models.ScoreType `json:"scores" binding:"required"`
+}
 type Jury struct {
 	ID            uint64 `json:"id" gorm:"primaryKey"`
 	totalAssigned int
@@ -60,7 +65,7 @@ func (s *RoundService) CreateRound(request *RoundRequest) (*models.Round, error)
 	conn, close := repository.GetDB()
 	defer close()
 	tx := conn.Begin()
-	campaign, err := campaign_repo.FindByID(tx, request.CampaignID)
+	campaign, err := campaign_repo.FindByID(tx.Preload("LatestRound"), request.CampaignID)
 	if err != nil {
 		tx.Rollback()
 		return nil, errors.New("campaign not found")
@@ -68,6 +73,30 @@ func (s *RoundService) CreateRound(request *RoundRequest) (*models.Round, error)
 	if campaign.Status != models.RoundStatusActive {
 		tx.Rollback()
 		return nil, errors.New("campaign is not active")
+	}
+	previousRound := campaign.LatestRound
+	if previousRound != nil {
+		log.Println("Previous round found with ID: ", previousRound.RoundID)
+		// check previous rounds
+		if previousRound.Status != models.RoundStatusCompleted {
+			tx.Rollback()
+			return nil, errors.New("previous round is not completed yet")
+		}
+		request.RoundWritable.Serial = previousRound.Serial + 1
+		if request.IsPublicJury && !previousRound.IsPublicJury {
+			tx.Rollback()
+			return nil, errors.New("public jury cannot be created after private jury on the same campaign")
+		}
+		// current request is public if all previous rounds are public and the current request is for public
+		request.RoundWritable.IsPublicJury = request.IsPublicJury && previousRound.IsPublicJury
+		request.RoundWritable.DependsOnRoundID = &previousRound.RoundID
+	} else {
+		log.Println("No previous round found")
+		request.Serial = 1
+	}
+	// if private jury, then the campaign would be private permanently
+	if !request.IsPublicJury {
+		campaign.IsPublic = false
 	}
 	round := &models.Round{
 		RoundID:       idgenerator.GenerateID("r"),
@@ -82,6 +111,13 @@ func (s *RoundService) CreateRound(request *RoundRequest) (*models.Round, error)
 		tx.Rollback()
 		return nil, err
 	}
+	campaign.LatestRound = round
+	err = campaign_repo.Update(tx, campaign)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	// create roles for the juries
 
 	currentRoles, _, err := role_service.FetchChangeRoles(tx, models.RoleTypeJury, campaign.ProjectID, nil, &campaign.CampaignID, &round.RoundID, request.Juries)
 	if err != nil {
@@ -141,6 +177,77 @@ func (b *RoundService) ImportFromCommons(roundId models.IDType, categories []str
 	log.Println("Task created with ID: ", task.TaskID)
 	commonsCategorySource := importsources.NewCommonsCategoryListSource(categories)
 	batch_processor := importservice.NewImportTaskRunner(task.TaskID, commonsCategorySource)
+	go batch_processor.Run()
+	return task, nil
+}
+func (b *RoundService) ImportFromPreviousRound(currentUserId models.IDType, targetRoundId models.IDType, filter *ImportFromPreviousRoundPayload) (*models.Task, error) {
+	round_repo := repository.NewRoundRepository()
+	task_repo := repository.NewTaskRepository()
+	conn, close := repository.GetDB()
+	defer close()
+	tx := conn.Begin()
+	targetRound, err := round_repo.FindByID(tx.Preload("Campaign"), targetRoundId)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	} else if targetRound == nil {
+		tx.Rollback()
+		return nil, fmt.Errorf("round not found")
+	} else if targetRound.Campaign == nil {
+		tx.Rollback()
+		return nil, fmt.Errorf("campaign not found")
+	}
+	sourceRound, err := round_repo.FindByID(tx, filter.RoundID)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	} else if sourceRound == nil {
+		tx.Rollback()
+		return nil, fmt.Errorf("source round not found")
+	}
+	if sourceRound.Status != models.RoundStatusCompleted {
+		tx.Rollback()
+		return nil, errors.New("source round is not completed")
+	}
+	if targetRound.Status != models.RoundStatusPaused {
+		tx.Rollback()
+		return nil, errors.New("target round is not paused")
+	}
+	if targetRound.CampaignID != sourceRound.CampaignID {
+		tx.Rollback()
+		return nil, errors.New("source and target rounds are not from the same campaign")
+	}
+	if targetRound.ProjectID != sourceRound.ProjectID {
+		tx.Rollback()
+		return nil, errors.New("source and target rounds are not from the same project")
+	}
+	if targetRound.Campaign.Status != models.RoundStatusActive {
+		tx.Rollback()
+		return nil, errors.New("campaign is not active")
+	}
+
+	taskReq := &models.Task{
+		TaskID:               idgenerator.GenerateID("t"),
+		Type:                 models.TaskTypeImportFromPreviousRound,
+		Status:               models.TaskStatusPending,
+		AssociatedRoundID:    &targetRoundId,
+		AssociatedUserID:     &targetRound.CreatedByID,
+		CreatedByID:          targetRound.CreatedByID,
+		AssociatedCampaignID: &targetRound.CampaignID,
+		SuccessCount:         0,
+		FailedCount:          0,
+		FailedIds:            &datatypes.JSONType[map[string]string]{},
+		RemainingCount:       0,
+	}
+	task, err := task_repo.Create(tx, taskReq)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	tx.Commit()
+	log.Println("Task created with ID: ", task.TaskID)
+	previousRoundSource := importsources.NewRoundCategoryListSource(filter.Scores, sourceRound.RoundID)
+	batch_processor := importservice.NewImportTaskRunner(task.TaskID, previousRoundSource)
 	go batch_processor.Run()
 	return task, nil
 }

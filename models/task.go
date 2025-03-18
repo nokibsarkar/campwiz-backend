@@ -10,8 +10,9 @@ type TaskStatus string
 type TaskType string
 
 const (
-	TaskTypeImportFromCommons     TaskType = "import.commons"
-	TaskTypeDistributeEvaluations TaskType = "distribute.evaluations"
+	TaskTypeImportFromCommons       TaskType = "import.commons"
+	TaskTypeImportFromPreviousRound TaskType = "import.previous.round"
+	TaskTypeDistributeEvaluations   TaskType = "distribute.evaluations"
 )
 const (
 	TaskStatusPending TaskStatus = "pending"

@@ -21,8 +21,9 @@ type ArticleSubmission struct {
 	AddedWords uint64 `json:"addedwords" gorm:"default:0"`
 }
 type ImageSubmission struct {
-	Width  uint64 `json:"width"`
-	Height uint64 `json:"height"`
+	Width      uint64 `json:"width"`
+	Height     uint64 `json:"height"`
+	Resolution uint64 `json:"resolution"`
 }
 type AudioVideoSubmission struct {
 	Duration uint64 `json:"duration"` // in milliseconds

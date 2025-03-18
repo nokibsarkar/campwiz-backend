@@ -101,6 +101,38 @@ func ImportFromCommons(c *gin.Context, sess *cache.Session) {
 	c.JSON(200, ResponseSingle[*models.Task]{Data: task})
 }
 
+func ImportFromPreviousRound(c *gin.Context, sess *cache.Session) {
+	roundId := c.Param("roundId")
+	if roundId == "" {
+		c.JSON(400, ResponseError{Detail: "Invalid request : Round ID is required"})
+	}
+	req := &services.ImportFromPreviousRoundPayload{}
+	err := c.ShouldBindBodyWithJSON(req)
+	if err != nil {
+		c.JSON(400, ResponseError{Detail: "Error Decoding : " + err.Error()})
+		return
+	}
+	if len(req.Scores) == 0 {
+		c.JSON(400, ResponseError{Detail: "Invalid request : No scores provided"})
+		return
+	}
+	if req.RoundID == "" {
+		c.JSON(400, ResponseError{Detail: "Invalid request : No round ID provided"})
+		return
+	}
+	round_service := services.NewRoundService()
+	if len(req.Scores) == 0 {
+		c.JSON(400, ResponseError{Detail: "Invalid request : No scores provided"})
+		return
+	}
+	task, err := round_service.ImportFromPreviousRound(sess.UserID, models.IDType(roundId), req)
+	if err != nil {
+		c.JSON(400, ResponseError{Detail: "Failed to import images : " + err.Error()})
+		return
+	}
+	c.JSON(200, ResponseSingle[*models.Task]{Data: task})
+}
+
 // UpdateRoundDetails godoc
 // @Summary Update the details of a round
 // @Description Update the details of a round

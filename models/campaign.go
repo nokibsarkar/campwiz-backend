@@ -25,10 +25,12 @@ type Campaign struct {
 	CreatedAt   *time.Time `json:"createdAt" gorm:"-<-:create"`
 	CreatedByID IDType     `json:"createdById" gorm:"index"`
 	CampaignWithWriteableFields
-	CreatedBy *User    `json:"-" gorm:"foreignKey:CreatedByID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
-	Roles     []Role   `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	Rounds    []Round  `json:"rounds" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	Project   *Project `json:"project" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	CreatedBy     *User    `json:"-" gorm:"foreignKey:CreatedByID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
+	Roles         []Role   `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Rounds        []Round  `json:"rounds" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Project       *Project `json:"project" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	LatestRoundID *IDType  `json:"latestRoundId" gorm:"default:null"`
+	LatestRound   *Round   `json:"-" gorm:"foreignKey:LatestRoundID;constraint:OnUpdate:SET NULL,OnDelete:SET NULL"`
 }
 type CampaignExtended struct {
 	Campaign

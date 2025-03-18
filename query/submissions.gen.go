@@ -52,6 +52,7 @@ func newSubmission(db *gorm.DB, opts ...gen.DOOption) submission {
 	_submission.Metadata = field.NewField(tableName, "metadata")
 	_submission.Width = field.NewUint64(tableName, "width")
 	_submission.Height = field.NewUint64(tableName, "height")
+	_submission.Resolution = field.NewUint64(tableName, "resolution")
 	_submission.Duration = field.NewUint64(tableName, "duration")
 	_submission.Bitrate = field.NewUint64(tableName, "bitrate")
 	_submission.Size = field.NewUint64(tableName, "size")
@@ -86,86 +87,91 @@ func newSubmission(db *gorm.DB, opts ...gen.DOOption) submission {
 		}{
 			RelationField: field.NewRelation("Campaign.Project", "models.Project"),
 		},
-		Roles: struct {
+		LatestRound: struct {
 			field.RelationField
 			Campaign struct {
 				field.RelationField
 			}
-			User struct {
+			Creator struct {
 				field.RelationField
 			}
-			Round struct {
+			DependsOnRound struct {
+				field.RelationField
+			}
+			Roles struct {
 				field.RelationField
 				Campaign struct {
 					field.RelationField
 				}
-				Creator struct {
+				User struct {
 					field.RelationField
 				}
-				DependsOnRound struct {
+				Round struct {
 					field.RelationField
 				}
-				Roles struct {
+				Project struct {
 					field.RelationField
 				}
-			}
-			Project struct {
-				field.RelationField
 			}
 		}{
-			RelationField: field.NewRelation("Campaign.Roles", "models.Role"),
+			RelationField: field.NewRelation("Campaign.LatestRound", "models.Round"),
 			Campaign: struct {
 				field.RelationField
 			}{
-				RelationField: field.NewRelation("Campaign.Roles.Campaign", "models.Campaign"),
+				RelationField: field.NewRelation("Campaign.LatestRound.Campaign", "models.Campaign"),
 			},
-			User: struct {
+			Creator: struct {
 				field.RelationField
 			}{
-				RelationField: field.NewRelation("Campaign.Roles.User", "models.User"),
+				RelationField: field.NewRelation("Campaign.LatestRound.Creator", "models.User"),
 			},
-			Round: struct {
+			DependsOnRound: struct {
+				field.RelationField
+			}{
+				RelationField: field.NewRelation("Campaign.LatestRound.DependsOnRound", "models.Round"),
+			},
+			Roles: struct {
 				field.RelationField
 				Campaign struct {
 					field.RelationField
 				}
-				Creator struct {
+				User struct {
 					field.RelationField
 				}
-				DependsOnRound struct {
+				Round struct {
 					field.RelationField
 				}
-				Roles struct {
+				Project struct {
 					field.RelationField
 				}
 			}{
-				RelationField: field.NewRelation("Campaign.Roles.Round", "models.Round"),
+				RelationField: field.NewRelation("Campaign.LatestRound.Roles", "models.Role"),
 				Campaign: struct {
 					field.RelationField
 				}{
-					RelationField: field.NewRelation("Campaign.Roles.Round.Campaign", "models.Campaign"),
+					RelationField: field.NewRelation("Campaign.LatestRound.Roles.Campaign", "models.Campaign"),
 				},
-				Creator: struct {
+				User: struct {
 					field.RelationField
 				}{
-					RelationField: field.NewRelation("Campaign.Roles.Round.Creator", "models.User"),
+					RelationField: field.NewRelation("Campaign.LatestRound.Roles.User", "models.User"),
 				},
-				DependsOnRound: struct {
+				Round: struct {
 					field.RelationField
 				}{
-					RelationField: field.NewRelation("Campaign.Roles.Round.DependsOnRound", "models.Round"),
+					RelationField: field.NewRelation("Campaign.LatestRound.Roles.Round", "models.Round"),
 				},
-				Roles: struct {
+				Project: struct {
 					field.RelationField
 				}{
-					RelationField: field.NewRelation("Campaign.Roles.Round.Roles", "models.Role"),
+					RelationField: field.NewRelation("Campaign.LatestRound.Roles.Project", "models.Project"),
 				},
 			},
-			Project: struct {
-				field.RelationField
-			}{
-				RelationField: field.NewRelation("Campaign.Roles.Project", "models.Project"),
-			},
+		},
+		Roles: struct {
+			field.RelationField
+		}{
+			RelationField: field.NewRelation("Campaign.Roles", "models.Role"),
 		},
 		Rounds: struct {
 			field.RelationField
@@ -231,6 +237,7 @@ type submission struct {
 	Metadata           field.Field
 	Width              field.Uint64
 	Height             field.Uint64
+	Resolution         field.Uint64
 	Duration           field.Uint64
 	Bitrate            field.Uint64
 	Size               field.Uint64
@@ -286,6 +293,7 @@ func (s *submission) updateTableName(table string) *submission {
 	s.Metadata = field.NewField(table, "metadata")
 	s.Width = field.NewUint64(table, "width")
 	s.Height = field.NewUint64(table, "height")
+	s.Resolution = field.NewUint64(table, "resolution")
 	s.Duration = field.NewUint64(table, "duration")
 	s.Bitrate = field.NewUint64(table, "bitrate")
 	s.Size = field.NewUint64(table, "size")
@@ -305,7 +313,7 @@ func (s *submission) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (s *submission) fillFieldMap() {
-	s.fieldMap = make(map[string]field.Expr, 34)
+	s.fieldMap = make(map[string]field.Expr, 35)
 	s.fieldMap["submission_id"] = s.SubmissionID
 	s.fieldMap["name"] = s.Name
 	s.fieldMap["campaign_id"] = s.CampaignID
@@ -331,6 +339,7 @@ func (s *submission) fillFieldMap() {
 	s.fieldMap["metadata"] = s.Metadata
 	s.fieldMap["width"] = s.Width
 	s.fieldMap["height"] = s.Height
+	s.fieldMap["resolution"] = s.Resolution
 	s.fieldMap["duration"] = s.Duration
 	s.fieldMap["bitrate"] = s.Bitrate
 	s.fieldMap["size"] = s.Size
@@ -504,32 +513,35 @@ type submissionBelongsToCampaign struct {
 	Project struct {
 		field.RelationField
 	}
-	Roles struct {
+	LatestRound struct {
 		field.RelationField
 		Campaign struct {
 			field.RelationField
 		}
-		User struct {
+		Creator struct {
 			field.RelationField
 		}
-		Round struct {
+		DependsOnRound struct {
+			field.RelationField
+		}
+		Roles struct {
 			field.RelationField
 			Campaign struct {
 				field.RelationField
 			}
-			Creator struct {
+			User struct {
 				field.RelationField
 			}
-			DependsOnRound struct {
+			Round struct {
 				field.RelationField
 			}
-			Roles struct {
+			Project struct {
 				field.RelationField
 			}
 		}
-		Project struct {
-			field.RelationField
-		}
+	}
+	Roles struct {
+		field.RelationField
 	}
 	Rounds struct {
 		field.RelationField

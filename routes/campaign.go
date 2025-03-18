@@ -134,7 +134,7 @@ func GetSingleCampaign(c *gin.Context, sess *cache.Session) {
 		if campaign.IsPublic {
 			for i, round := range campaign.Rounds {
 				// No need to show the roles for public campaigns
-				// round.Roles = []models.Role{}
+				round.Roles = []models.Role{}
 				campaign.Rounds[i] = round
 			}
 		}

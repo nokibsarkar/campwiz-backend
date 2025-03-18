@@ -12,7 +12,9 @@ func main() {
 		OutPath: "../query",                                                         // output path
 		Mode:    gen.WithoutContext | gen.WithDefaultQuery | gen.WithQueryInterface, // generate mode
 	})
-	g.ApplyBasic(models.Project{}, models.User{}, models.Campaign{}, models.Round{}, models.Task{}, models.Role{}, models.Submission{}, models.Evaluation{}, cache.Evaluation{})
+	g.ApplyBasic(models.Project{}, models.User{}, models.Campaign{},
+		models.Round{}, models.Task{}, models.Role{}, models.Submission{},
+		models.Evaluation{}, cache.Evaluation{}, models.SubmissionResult{})
 	g.ApplyInterface(func(cache.Dirtributor) {}, cache.Evaluation{})
 	g.ApplyInterface(func(models.SubmissionStatisticsFetcher) {}, models.SubmissionStatistics{})
 	g.ApplyInterface(func(models.JuryStatisticsUpdater) {}, models.JuryStatistics{})

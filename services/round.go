@@ -94,10 +94,7 @@ func (s *RoundService) CreateRound(request *RoundRequest) (*models.Round, error)
 		log.Println("No previous round found")
 		request.Serial = 1
 	}
-	// if private jury, then the campaign would be private permanently
-	if !request.IsPublicJury {
-		campaign.IsPublic = false
-	}
+
 	round := &models.Round{
 		RoundID:       idgenerator.GenerateID("r"),
 		CreatedByID:   request.CreatedByID,
@@ -111,8 +108,21 @@ func (s *RoundService) CreateRound(request *RoundRequest) (*models.Round, error)
 		tx.Rollback()
 		return nil, err
 	}
-	campaign.LatestRound = round
-	err = campaign_repo.Update(tx, campaign)
+	// if private jury, then the campaign would be private permanently
+	if !request.IsPublicJury {
+		campaign.CampaignWithWriteableFields.IsPublic = false
+	}
+	q := query.Use(tx)
+	stmt := q.Campaign.Where(q.Campaign.CampaignID.Eq(campaign.CampaignID.String()))
+	if !request.IsPublicJury && campaign.IsPublic {
+		_, err = stmt.Update(q.Campaign.IsPublic, campaign.IsPublic)
+		if err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+	}
+	campaign.LatestRoundID = &round.RoundID
+	_, err = stmt.Update(q.Campaign.LatestRoundID, campaign.LatestRoundID)
 	if err != nil {
 		tx.Rollback()
 		return nil, err
@@ -445,11 +455,11 @@ func (r *RoundService) DistributeEvaluations(currentUserID models.IDType, roundI
 	go runner.Run()
 	return task, nil
 }
-func (r *RoundService) GetResults(roundID models.IDType) (results []models.EvaluationResult, err error) {
+func (r *RoundService) GetResultSummary(roundID models.IDType) (results []models.EvaluationResult, err error) {
 	round_repo := repository.NewRoundRepository()
 	conn, close := repository.GetDB()
 	defer close()
-	results, err = round_repo.GetResultsV2(conn, roundID)
+	results, err = round_repo.GetResultSummary(conn, roundID)
 	if err != nil {
 		return nil, err
 	}
@@ -576,4 +586,11 @@ func (e *RoundService) UpdateStatus(currenUserID models.IDType, roundID models.I
 	}
 	tx.Commit()
 	return round, nil
+}
+
+func (e *RoundService) GetResults(roundID models.IDType, q *models.SubmissionResultQuery) ([]models.SubmissionResult, error) {
+	round_repo := repository.NewRoundRepository()
+	conn, close := repository.GetDB()
+	defer close()
+	return round_repo.GetResults(conn, roundID, q)
 }

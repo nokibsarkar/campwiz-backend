@@ -740,6 +740,44 @@ const docTemplate = `{
                 }
             }
         },
+        "/round/import/{targetRoundId}/previous": {
+            "post": {
+                "description": "The user would provide a round ID and a list of scores and the system would import images from the previous round with those scores",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Round"
+                ],
+                "summary": "Import images from previous round",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The target round ID, where the images will be imported",
+                        "name": "targetRoundId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "The import from previous round request",
+                        "name": "ImportFromPreviousRoundPayload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/services.ImportFromPreviousRoundPayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.ResponseSingle-models_Task"
+                        }
+                    }
+                }
+            }
+        },
         "/round/{roundId}": {
             "get": {
                 "description": "Get a round",
@@ -835,6 +873,71 @@ const docTemplate = `{
             }
         },
         "/round/{roundId}/results": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get results of a round",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Round"
+                ],
+                "summary": "Get results of a round",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The round ID",
+                        "name": "roundId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "next",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "prev",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "enum": [
+                                "ARTICLE",
+                                "BITMAP",
+                                "AUDIO",
+                                "VIDEO",
+                                "PDF"
+                            ],
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "type",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.ResponseList-models_SubmissionResult"
+                        }
+                    }
+                }
+            }
+        },
+        "/round/{roundId}/results/summary": {
             "get": {
                 "description": "Get results of a round",
                 "produces": [
@@ -1261,6 +1364,18 @@ const docTemplate = `{
                 "PermissionGroupADMIN"
             ]
         },
+        "gorm.DeletedAt": {
+            "type": "object",
+            "properties": {
+                "time": {
+                    "type": "string"
+                },
+                "valid": {
+                    "description": "Valid is true if Time is not NULL",
+                    "type": "boolean"
+                }
+            }
+        },
         "models.Campaign": {
             "type": "object",
             "required": [
@@ -1296,6 +1411,9 @@ const docTemplate = `{
                 },
                 "language": {
                     "$ref": "#/definitions/consts.Language"
+                },
+                "latestRoundId": {
+                    "type": "string"
                 },
                 "name": {
                     "type": "string"
@@ -1364,6 +1482,9 @@ const docTemplate = `{
                 },
                 "language": {
                     "$ref": "#/definitions/consts.Language"
+                },
+                "latestRoundId": {
+                    "type": "string"
                 },
                 "name": {
                     "type": "string"
@@ -1540,8 +1661,8 @@ const docTemplate = `{
                 "campaignId": {
                     "type": "string"
                 },
-                "isAllowed": {
-                    "type": "boolean"
+                "deletedAt": {
+                    "$ref": "#/definitions/gorm.DeletedAt"
                 },
                 "permission": {
                     "$ref": "#/definitions/consts.PermissionGroup"
@@ -1830,6 +1951,9 @@ const docTemplate = `{
                 "participantId": {
                     "type": "string"
                 },
+                "resolution": {
+                    "type": "integer"
+                },
                 "score": {
                     "description": "The Average Score of the submission",
                     "allOf": [
@@ -1869,6 +1993,29 @@ const docTemplate = `{
                 },
                 "width": {
                     "type": "integer"
+                }
+            }
+        },
+        "models.SubmissionResult": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "type": "string"
+                },
+                "juryCount": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "score": {
+                    "$ref": "#/definitions/models.ScoreType"
+                },
+                "submissionId": {
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/models.MediaType"
                 }
             }
         },
@@ -1941,10 +2088,12 @@ const docTemplate = `{
             "type": "string",
             "enum": [
                 "import.commons",
+                "import.previous.round",
                 "distribute.evaluations"
             ],
             "x-enum-varnames": [
                 "TaskTypeImportFromCommons",
+                "TaskTypeImportFromPreviousRound",
                 "TaskTypeDistributeEvaluations"
             ]
         },
@@ -2032,6 +2181,23 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.Submission"
+                    }
+                },
+                "next": {
+                    "type": "string"
+                },
+                "prev": {
+                    "type": "string"
+                }
+            }
+        },
+        "routes.ResponseList-models_SubmissionResult": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.SubmissionResult"
                     }
                 },
                 "next": {
@@ -2266,6 +2432,26 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "type": "string"
+                    }
+                }
+            }
+        },
+        "services.ImportFromPreviousRoundPayload": {
+            "type": "object",
+            "required": [
+                "roundId",
+                "scores"
+            ],
+            "properties": {
+                "roundId": {
+                    "description": "RoundID from which images will be fetched",
+                    "type": "string"
+                },
+                "scores": {
+                    "description": "Scores of the images to be fetched",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ScoreType"
                     }
                 }
             }

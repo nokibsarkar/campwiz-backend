@@ -147,6 +147,14 @@ definitions:
     - PermissionGroupCoordinator
     - PermissionGroupLead
     - PermissionGroupADMIN
+  gorm.DeletedAt:
+    properties:
+      time:
+        type: string
+      valid:
+        description: Valid is true if Time is not NULL
+        type: boolean
+    type: object
   models.Campaign:
     properties:
       campaignId:
@@ -168,6 +176,8 @@ definitions:
         type: boolean
       language:
         $ref: '#/definitions/consts.Language'
+      latestRoundId:
+        type: string
       name:
         type: string
       project:
@@ -215,6 +225,8 @@ definitions:
         type: boolean
       language:
         $ref: '#/definitions/consts.Language'
+      latestRoundId:
+        type: string
       name:
         type: string
       project:
@@ -340,8 +352,8 @@ definitions:
     properties:
       campaignId:
         type: string
-      isAllowed:
-        type: boolean
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
       permission:
         $ref: '#/definitions/consts.PermissionGroup'
       projectId:
@@ -544,6 +556,8 @@ definitions:
         type: array
       participantId:
         type: string
+      resolution:
+        type: integer
       score:
         allOf:
         - $ref: '#/definitions/models.ScoreType'
@@ -570,6 +584,21 @@ definitions:
         type: string
       width:
         type: integer
+    type: object
+  models.SubmissionResult:
+    properties:
+      author:
+        type: string
+      juryCount:
+        type: integer
+      name:
+        type: string
+      score:
+        $ref: '#/definitions/models.ScoreType'
+      submissionId:
+        type: string
+      type:
+        $ref: '#/definitions/models.MediaType'
     type: object
   models.Task:
     properties:
@@ -619,10 +648,12 @@ definitions:
   models.TaskType:
     enum:
     - import.commons
+    - import.previous.round
     - distribute.evaluations
     type: string
     x-enum-varnames:
     - TaskTypeImportFromCommons
+    - TaskTypeImportFromPreviousRound
     - TaskTypeDistributeEvaluations
   routes.RedirectResponse:
     properties:
@@ -679,6 +710,17 @@ definitions:
       data:
         items:
           $ref: '#/definitions/models.Submission'
+        type: array
+      next:
+        type: string
+      prev:
+        type: string
+    type: object
+  routes.ResponseList-models_SubmissionResult:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/models.SubmissionResult'
         type: array
       next:
         type: string
@@ -834,6 +876,20 @@ definitions:
         type: array
     required:
     - categories
+    type: object
+  services.ImportFromPreviousRoundPayload:
+    properties:
+      roundId:
+        description: RoundID from which images will be fetched
+        type: string
+      scores:
+        description: Scores of the images to be fetched
+        items:
+          $ref: '#/definitions/models.ScoreType'
+        type: array
+    required:
+    - roundId
+    - scores
     type: object
   services.RoundRequest:
     properties:
@@ -1436,6 +1492,48 @@ paths:
         name: roundId
         required: true
         type: string
+      - in: query
+        name: limit
+        type: integer
+      - in: query
+        name: next
+        type: string
+      - in: query
+        name: prev
+        type: string
+      - collectionFormat: csv
+        in: query
+        items:
+          enum:
+          - ARTICLE
+          - BITMAP
+          - AUDIO
+          - VIDEO
+          - PDF
+          type: string
+        name: type
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.ResponseList-models_SubmissionResult'
+      security:
+      - ApiKeyAuth: []
+      summary: Get results of a round
+      tags:
+      - Round
+  /round/{roundId}/results/summary:
+    get:
+      description: Get results of a round
+      parameters:
+      - description: The round ID
+        in: path
+        name: roundId
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -1522,6 +1620,32 @@ paths:
           schema:
             $ref: '#/definitions/routes.ResponseSingle-models_Task'
       summary: Import images from commons
+      tags:
+      - Round
+  /round/import/{targetRoundId}/previous:
+    post:
+      description: The user would provide a round ID and a list of scores and the
+        system would import images from the previous round with those scores
+      parameters:
+      - description: The target round ID, where the images will be imported
+        in: path
+        name: targetRoundId
+        required: true
+        type: string
+      - description: The import from previous round request
+        in: body
+        name: ImportFromPreviousRoundPayload
+        required: true
+        schema:
+          $ref: '#/definitions/services.ImportFromPreviousRoundPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.ResponseSingle-models_Task'
+      summary: Import images from previous round
       tags:
       - Round
   /submission/:

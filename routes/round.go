@@ -5,6 +5,7 @@ import (
 	"nokib/campwiz/models"
 	"nokib/campwiz/repository/cache"
 	"nokib/campwiz/services"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -101,6 +102,16 @@ func ImportFromCommons(c *gin.Context, sess *cache.Session) {
 	c.JSON(200, ResponseSingle[*models.Task]{Data: task})
 }
 
+// ImportFromPreviousRound godoc
+// @Summary Import images from previous round
+// @Description The user would provide a round ID and a list of scores and the system would import images from the previous round with those scores
+// @Produce  json
+// @Success 200 {object} ResponseSingle[models.Task]
+// @Router /round/import/{targetRoundId}/previous [post]
+// @Param targetRoundId path string true "The target round ID, where the images will be imported"
+// @Param ImportFromPreviousRoundPayload body services.ImportFromPreviousRoundPayload true "The import from previous round request"
+// @Tags Round
+// @Error 400 {object} ResponseError
 func ImportFromPreviousRound(c *gin.Context, sess *cache.Session) {
 	roundId := c.Param("roundId")
 	if roundId == "" {
@@ -261,27 +272,74 @@ func GetRound(c *gin.Context) {
 	c.JSON(200, ResponseSingle[*models.Round]{Data: round})
 }
 
-// GetResults godoc
+// GetResultSummary godoc
 // @Summary Get results of a round
 // @Description Get results of a round
 // @Produce  json
 // @Success 200 {object} ResponseList[models.EvaluationResult]
-// @Router /round/{roundId}/results [get]
+// @Router /round/{roundId}/results/summary [get]
 // @Param roundId path string true "The round ID"
 // @Tags Round
 // @Error 400 {object} ResponseError
-func GetResults(c *gin.Context, sess *cache.Session) {
+func GetResultSummary(c *gin.Context, sess *cache.Session) {
 	roundId := c.Param("roundId")
 	if roundId == "" {
 		c.JSON(400, ResponseError{Detail: "Invalid request : Round ID is required"})
 	}
 	round_service := services.NewRoundService()
-	results, err := round_service.GetResults(models.IDType(roundId))
+	results, err := round_service.GetResultSummary(models.IDType(roundId))
 	if err != nil {
 		c.JSON(400, ResponseError{Detail: "Failed to get round results : " + err.Error()})
 		return
 	}
 	c.JSON(200, ResponseList[models.EvaluationResult]{Data: results})
+}
+
+// GetResults godoc
+// @Summary Get results of a round
+// @Description Get results of a round
+// @Produce  json
+// @Success 200 {object} ResponseList[models.SubmissionResult]
+// @Router /round/{roundId}/results [get]
+// @Param roundId path string true "The round ID"
+// @Param SubmissionResultQuery query models.SubmissionResultQuery false "The query to filter the results"
+// @Tags Round
+// @Error 400 {object} ResponseError
+// @Security ApiKeyAuth
+func GetResults(c *gin.Context, sess *cache.Session) {
+	roundId := c.Param("roundId")
+	if roundId == "" {
+		c.JSON(400, ResponseError{Detail: "Invalid request : Round ID is required"})
+	}
+	q := &models.SubmissionResultQuery{}
+	err := c.ShouldBindQuery(&q)
+	if err != nil {
+		c.JSON(400, ResponseError{Detail: "Invalid request : " + err.Error()})
+		return
+	}
+	if len(q.Type) > 0 {
+		k := []models.MediaType{}
+		for _, t := range q.Type {
+			if strings.Contains(string(t), ",") {
+				for _, tt := range strings.Split(string(t), ",") {
+					k = append(k, models.MediaType(tt))
+				}
+			}
+		}
+		q.Type = k
+	}
+	round_service := services.NewRoundService()
+	results, err := round_service.GetResults(models.IDType(roundId), q)
+	if err != nil {
+		c.JSON(404, ResponseError{Detail: "Failed to get round results : " + err.Error()})
+		return
+	}
+	result := ResponseList[models.SubmissionResult]{Data: results}
+	if len(results) > 0 {
+		result.ContinueToken = results[len(results)-1].SubmissionID.String()
+		result.PreviousToken = results[0].SubmissionID.String()
+	}
+	c.JSON(200, result)
 }
 
 // NextPublicSubmission godoc
@@ -325,10 +383,12 @@ func NewRoundRoutes(parent *gin.RouterGroup) {
 	r.GET("/", WithSession(ListAllRounds))
 	r.GET("/:roundId", GetRound)
 	r.GET("/:roundId/next/public", WithSession(NextPublicSubmission))
+	r.GET("/:roundId/results/summary", WithSession(GetResultSummary))
 	r.GET("/:roundId/results", WithSession(GetResults))
 	r.POST("/:roundId/status", WithSession(UpdateStatus))
 	r.POST("/", WithPermission(consts.PermissionCreateCampaign, CreateRound))
 	r.POST("/:roundId", WithPermission(consts.PermissionCreateCampaign, UpdateRoundDetails))
 	r.POST("/import/:roundId/commons", WithPermission(consts.PermissionLogin, ImportFromCommons))
+	r.POST("/import/:roundId/previous", WithPermission(consts.PermissionLogin, ImportFromPreviousRound))
 	r.POST("/distribute/:roundId", WithPermission(consts.PermissionCreateCampaign, DistributeEvaluations))
 }

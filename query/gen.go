@@ -24,6 +24,7 @@ var (
 	Role                 *role
 	Round                *round
 	Submission           *submission
+	SubmissionResult     *submissionResult
 	SubmissionStatistics *submissionStatistics
 	Task                 *task
 	User                 *user
@@ -38,6 +39,7 @@ func SetDefault(db *gorm.DB, opts ...gen.DOOption) {
 	Role = &Q.Role
 	Round = &Q.Round
 	Submission = &Q.Submission
+	SubmissionResult = &Q.SubmissionResult
 	SubmissionStatistics = &Q.SubmissionStatistics
 	Task = &Q.Task
 	User = &Q.User
@@ -53,6 +55,7 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 		Role:                 newRole(db, opts...),
 		Round:                newRound(db, opts...),
 		Submission:           newSubmission(db, opts...),
+		SubmissionResult:     newSubmissionResult(db, opts...),
 		SubmissionStatistics: newSubmissionStatistics(db, opts...),
 		Task:                 newTask(db, opts...),
 		User:                 newUser(db, opts...),
@@ -69,6 +72,7 @@ type Query struct {
 	Role                 role
 	Round                round
 	Submission           submission
+	SubmissionResult     submissionResult
 	SubmissionStatistics submissionStatistics
 	Task                 task
 	User                 user
@@ -86,6 +90,7 @@ func (q *Query) clone(db *gorm.DB) *Query {
 		Role:                 q.Role.clone(db),
 		Round:                q.Round.clone(db),
 		Submission:           q.Submission.clone(db),
+		SubmissionResult:     q.SubmissionResult.clone(db),
 		SubmissionStatistics: q.SubmissionStatistics.clone(db),
 		Task:                 q.Task.clone(db),
 		User:                 q.User.clone(db),
@@ -110,6 +115,7 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 		Role:                 q.Role.replaceDB(db),
 		Round:                q.Round.replaceDB(db),
 		Submission:           q.Submission.replaceDB(db),
+		SubmissionResult:     q.SubmissionResult.replaceDB(db),
 		SubmissionStatistics: q.SubmissionStatistics.replaceDB(db),
 		Task:                 q.Task.replaceDB(db),
 		User:                 q.User.replaceDB(db),
@@ -124,6 +130,7 @@ type queryCtx struct {
 	Role                 IRoleDo
 	Round                IRoundDo
 	Submission           ISubmissionDo
+	SubmissionResult     ISubmissionResultDo
 	SubmissionStatistics ISubmissionStatisticsDo
 	Task                 ITaskDo
 	User                 IUserDo
@@ -138,6 +145,7 @@ func (q *Query) WithContext(ctx context.Context) *queryCtx {
 		Role:                 q.Role.WithContext(ctx),
 		Round:                q.Round.WithContext(ctx),
 		Submission:           q.Submission.WithContext(ctx),
+		SubmissionResult:     q.SubmissionResult.WithContext(ctx),
 		SubmissionStatistics: q.SubmissionStatistics.WithContext(ctx),
 		Task:                 q.Task.WithContext(ctx),
 		User:                 q.User.WithContext(ctx),

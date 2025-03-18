@@ -76,6 +76,18 @@ type Submission struct {
 type SubmissionSelectID struct {
 	SubmissionID types.SubmissionIDType
 }
+type SubmissionResult struct {
+	SubmissionID    IDType    `json:"submissionId"`
+	Name            string    `json:"name"`
+	Author          string    `json:"author"`
+	Score           ScoreType `json:"score"`
+	EvaluationCount int       `json:"juryCount"`
+	MediaType       MediaType `json:"type"`
+}
+type SubmissionResultQuery struct {
+	CommonFilter
+	Type []MediaType `form:"type"`
+}
 type SubmissionStatistics struct {
 	SubmissionID    types.SubmissionIDType
 	AssignmentCount int

@@ -4,6 +4,7 @@ import (
 	"log"
 	"nokib/campwiz/models"
 	"nokib/campwiz/models/types"
+	"nokib/campwiz/query"
 	"nokib/campwiz/repository"
 	idgenerator "nokib/campwiz/services/idGenerator"
 	rnd "nokib/campwiz/services/round"
@@ -198,11 +199,14 @@ func (b *TaskRunner) updateStatistics(tx *gorm.DB, round *models.Round, successC
 		TotalEvaluatedSubmissions int
 	}
 	var result Result
-	res := tx.Model(&models.Submission{}).Select("count(submission_id) as total_submissions", "sum(assignment_count) as total_evaluations").Where(&models.Submission{RoundID: round.RoundID}).Find(&result)
-	if res.Error != nil {
-		return res.Error
+	q := query.Use(tx)
+	Submission := q.Submission
+	err := Submission.Select(Submission.SubmissionID.Count().As("TotalSubmissions"), Submission.AssignmentCount.Sum().
+		As("TotalEvaluatedSubmissions")).Where(Submission.RoundID.Eq(round.RoundID.String())).Scan(&result)
+	if err != nil {
+		return err
 	}
-	res = tx.Updates(&models.Round{
+	res := tx.Updates(&models.Round{
 		RoundID:                   round.RoundID,
 		TotalSubmissions:          result.TotalSubmissions,
 		TotalEvaluatedSubmissions: result.TotalEvaluatedSubmissions,
@@ -276,7 +280,7 @@ func (b *TaskRunner) Run() {
 		}
 	}()
 	successCount, failedCount := 0, 0
-	if task.Type == models.TaskTypeImportFromCommons {
+	if task.Type == models.TaskTypeImportFromCommons || task.Type == models.TaskTypeImportFromPreviousRound {
 		if b.ImportSource == nil {
 			log.Printf("No import source found for task %s\n", b.TaskId)
 			task.Status = models.TaskStatusFailed

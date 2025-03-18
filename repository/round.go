@@ -47,23 +47,43 @@ func (r *RoundRepository) FindByID(conn *gorm.DB, id models.IDType) (*models.Rou
 	result := conn.First(round, where)
 	return round, result.Error
 }
-func (r *RoundRepository) GetResults(conn *gorm.DB, roundID models.IDType) (results []models.EvaluationResult, err error) {
-	results = []models.EvaluationResult{}
-	stmt := (conn.Model(&models.Submission{}).
-		Select("score as AverageScore, count(submission_id) as SubmissionCount").
-		Where(&models.Submission{RoundID: roundID}).Group("score").Order("score").
-		Limit(100).
-		Find(&results))
-	if stmt.Error != nil {
-		return nil, stmt.Error
+func (r *RoundRepository) GetResults(conn *gorm.DB, roundID models.IDType, qry *models.SubmissionResultQuery) (results []models.SubmissionResult, err error) {
+	results = []models.SubmissionResult{}
+	q := query.Use(conn)
+	Submission := q.Submission
+	stmt := Submission.Select(Submission.SubmissionID, Submission.Name, Submission.Score, Submission.Author, Submission.EvaluationCount, Submission.MediaType).
+		Where(Submission.RoundID.Eq(roundID.String()))
+	if qry != nil {
+		if qry.Limit > 0 {
+			stmt = stmt.Limit(qry.Limit)
+		}
+		if qry.ContinueToken != "" {
+			stmt = stmt.Where(Submission.SubmissionID.Gt(qry.ContinueToken))
+		}
+		if qry.PreviousToken != "" {
+			stmt = stmt.Where(Submission.SubmissionID.Lt(qry.PreviousToken))
+		}
+		if len(qry.Type) > 0 {
+			types := []string{}
+			for _, t := range qry.Type {
+				types = append(types, string(t))
+			}
+			stmt = stmt.Where(Submission.MediaType.In(types...))
+		}
+	}
+
+	err = stmt.Order(Submission.Score.Desc(), Submission.EvaluationCount.Desc()).Scan(&results)
+	if err != nil {
+		return nil, err
 	}
 	return results, nil
 
 }
-func (r *RoundRepository) GetResultsV2(conn *gorm.DB, roundID models.IDType) (results []models.EvaluationResult, err error) {
+func (r *RoundRepository) GetResultSummary(conn *gorm.DB, roundID models.IDType) (results []models.EvaluationResult, err error) {
 	results = []models.EvaluationResult{}
 	q := query.Use(conn)
-	stmt := q.Submission.Select(q.Submission.Score.As("AverageScore"), q.Submission.SubmissionID.Count().As("SubmissionCount")).Group(q.Submission.Score).Order(q.Submission.Score.Desc()).Limit(100)
+	stmt := q.Submission.Select(q.Submission.Score.As("AverageScore"), q.Submission.SubmissionID.Count().As("SubmissionCount")).
+		Group(q.Submission.Score).Order(q.Submission.Score.Desc()).Limit(100)
 	err = stmt.Scan(&results)
 	return results, err
 

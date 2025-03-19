@@ -108,13 +108,9 @@ func (s *RoundService) CreateRound(request *RoundRequest) (*models.Round, error)
 		tx.Rollback()
 		return nil, err
 	}
-	// if private jury, then the campaign would be private permanently
-	if !request.IsPublicJury {
-		campaign.CampaignWithWriteableFields.IsPublic = false
-	}
 	q := query.Use(tx)
 	stmt := q.Campaign.Where(q.Campaign.CampaignID.Eq(campaign.CampaignID.String()))
-	if !request.IsPublicJury && campaign.IsPublic {
+	if !request.IsPublicJury {
 		_, err = stmt.Update(q.Campaign.IsPublic, campaign.IsPublic)
 		if err != nil {
 			tx.Rollback()
@@ -614,7 +610,7 @@ func (e *RoundService) UpdateStatus(currenUserID models.IDType, roundID models.I
 		tx.Rollback()
 		return nil, errors.New("round cannot be set to any other status from cancelled")
 	}
-	if status == models.RoundStatusActive || status == models.RoundStatusPaused {
+	if status == models.RoundStatusActive || status == models.RoundStatusPaused || status == models.RoundStatusCompleted {
 		qm := query.Use(tx)
 		campaignStatus := models.RoundStatusActive
 		if status == models.RoundStatusPaused {

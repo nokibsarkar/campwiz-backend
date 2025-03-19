@@ -89,7 +89,7 @@ type RoundWritable struct {
 	StartDate        time.Time      `json:"startDate" gorm:"type:datetime"`
 	EndDate          time.Time      `json:"endDate" gorm:"type:datetime"`
 	IsOpen           bool           `json:"isOpen" gorm:"default:true"`
-	IsPublicJury     bool           `json:"isPublic" gorm:"default:false"`
+	IsPublicJury     bool           `json:"isPublicJury" gorm:"default:false"`
 	DependsOnRoundID *IDType        `json:"dependsOnRoundId" gorm:"default:null"`
 	DependsOnRound   *Round         `json:"-" gorm:"foreignKey:DependsOnRoundID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	Serial           int            `json:"serial" gorm:"default:0"`

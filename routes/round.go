@@ -408,7 +408,7 @@ func NewRoundRoutes(parent *gin.RouterGroup) {
 	r.GET("/:roundId/results/:format", WithSession(GetResults))
 	r.POST("/:roundId/status", WithSession(UpdateStatus))
 	r.POST("/", WithPermission(consts.PermissionCreateCampaign, CreateRound))
-	r.POST("/:roundId", WithPermission(consts.PermissionCreateCampaign, UpdateRoundDetails))
+	r.POST("/:roundId", WithSession(UpdateRoundDetails))
 	r.POST("/import/:roundId/commons", WithPermission(consts.PermissionLogin, ImportFromCommons))
 	r.POST("/import/:roundId/previous", WithPermission(consts.PermissionLogin, ImportFromPreviousRound))
 	r.POST("/distribute/:roundId", WithPermission(consts.PermissionCreateCampaign, DistributeEvaluations))

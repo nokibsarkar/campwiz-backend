@@ -99,7 +99,7 @@ type ProjectSingleQuery struct {
 // @Error 400 {object} ResponseError
 // @Error 403 {object} ResponseError
 // @Error 404 {object} ResponseError
-func GetSingleProject(c *gin.Context) {
+func GetSingleProject(c *gin.Context, sess *cache.Session) {
 	projectId := c.Param("projectId")
 	if projectId == "" {
 		c.JSON(400, ResponseError{Detail: "Invalid request : Project ID is required"})
@@ -111,36 +111,87 @@ func GetSingleProject(c *gin.Context) {
 		c.JSON(400, ResponseError{Detail: "Invalid request : " + err.Error()})
 		return
 	}
+	u := GetCurrentUser(c)
+	if u == nil {
+		c.JSON(400, ResponseError{Detail: "Invalid request : User not found"})
+		return
+	}
+	// User does not have permission for other projects
+	// User does not have
+	if !u.Permission.HasPermission(consts.PermissionOtherProjectAccess) && u.LeadingProjectID != nil && *u.LeadingProjectID == models.IDType(projectId) {
+		c.JSON(403, ResponseError{Detail: "User does not have permission to access this project"})
+		return
+	}
 	project_service := services.NewProjectService()
 	project, err := project_service.GetProjectByID(models.IDType(projectId), q.IncludeProjectLeads)
 	if err != nil {
 		c.JSON(400, ResponseError{Detail: "Error getting project : " + err.Error()})
 		return
 	}
+	if project == nil {
+		c.JSON(404, ResponseError{Detail: "Project not found"})
+		return
+	}
 	c.JSON(200, ResponseSingle[models.ProjectExtended]{Data: *project})
 }
+
+// ListProjects godoc
+// @Summary List all projects
+// @Description List all projects
+// @Produce  json
+// @Success 200 {object} ResponseList[models.ProjectExtended]
+// @Router /project/ [get]
+// @Tags Project
+// @Security ApiKeyAuth
+// @Error 400 {object} ResponseError
+// @Error 403 {object} ResponseError
+// @Error 404 {object} ResponseError
 func ListProjects(c *gin.Context, sess *cache.Session) {
+	q := &models.ProjectFilter{}
+	err := c.ShouldBindQuery(q)
+	if err != nil {
+		c.JSON(400, ResponseError{Detail: "Invalid request : " + err.Error()})
+		return
+	}
+	u := GetCurrentUser(c)
+	if u == nil {
+		c.JSON(400, ResponseError{Detail: "Invalid request : User not found"})
+		return
+	}
+	if !u.Permission.HasPermission(consts.PermissionOtherProjectAccess) {
+		// user does not have permission to access other projects
+		// but user is trying to access other projects
+		if q.IncludeOtherProjects {
+			c.JSON(200, ResponseList[models.ProjectExtended]{Data: []models.ProjectExtended{}})
+			return
+		} else if u.LeadingProjectID != nil {
+			// User is not an admin, but he is trying to access his own project
+			q.IDs = []models.IDType{*u.LeadingProjectID}
+		} else {
+			// neither admin nor leading any project
+			c.JSON(200, ResponseList[models.ProjectExtended]{Data: []models.ProjectExtended{}})
+			return
+		}
+	}
+
 	project_service := services.NewProjectService()
-	projects, err := project_service.ListProjects()
+	projects, err := project_service.ListProjects(&u.UserID, q)
 	if err != nil {
 		c.JSON(400, ResponseError{Detail: "Error getting projects : " + err.Error()})
 		return
 	}
-	pj := []models.ProjectExtended{}
-	for _, p := range projects {
-		px := models.ProjectExtended{Project: p}
-		px.Leads = []models.WikimediaUsernameType{}
-		pj = append(pj, px)
-	}
-	c.JSON(200, ResponseList[models.ProjectExtended]{Data: pj})
+
+	c.JSON(200, ResponseList[models.ProjectExtended]{Data: projects})
 }
 
 func NewProjectRoutes(parent *gin.RouterGroup) *gin.RouterGroup {
 	r := parent.Group("/project")
-	r.GET("/", WithPermission(consts.PermissionOtherProjectAccess, ListProjects))
+	r.GET("/", WithSession(ListProjects))
+	// Only super admin can create a project
 	r.POST("/", WithPermission(consts.PermissionCreateCampaign, CreateProject))
+	// Only super admin can update a project
 	r.POST("/:projectId", WithPermission(consts.PermissionUpdateProject, UpdateProject))
-	r.GET("/:projectId", GetSingleProject)
+	r.GET("/:projectId", WithSession(GetSingleProject))
 
 	return r
 }

@@ -10,6 +10,10 @@ import (
 	"gorm.io/gorm"
 )
 
+type ProjectListQuery struct {
+	IncludeProjectLeads  bool `form:"includeProjectLeads"`
+	IncludeOtherProjects bool `form:"includeOtherProjects"`
+}
 type ProjectService struct{}
 
 func NewProjectService() *ProjectService {
@@ -159,11 +163,11 @@ func (p *ProjectService) UpdateProject(projectReq *models.ProjectRequest) (*mode
 	}
 	return px, nil
 }
-func (p *ProjectService) ListProjects() ([]models.Project, error) {
+func (p *ProjectService) ListProjects(currentUserProjectID *models.IDType, qrt *models.ProjectFilter) ([]models.ProjectExtended, error) {
 	project_repo := repository.NewProjectRepository()
 	conn, close := repository.GetDB()
 	defer close()
-	projects, err := project_repo.ListProjects(conn, &models.ProjectFilter{})
+	projects, err := project_repo.ListProjects(conn, qrt)
 	if err != nil {
 		return nil, err
 	}

@@ -25,6 +25,8 @@ type ProjectRequest struct {
 	Campaigns    []*Campaign             `json:"-"  gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }
 type ProjectFilter struct {
-	IncludeRoles bool `form:"includeRoles"`
+	IncludeRoles         bool     `form:"includeRoles"`
+	IncludeOtherProjects bool     `form:"includeOtherProjects"`
+	IDs                  []IDType `form:"ids"`
 	CommonFilter
 }

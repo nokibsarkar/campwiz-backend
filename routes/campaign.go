@@ -201,7 +201,7 @@ func CreateCampaign(c *gin.Context, sess *cache.Session) {
 // @Param id path string true "The campaign ID"
 // @Param campaignRequest body services.CampaignUpdateRequest true "The campaign request"
 func UpdateCampaign(c *gin.Context, sess *cache.Session) {
-	campaignId := c.Param("id")
+	campaignId := c.Param("campaignId")
 	if campaignId == "" {
 		c.JSON(400, ResponseError{Detail: "Invalid request : Campaign ID is required"})
 	}
@@ -219,7 +219,12 @@ func UpdateCampaign(c *gin.Context, sess *cache.Session) {
 	}
 	c.JSON(200, ResponseSingle[*models.Campaign]{Data: campaign})
 }
-func GetCampaignResult(c *gin.Context) {
+func GetCampaignResultSummary(c *gin.Context) {
+	c.JSON(200, gin.H{
+		"message": "Hello, World!",
+	})
+}
+func GetCampaignResults(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"message": "Hello, World!",
 	})
@@ -253,10 +258,10 @@ func NewCampaignRoutes(parent *gin.RouterGroup) {
 	r := parent.Group("/campaign")
 	r.GET("/", ListAllCampaigns)
 	r.GET("/timeline2", GetAllCampaignTimeLine)
-	r.GET("/:campaignId/result", GetCampaignResult)
+	r.GET("/:campaignId/result", GetCampaignResultSummary)
 	r.GET("/jury", ListAllJury)
 	r.POST("/", WithPermission(consts.PermissionCreateCampaign, CreateCampaign))
-	r.POST("/:campaignId", WithPermission(consts.PermissionUpdateCampaignDetails, UpdateCampaign))
+	r.POST("/:campaignId", WithSession(UpdateCampaign))
 	r.GET("/:campaignId/submissions", GetCampaignSubmissions)
 	r.GET("/:campaignId/next", GetNextSubmission)
 	r.POST("/:campaignId/status", ApproveCampaign)

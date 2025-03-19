@@ -530,7 +530,7 @@ func (e *RoundService) UpdateStatus(currenUserID models.IDType, roundID models.I
 	defer close()
 	tx := conn.Begin()
 
-	round, err := round_repo.FindByID(tx, roundID)
+	round, err := round_repo.FindByID(tx.Preload("Campaign"), roundID)
 	if err != nil {
 		tx.Rollback()
 		return nil, err
@@ -543,6 +543,15 @@ func (e *RoundService) UpdateStatus(currenUserID models.IDType, roundID models.I
 		tx.Rollback()
 		return round, nil
 	}
+	campaign := round.Campaign
+	if campaign == nil {
+		tx.Rollback()
+		return nil, errors.New("campaign not found")
+	}
+	// if campaign.Status == models.
+	// 	tx.Rollback()
+	// 	return nil, errors.New("campaign is not active")
+	// }
 	coordinatorType := models.RoleTypeCoordinator
 	coordinatorRoles, err := role_repo.ListAllRoles(tx, &models.RoleFilter{
 		UserID:     &currenUserID,
@@ -604,6 +613,15 @@ func (e *RoundService) UpdateStatus(currenUserID models.IDType, roundID models.I
 	case models.RoundStatusCancelled:
 		tx.Rollback()
 		return nil, errors.New("round cannot be set to any other status from cancelled")
+	}
+	if status == models.RoundStatusActive || status == models.RoundStatusPaused {
+		qm := query.Use(tx)
+		Campaign := qm.Campaign
+		_, err = Campaign.Where(Campaign.CampaignID.Eq(round.CampaignID.String())).Update(Campaign.Status, status)
+		if err != nil {
+			tx.Rollback()
+			return nil, err
+		}
 	}
 	round, err = round_repo.Update(tx, &models.Round{
 		RoundID: roundID,

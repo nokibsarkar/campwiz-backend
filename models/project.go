@@ -24,3 +24,7 @@ type ProjectRequest struct {
 	ProjectLeads []WikimediaUsernameType `json:"projectLeads"  gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	Campaigns    []*Campaign             `json:"-"  gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }
+type ProjectFilter struct {
+	IncludeRoles bool `form:"includeRoles"`
+	CommonFilter
+}

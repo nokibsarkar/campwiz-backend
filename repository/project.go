@@ -24,3 +24,8 @@ func (r *ProjectRepository) UpdateProject(tx *gorm.DB, project *models.Project) 
 	result := tx.Updates(project)
 	return result.Error
 }
+func (r *ProjectRepository) ListProjects(tx *gorm.DB, filter *models.ProjectFilter) ([]models.Project, error) {
+	projects := []models.Project{}
+	result := tx.Find(&projects)
+	return projects, result.Error
+}

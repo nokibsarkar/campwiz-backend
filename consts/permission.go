@@ -153,6 +153,29 @@ type PermissionMap map[PermissionName]Permission
 func GetPermissionMap() PermissionMap {
 	permissionMap := PermissionMap{}
 	permissionMap[PermissionName("PermissionApproveRejectCampaign")] = PermissionApproveRejectCampaign
+	permissionMap[PermissionName("PermissionCreateCampaign")] = PermissionCreateCampaign
+	permissionMap[PermissionName("PermissionCreateProject")] = PermissionCreateProject
+	permissionMap[PermissionName("PermissionCreateRound")] = PermissionCreateRound
+	permissionMap[PermissionName("PermissionDeleteCampaign")] = PermissionDeleteCampaign
+	permissionMap[PermissionName("PermissionDeleteProject")] = PermissionDeleteProject
+	permissionMap[PermissionName("PermissionDeleteRound")] = PermissionDeleteRound
+	permissionMap[PermissionName("PermissionEvaluateSubmission")] = PermissionEvaluateSubmission
+	permissionMap[PermissionName("PermissionLogin")] = PermissionLogin
+	permissionMap[PermissionName("PermissionOtherProjectAccess")] = PermissionOtherProjectAccess
+	permissionMap[PermissionName("PermissionSeeAllUsers")] = PermissionSeeAllUsers
+	permissionMap[PermissionName("PermissionSeeOthersEvaluationResult")] = PermissionSeeOthersEvaluationResult
+	permissionMap[PermissionName("PermissionSeeOwnEvaluationResult")] = PermissionSeeOwnEvaluationResult
+	permissionMap[PermissionName("PermissionSeeUserDetails")] = PermissionSeeUserDetails
+	permissionMap[PermissionName("PermissionSubmitSubmission")] = PermissionSubmitSubmission
+	permissionMap[PermissionName("PermissionUpdateCampaignDetails")] = PermissionUpdateCampaignDetails
+	permissionMap[PermissionName("PermissionUpdateCampaignStatus")] = PermissionUpdateCampaignStatus
+	permissionMap[PermissionName("PermissionUpdateProject")] = PermissionUpdateProject
+	permissionMap[PermissionName("PermissionUpdateRoundDetails")] = PermissionUpdateRoundDetails
+	permissionMap[PermissionName("PermissionUpdateRoundStatus")] = PermissionUpdateRoundStatus
+	permissionMap[PermissionName("PermissionSeeOthersEvaluationResult")] = PermissionSeeOthersEvaluationResult
+	permissionMap[PermissionName("PermissionSeeOwnEvaluationResult")] = PermissionSeeOwnEvaluationResult
+	permissionMap[PermissionName("PermissionEvaluateSubmission")] = PermissionEvaluateSubmission
+	permissionMap[PermissionName("PermissionSubmitSubmission")] = PermissionSubmitSubmission
 	return permissionMap
 }
 func (p *PermissionGroup) GetPermissions(permMap PermissionMap) []PermissionName {

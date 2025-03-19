@@ -119,9 +119,25 @@ func GetSingleProject(c *gin.Context) {
 	}
 	c.JSON(200, ResponseSingle[models.ProjectExtended]{Data: *project})
 }
+func ListProjects(c *gin.Context, sess *cache.Session) {
+	project_service := services.NewProjectService()
+	projects, err := project_service.ListProjects()
+	if err != nil {
+		c.JSON(400, ResponseError{Detail: "Error getting projects : " + err.Error()})
+		return
+	}
+	pj := []models.ProjectExtended{}
+	for _, p := range projects {
+		px := models.ProjectExtended{Project: p}
+		px.Leads = []models.WikimediaUsernameType{}
+		pj = append(pj, px)
+	}
+	c.JSON(200, ResponseList[models.ProjectExtended]{Data: pj})
+}
 
 func NewProjectRoutes(parent *gin.RouterGroup) *gin.RouterGroup {
 	r := parent.Group("/project")
+	r.GET("/", WithPermission(consts.PermissionOtherProjectAccess, ListProjects))
 	r.POST("/", WithPermission(consts.PermissionCreateCampaign, CreateProject))
 	r.POST("/:projectId", WithPermission(consts.PermissionUpdateProject, UpdateProject))
 	r.GET("/:projectId", GetSingleProject)

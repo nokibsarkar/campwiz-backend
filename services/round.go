@@ -616,8 +616,12 @@ func (e *RoundService) UpdateStatus(currenUserID models.IDType, roundID models.I
 	}
 	if status == models.RoundStatusActive || status == models.RoundStatusPaused {
 		qm := query.Use(tx)
+		campaignStatus := models.RoundStatusActive
+		if status == models.RoundStatusPaused {
+			campaignStatus = models.RoundStatusPaused
+		}
 		Campaign := qm.Campaign
-		_, err = Campaign.Where(Campaign.CampaignID.Eq(round.CampaignID.String())).Update(Campaign.Status, status)
+		_, err = Campaign.Where(Campaign.CampaignID.Eq(round.CampaignID.String())).Update(Campaign.Status, campaignStatus)
 		if err != nil {
 			tx.Rollback()
 			return nil, err

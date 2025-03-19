@@ -159,3 +159,13 @@ func (p *ProjectService) UpdateProject(projectReq *models.ProjectRequest) (*mode
 	}
 	return px, nil
 }
+func (p *ProjectService) ListProjects() ([]models.Project, error) {
+	project_repo := repository.NewProjectRepository()
+	conn, close := repository.GetDB()
+	defer close()
+	projects, err := project_repo.ListProjects(conn, &models.ProjectFilter{})
+	if err != nil {
+		return nil, err
+	}
+	return projects, nil
+}

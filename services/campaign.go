@@ -6,6 +6,7 @@ import (
 	"nokib/campwiz/consts"
 	"nokib/campwiz/models"
 	"nokib/campwiz/repository"
+	"nokib/campwiz/repository/cache"
 	idgenerator "nokib/campwiz/services/idGenerator"
 )
 
@@ -101,6 +102,19 @@ func (service *CampaignService) GetAllCampaigns(query *models.CampaignFilter) []
 		log.Println("Error: ", err)
 		return []models.Campaign{}
 	}
+	return campaigns
+}
+func (service *CampaignService) ListPrivateCampaigns(sess *cache.Session, qry *models.CampaignFilter) []models.Campaign {
+	q, close := repository.GetDBWithGen()
+	defer close()
+	campaigns := []models.Campaign{}
+	stmt := q.Campaign.Where(q.Campaign.IsPublic.Not()).Join(q.Role, q.Role.CampaignID.EqCol(q.Campaign.CampaignID)).
+		Where(q.Role.UserID.Eq(sess.UserID.String()))
+	if qry.ProjectID != "" {
+		stmt = stmt.Where(q.Campaign.ProjectID.Eq(qry.ProjectID.String()))
+	}
+	stmt = stmt.Group(q.Campaign.CampaignID).Limit(qry.Limit)
+	stmt.Scan(&campaigns)
 	return campaigns
 }
 

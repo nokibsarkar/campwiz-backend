@@ -46,12 +46,15 @@ func (a *AuthenticationMiddleWare) extractAccessToken(c *gin.Context) (string, e
 }
 
 func (a *AuthenticationMiddleWare) checkIfUnauthenticatedAllowed(c *gin.Context) bool {
+	if c.Request.Method != "GET" {
+		return false
+	}
 	path := c.Request.URL.Path
 	// return true
 	var UnRestrictedPaths = []string{
 		"/user/login",
 		"/user/callback",
-		// "/api/v2/campaign/",
+		"/api/v2/campaign/",
 	}
 	for _, p := range UnRestrictedPaths {
 		if strings.HasSuffix(p, "*") {
@@ -100,4 +103,34 @@ func (a *AuthenticationMiddleWare) Authenticate(c *gin.Context) {
 		}
 		c.Next()
 	}
+}
+func (a *AuthenticationMiddleWare) Authenticate2(c *gin.Context) {
+
+	token, err := a.extractAccessToken(c)
+	if err != nil {
+		if !a.checkIfUnauthenticatedAllowed(c) {
+			log.Println("Error", err)
+			c.Set("error", err)
+			c.AbortWithStatusJSON(401, ResponseError{Detail: "Unauthorized : No token found"})
+			return
+		}
+	} else {
+		auth_service := services.NewAuthenticationService()
+		accessToken, session, err, setCookie := auth_service.Authenticate(token)
+		if err != nil {
+			if !a.checkIfUnauthenticatedAllowed(c) {
+				log.Println("Error", err)
+				c.Set("error", err)
+				c.AbortWithStatusJSON(401, ResponseError{Detail: "Unauthorized : Invalid token"})
+				return
+			}
+		} else {
+			if setCookie {
+				log.Println("Setting Authentication Cookie")
+				c.SetCookie(AuthenticationCookieName, accessToken, consts.Config.Auth.Expiry, "/", "", false, true)
+			}
+			c.Set(SESSION_KEY, session)
+		}
+	}
+	c.Next()
 }

@@ -85,7 +85,7 @@ func ListAllCampaigns(c *gin.Context) {
 	c.JSON(200, ResponseList[models.Campaign]{Data: campaignList})
 }
 
-func ListAllCampaignsV2(c *gin.Context) {
+func ListAllCampaignsV2(c *gin.Context, sess *cache.Session) {
 	qry := &models.CampaignFilter{}
 	err := c.ShouldBindQuery(qry)
 	if err != nil {
@@ -323,7 +323,7 @@ NewCampaignRoutes will create all the routes for the /campaign endpoint
 func NewCampaignRoutes(parent *gin.RouterGroup) {
 	defer HandleError("/campaign")
 	r := parent.Group("/campaign")
-	r.GET("/", ListAllCampaignsV2)
+	r.GET("/", WithSessionOptional(ListAllCampaignsV2))
 	r.GET("/timeline2", GetAllCampaignTimeLine)
 	r.GET("/:campaignId/result", GetCampaignResultSummary)
 	r.GET("/jury", ListAllJury)

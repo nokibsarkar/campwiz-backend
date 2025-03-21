@@ -9,6 +9,8 @@ import (
 	"nokib/campwiz/consts"
 	"nokib/campwiz/models"
 	"strings"
+
+	"github.com/st3fan/html2text"
 )
 
 const COMMONS_API = "http://commons.wikimedia.org/w/api.php"
@@ -84,8 +86,8 @@ func (c *CommonsRepository) GetImagesFromCommonsCategories(category string) ([]m
 			Resolution:       info.Width * info.Height,
 		}
 		if info.ExtMetadata != nil {
-			img.License = info.ExtMetadata.GetLicense()
-			img.Description = info.ExtMetadata.GetImageDescription()
+			img.License = html2text.HTML2Text(info.ExtMetadata.GetLicense())
+			img.Description = html2text.HTML2Text(info.ExtMetadata.GetImageDescription())
 			img.CreditHTML = info.ExtMetadata.GetCredit()
 		}
 		result = append(result, img)

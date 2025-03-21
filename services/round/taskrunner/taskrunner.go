@@ -94,7 +94,8 @@ func (b *TaskRunner) importImages(conn *gorm.DB, task *models.Task) (successCoun
 		images := []models.ImageResult{}
 		log.Println("Processing batch of images")
 		for _, image := range successBatch {
-			if technicalJudge.PreventionReason(image) != "" {
+			// not allowed to submit images
+			if technicalJudge.PreventionReason(image) == "" {
 				images = append(images, image)
 			}
 		}

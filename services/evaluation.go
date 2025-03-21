@@ -142,6 +142,10 @@ func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluation
 		submissionIds = append(submissionIds, submission.SubmissionID)
 
 	}
+	if currentRound == nil {
+		tx.Rollback()
+		return nil, errors.New("no evaluations found")
+	}
 	// trigger submission score counting
 	if err := e.triggerEvaluationScoreCount(tx, currentRound.RoundID, submissionIds); err != nil {
 		tx.Rollback()

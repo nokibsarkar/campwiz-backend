@@ -91,6 +91,7 @@ func (s *RoundService) CreateRound(request *RoundRequest) (*models.Round, error)
 		}
 		// current request is public if all previous rounds are public and the current request is for public
 		request.RoundWritable.IsPublicJury = request.IsPublicJury && previousRound.IsPublicJury
+
 		request.RoundWritable.DependsOnRoundID = &previousRound.RoundID
 	} else {
 		log.Println("No previous round found")

@@ -64,7 +64,7 @@ func (strategy *RoundRobinDistributionStrategyV3) AssignJuries(tx *gorm.DB, roun
 	if err != nil {
 		return
 	}
-	_, err = strategy.createMissingEvaluations(tx, models.EvaluationTypeScore, round, submissions)
+	_, err = strategy.createMissingEvaluations(tx, round.Type, round, submissions)
 	if err != nil {
 		return
 	}

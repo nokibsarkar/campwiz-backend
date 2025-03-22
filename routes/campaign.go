@@ -198,13 +198,13 @@ func GetSingleCampaign(c *gin.Context, sess *cache.Session) {
 		}
 	}
 	if q.IncludeRounds && q.IncludeRoundRoles {
-		if campaign.IsPublic {
-			for i, round := range campaign.Rounds {
-				// No need to show the roles for public campaigns
-				round.Roles = []models.Role{}
-				campaign.Rounds[i] = round
-			}
-		}
+		// if campaign.IsPublic {
+		// 	for i, round := range campaign.Rounds {
+		// 		// No need to show the roles for public campaigns
+		// 		round.Roles = []models.Role{}
+		// 		campaign.Rounds[i] = round
+		// 	}
+		// }
 		for i, round := range campaign.Rounds {
 			round.Jury = map[models.IDType]models.WikimediaUsernameType{}
 			for _, role := range round.Roles {

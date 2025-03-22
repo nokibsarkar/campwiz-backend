@@ -628,6 +628,10 @@ func (e *RoundService) UpdateStatus(currenUserID models.IDType, roundID models.I
 	round, err = round_repo.Update(tx, &models.Round{
 		RoundID: roundID,
 		Status:  status,
+		RoundWritable: models.RoundWritable{
+			IsPublicJury: round.IsPublicJury,
+			IsOpen:       round.IsOpen,
+		},
 	})
 	if err != nil {
 		tx.Rollback()

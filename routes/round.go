@@ -3,6 +3,7 @@ package routes
 import (
 	"encoding/csv"
 	"fmt"
+	"log"
 	"nokib/campwiz/consts"
 	"nokib/campwiz/models"
 	"nokib/campwiz/repository/cache"
@@ -34,8 +35,8 @@ func CreateRound(c *gin.Context, sess *cache.Session) {
 		c.JSON(400, ResponseError{Detail: "Invalid request : " + err.Error()})
 		return
 	}
-	if len(requestedRounds.Juries) == 0 {
-		c.JSON(400, ResponseError{Detail: "Invalid request : At least one jury is required"})
+	if !requestedRounds.IsPublicJury && len(requestedRounds.Juries) == 0 {
+		c.JSON(400, ResponseError{Detail: "Invalid request : At least one jury is required for private jury"})
 		return
 	}
 	round_service := services.NewRoundService()
@@ -179,6 +180,7 @@ func UpdateRoundDetails(c *gin.Context, sess *cache.Session) {
 		c.JSON(400, ResponseError{Detail: "Error Decoding : " + err.Error()})
 		return
 	}
+	log.Printf("Request : %+v", req)
 	round_service := services.NewRoundService()
 	round, err := round_service.UpdateRoundDetails(models.IDType(roundId), req, q)
 	if err != nil {

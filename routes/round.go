@@ -428,11 +428,25 @@ func DeleteRound(c *gin.Context, sess *cache.Session) {
 	}
 	c.JSON(200, ResponseSingle[RoundDeletedResponse]{Data: RoundDeletedResponse{RoundID: models.IDType(roundID)}})
 }
+func addMySelfAsJury(c *gin.Context, sess *cache.Session) {
+	roundID := c.Param("roundId")
+	if roundID == "" {
+		c.JSON(400, ResponseError{Detail: "Invalid request : Round ID is required"})
+	}
+	round_service := services.NewRoundService()
+	role, err := round_service.AddMyselfAsJury(sess.UserID, models.IDType(roundID))
+	if err != nil {
+		c.JSON(400, ResponseError{Detail: "Failed to add myself as jury : " + err.Error()})
+		return
+	}
+	c.JSON(200, ResponseSingle[*models.Role]{Data: role})
+}
 func NewRoundRoutes(parent *gin.RouterGroup) {
 	r := parent.Group("/round")
 	r.GET("/", WithSession(ListAllRounds))
 	r.GET("/:roundId", GetRound)
 	r.DELETE("/:roundId", WithSession(DeleteRound))
+	r.POST("/:roundId/addMyselfAsPublicJury", WithSession(addMySelfAsJury))
 	r.GET("/:roundId/next/public", WithSession(NextPublicSubmission))
 	r.GET("/:roundId/results/summary", WithSession(GetResultSummary))
 	r.GET("/:roundId/results/:format", WithSession(GetResults))
@@ -442,4 +456,5 @@ func NewRoundRoutes(parent *gin.RouterGroup) {
 	r.POST("/import/:roundId/commons", WithPermission(consts.PermissionLogin, ImportFromCommons))
 	r.POST("/import/:roundId/previous", WithPermission(consts.PermissionLogin, ImportFromPreviousRound))
 	r.POST("/distribute/:roundId", WithPermission(consts.PermissionCreateCampaign, DistributeEvaluations))
+
 }

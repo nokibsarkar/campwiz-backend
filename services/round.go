@@ -378,42 +378,44 @@ func (r *RoundService) UpdateRoundDetails(roundID models.IDType, req *RoundReque
 		tx.Rollback()
 		return nil, err
 	}
-	juryType := models.RoleTypeJury
-	filter := &models.RoleFilter{
-		RoundID:    &roundID,
-		CampaignID: &round.CampaignID,
-		Type:       &juryType,
-		ProjectID:  round.ProjectID,
-	}
-	addedRoles, removedRoleIDs, err := role_service.CalculateRoleDifference(tx, models.RoleTypeJury, filter, req.Juries)
-	if err != nil {
-		log.Println(err)
-		tx.Rollback()
-		return nil, err
-	}
-	if len(addedRoles) > 0 {
-		res := tx.Save(addedRoles)
-		if res.Error != nil {
-			tx.Rollback()
-			return nil, res.Error
+	if !req.IsPublicJury {
+		juryType := models.RoleTypeJury
+		filter := &models.RoleFilter{
+			RoundID:    &roundID,
+			CampaignID: &round.CampaignID,
+			Type:       &juryType,
+			ProjectID:  round.ProjectID,
 		}
-	}
-	if len(removedRoleIDs) > 0 {
-		r := []string{}
-		for _, roleID := range removedRoleIDs {
-			res := tx.Delete(&models.Role{RoleID: roleID})
+		addedRoles, removedRoleIDs, err := role_service.CalculateRoleDifference(tx, models.RoleTypeJury, filter, req.Juries)
+		if err != nil {
+			log.Println(err)
+			tx.Rollback()
+			return nil, err
+		}
+		if len(addedRoles) > 0 {
+			res := tx.Save(addedRoles)
 			if res.Error != nil {
 				tx.Rollback()
 				return nil, res.Error
 			}
-			r = append(r, roleID.String())
 		}
-		// make all the unevaluated evaluations available for re-assignment to other juries
-		_, err = q.Evaluation.Where(q.Evaluation.RoundID.Eq(roundID.String())).Where(q.Evaluation.JudgeID.In(r...)).
-			Where(q.Evaluation.EvaluatedAt.IsNull()).Update(q.Evaluation.JudgeID, nil)
-		if err != nil {
-			tx.Rollback()
-			return nil, err
+		if len(removedRoleIDs) > 0 {
+			r := []string{}
+			for _, roleID := range removedRoleIDs {
+				res := tx.Delete(&models.Role{RoleID: roleID})
+				if res.Error != nil {
+					tx.Rollback()
+					return nil, res.Error
+				}
+				r = append(r, roleID.String())
+			}
+			// make all the unevaluated evaluations available for re-assignment to other juries
+			_, err = q.Evaluation.Where(q.Evaluation.RoundID.Eq(roundID.String())).Where(q.Evaluation.JudgeID.In(r...)).
+				Where(q.Evaluation.EvaluatedAt.IsNull()).Update(q.Evaluation.JudgeID, nil)
+			if err != nil {
+				tx.Rollback()
+				return nil, err
+			}
 		}
 	}
 	if qry != nil {
@@ -717,4 +719,47 @@ func (e *RoundService) DeleteRound(sess *cache.Session, roundID models.IDType) e
 	}
 	tx.Commit()
 	return nil
+}
+func (e *RoundService) AddMyselfAsJury(currentUserID models.IDType, roundID models.IDType) (*models.Role, error) {
+	round_repo := repository.NewRoundRepository()
+	role_repo := repository.NewRoleRepository()
+	conn, close := repository.GetDB()
+	defer close()
+	tx := conn.Begin()
+	round, err := round_repo.FindByID(tx, roundID)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	if round == nil {
+		tx.Rollback()
+		return nil, errors.New("round not found")
+	}
+	if round.Status != models.RoundStatusActive {
+		tx.Rollback()
+		return nil, errors.New("only active rounds can have juries")
+	}
+	role, err := role_repo.FindRoleByUserIDAndRoundID(tx, currentUserID, roundID, models.RoleTypeJury)
+	if err != nil && err.Error() != "record not found" {
+		tx.Rollback()
+		return nil, err
+	}
+	if role.RoleID != "" {
+		tx.Rollback()
+		return nil, errors.New("user is already a jury")
+	}
+	role = &models.Role{
+		RoleID:    idgenerator.GenerateID("r"),
+		UserID:    currentUserID,
+		RoundID:   &roundID,
+		ProjectID: round.ProjectID,
+		Type:      models.RoleTypeJury,
+	}
+	err = role_repo.CreateRole(tx, role)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	tx.Commit()
+	return role, nil
 }

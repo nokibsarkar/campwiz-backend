@@ -376,7 +376,6 @@ func (e *EvaluationService) GetNextEvaluations(currenUserID models.IDType, filte
 	if err != nil {
 		return nil, err
 	}
-	log.Println("roles", roles)
 	if len(roles) == 0 {
 		return nil, errors.New("user is not a jury")
 	}

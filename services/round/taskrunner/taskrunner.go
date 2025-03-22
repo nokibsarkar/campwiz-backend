@@ -92,7 +92,7 @@ func (b *TaskRunner) importImages(conn *gorm.DB, task *models.Task) (successCoun
 			break
 		}
 		images := []models.MediaResult{}
-		log.Println("Processing batch of images")
+		log.Println("Processing batch of images : ", len(successBatch))
 		for _, image := range successBatch {
 			// not allowed to submit images
 			if technicalJudge.PreventionReason(image) == "" {

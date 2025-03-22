@@ -23,14 +23,14 @@ type Role struct {
 	ProjectID       IDType                 `json:"projectId" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	TargetProjectID *IDType                `json:"targetProjectId" gorm:"null;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	CampaignID      *IDType                `json:"campaignId" gorm:"null;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	RoundID         *IDType                `json:"roundId" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	RoundID         *IDType                `json:"roundId" gorm:"constraint:OnUpdate:CASCADE"`
 	TotalAssigned   int                    `json:"totalAssigned"`
 	TotalEvaluated  int                    `json:"totalEvaluated"`
 	TotalScore      int                    `json:"totalScore"`
 	Permission      consts.PermissionGroup `json:"permission" gorm:"not null;default:0"`
+	Round           *Round                 `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	Campaign        *Campaign              `json:"-"  gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	User            *User                  `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	Round           *Round                 `json:"-"  gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	Project         *Project               `json:"-"  gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	DeletedAt       *gorm.DeletedAt        `json:"deletedAt"`
 }

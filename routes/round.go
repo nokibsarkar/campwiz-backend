@@ -11,6 +11,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type RoundDeletedResponse struct {
+	RoundID models.IDType `json:"roundId"`
+}
+
 // CreateRound godoc
 // @Summary Create a new round
 // @Description Create a new round for a campaign
@@ -399,10 +403,34 @@ func NextSubmissionEvaluation(c *gin.Context, sess *cache.Session) {
 	}
 	ListEvaluations(c, sess)
 }
+
+// DeleteRound godoc
+// @Summary Delete a round
+// @Description Delete a round
+// @Produce  json
+// @Success 200 {object} ResponseSingle[RoundDeletedResponse]
+// @Router /round/{roundId} [delete]
+// @Param roundId path string true "The round ID"
+// @Tags Round
+// @Error 400 {object} ResponseError
+func DeleteRound(c *gin.Context, sess *cache.Session) {
+	roundID := c.Param("roundId")
+	if roundID == "" {
+		c.JSON(400, ResponseError{Detail: "Invalid request : Round ID is required"})
+	}
+	round_service := services.NewRoundService()
+	err := round_service.DeleteRound(sess, models.IDType(roundID))
+	if err != nil {
+		c.JSON(400, ResponseError{Detail: "Failed to delete round : " + err.Error()})
+		return
+	}
+	c.JSON(200, ResponseSingle[RoundDeletedResponse]{Data: RoundDeletedResponse{RoundID: models.IDType(roundID)}})
+}
 func NewRoundRoutes(parent *gin.RouterGroup) {
 	r := parent.Group("/round")
 	r.GET("/", WithSession(ListAllRounds))
 	r.GET("/:roundId", GetRound)
+	r.DELETE("/:roundId", WithSession(DeleteRound))
 	r.GET("/:roundId/next/public", WithSession(NextPublicSubmission))
 	r.GET("/:roundId/results/summary", WithSession(GetResultSummary))
 	r.GET("/:roundId/results/:format", WithSession(GetResults))

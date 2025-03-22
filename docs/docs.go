@@ -442,6 +442,29 @@ const docTemplate = `{
             }
         },
         "/project/": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List all projects",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "List all projects",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.ResponseList-models_ProjectExtended"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -838,6 +861,33 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/routes.ResponseSingle-models_Round"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a round",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Round"
+                ],
+                "summary": "Delete a round",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The round ID",
+                        "name": "roundId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.ResponseSingle-routes_RoundDeletedResponse"
                         }
                     }
                 }
@@ -1641,6 +1691,36 @@ const docTemplate = `{
                 }
             }
         },
+        "models.ProjectExtended": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "createdById": {
+                    "type": "string"
+                },
+                "logoUrl": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "projectId": {
+                    "type": "string"
+                },
+                "projectLeads": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "url": {
+                    "description": "The URL of the project's website",
+                    "type": "string"
+                }
+            }
+        },
         "models.ProjectRequest": {
             "type": "object",
             "required": [
@@ -1797,7 +1877,7 @@ const docTemplate = `{
                 "isOpen": {
                     "type": "boolean"
                 },
-                "isPublic": {
+                "isPublicJury": {
                     "type": "boolean"
                 },
                 "jury": {
@@ -1959,6 +2039,9 @@ const docTemplate = `{
                     "items": {
                         "type": "integer"
                     }
+                },
+                "pageId": {
+                    "type": "integer"
                 },
                 "participantId": {
                     "type": "string"
@@ -2169,6 +2252,23 @@ const docTemplate = `{
                 }
             }
         },
+        "routes.ResponseList-models_ProjectExtended": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ProjectExtended"
+                    }
+                },
+                "next": {
+                    "type": "string"
+                },
+                "prev": {
+                    "type": "string"
+                }
+            }
+        },
         "routes.ResponseList-models_Round": {
             "type": "object",
             "properties": {
@@ -2284,11 +2384,27 @@ const docTemplate = `{
                 }
             }
         },
+        "routes.ResponseSingle-routes_RoundDeletedResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/routes.RoundDeletedResponse"
+                }
+            }
+        },
         "routes.ResponseSingle-services_TaskResponse": {
             "type": "object",
             "properties": {
                 "data": {
                     "$ref": "#/definitions/services.TaskResponse"
+                }
+            }
+        },
+        "routes.RoundDeletedResponse": {
+            "type": "object",
+            "properties": {
+                "roundId": {
+                    "type": "string"
                 }
             }
         },
@@ -2534,7 +2650,7 @@ const docTemplate = `{
                 "isOpen": {
                     "type": "boolean"
                 },
-                "isPublic": {
+                "isPublicJury": {
                     "type": "boolean"
                 },
                 "jury": {

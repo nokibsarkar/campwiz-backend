@@ -101,13 +101,13 @@ func newSubmission(db *gorm.DB, opts ...gen.DOOption) submission {
 			}
 			Roles struct {
 				field.RelationField
+				Round struct {
+					field.RelationField
+				}
 				Campaign struct {
 					field.RelationField
 				}
 				User struct {
-					field.RelationField
-				}
-				Round struct {
 					field.RelationField
 				}
 				Project struct {
@@ -133,13 +133,13 @@ func newSubmission(db *gorm.DB, opts ...gen.DOOption) submission {
 			},
 			Roles: struct {
 				field.RelationField
+				Round struct {
+					field.RelationField
+				}
 				Campaign struct {
 					field.RelationField
 				}
 				User struct {
-					field.RelationField
-				}
-				Round struct {
 					field.RelationField
 				}
 				Project struct {
@@ -147,6 +147,11 @@ func newSubmission(db *gorm.DB, opts ...gen.DOOption) submission {
 				}
 			}{
 				RelationField: field.NewRelation("Campaign.LatestRound.Roles", "models.Role"),
+				Round: struct {
+					field.RelationField
+				}{
+					RelationField: field.NewRelation("Campaign.LatestRound.Roles.Round", "models.Round"),
+				},
 				Campaign: struct {
 					field.RelationField
 				}{
@@ -156,11 +161,6 @@ func newSubmission(db *gorm.DB, opts ...gen.DOOption) submission {
 					field.RelationField
 				}{
 					RelationField: field.NewRelation("Campaign.LatestRound.Roles.User", "models.User"),
-				},
-				Round: struct {
-					field.RelationField
-				}{
-					RelationField: field.NewRelation("Campaign.LatestRound.Roles.Round", "models.Round"),
 				},
 				Project: struct {
 					field.RelationField
@@ -530,13 +530,13 @@ type submissionBelongsToCampaign struct {
 		}
 		Roles struct {
 			field.RelationField
+			Round struct {
+				field.RelationField
+			}
 			Campaign struct {
 				field.RelationField
 			}
 			User struct {
-				field.RelationField
-			}
-			Round struct {
 				field.RelationField
 			}
 			Project struct {

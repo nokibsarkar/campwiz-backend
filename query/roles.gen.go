@@ -39,131 +39,137 @@ func newRole(db *gorm.DB, opts ...gen.DOOption) role {
 	_role.TotalScore = field.NewInt(tableName, "total_score")
 	_role.Permission = field.NewField(tableName, "permission")
 	_role.DeletedAt = field.NewField(tableName, "deleted_at")
-	_role.Campaign = roleBelongsToCampaign{
+	_role.Round = roleBelongsToRound{
 		db: db.Session(&gorm.Session{}),
 
-		RelationField: field.NewRelation("Campaign", "models.Campaign"),
-		CreatedBy: struct {
+		RelationField: field.NewRelation("Round", "models.Round"),
+		Campaign: struct {
 			field.RelationField
-			LeadingProject struct {
+			CreatedBy struct {
+				field.RelationField
+				LeadingProject struct {
+					field.RelationField
+				}
+			}
+			Project struct {
 				field.RelationField
 			}
-		}{
-			RelationField: field.NewRelation("Campaign.CreatedBy", "models.User"),
-			LeadingProject: struct {
-				field.RelationField
-			}{
-				RelationField: field.NewRelation("Campaign.CreatedBy.LeadingProject", "models.Project"),
-			},
-		},
-		Project: struct {
-			field.RelationField
-		}{
-			RelationField: field.NewRelation("Campaign.Project", "models.Project"),
-		},
-		LatestRound: struct {
-			field.RelationField
-			Campaign struct {
-				field.RelationField
-			}
-			Creator struct {
-				field.RelationField
-			}
-			DependsOnRound struct {
+			LatestRound struct {
 				field.RelationField
 			}
 			Roles struct {
 				field.RelationField
+				Round struct {
+					field.RelationField
+				}
 				Campaign struct {
 					field.RelationField
 				}
 				User struct {
-					field.RelationField
-				}
-				Round struct {
 					field.RelationField
 				}
 				Project struct {
 					field.RelationField
 				}
 			}
+			Rounds struct {
+				field.RelationField
+			}
 		}{
-			RelationField: field.NewRelation("Campaign.LatestRound", "models.Round"),
-			Campaign: struct {
+			RelationField: field.NewRelation("Round.Campaign", "models.Campaign"),
+			CreatedBy: struct {
 				field.RelationField
+				LeadingProject struct {
+					field.RelationField
+				}
 			}{
-				RelationField: field.NewRelation("Campaign.LatestRound.Campaign", "models.Campaign"),
+				RelationField: field.NewRelation("Round.Campaign.CreatedBy", "models.User"),
+				LeadingProject: struct {
+					field.RelationField
+				}{
+					RelationField: field.NewRelation("Round.Campaign.CreatedBy.LeadingProject", "models.Project"),
+				},
 			},
-			Creator: struct {
+			Project: struct {
 				field.RelationField
 			}{
-				RelationField: field.NewRelation("Campaign.LatestRound.Creator", "models.User"),
+				RelationField: field.NewRelation("Round.Campaign.Project", "models.Project"),
 			},
-			DependsOnRound: struct {
+			LatestRound: struct {
 				field.RelationField
 			}{
-				RelationField: field.NewRelation("Campaign.LatestRound.DependsOnRound", "models.Round"),
+				RelationField: field.NewRelation("Round.Campaign.LatestRound", "models.Round"),
 			},
 			Roles: struct {
 				field.RelationField
+				Round struct {
+					field.RelationField
+				}
 				Campaign struct {
 					field.RelationField
 				}
 				User struct {
 					field.RelationField
 				}
-				Round struct {
-					field.RelationField
-				}
 				Project struct {
 					field.RelationField
 				}
 			}{
-				RelationField: field.NewRelation("Campaign.LatestRound.Roles", "models.Role"),
+				RelationField: field.NewRelation("Round.Campaign.Roles", "models.Role"),
+				Round: struct {
+					field.RelationField
+				}{
+					RelationField: field.NewRelation("Round.Campaign.Roles.Round", "models.Round"),
+				},
 				Campaign: struct {
 					field.RelationField
 				}{
-					RelationField: field.NewRelation("Campaign.LatestRound.Roles.Campaign", "models.Campaign"),
+					RelationField: field.NewRelation("Round.Campaign.Roles.Campaign", "models.Campaign"),
 				},
 				User: struct {
 					field.RelationField
 				}{
-					RelationField: field.NewRelation("Campaign.LatestRound.Roles.User", "models.User"),
-				},
-				Round: struct {
-					field.RelationField
-				}{
-					RelationField: field.NewRelation("Campaign.LatestRound.Roles.Round", "models.Round"),
+					RelationField: field.NewRelation("Round.Campaign.Roles.User", "models.User"),
 				},
 				Project: struct {
 					field.RelationField
 				}{
-					RelationField: field.NewRelation("Campaign.LatestRound.Roles.Project", "models.Project"),
+					RelationField: field.NewRelation("Round.Campaign.Roles.Project", "models.Project"),
 				},
 			},
+			Rounds: struct {
+				field.RelationField
+			}{
+				RelationField: field.NewRelation("Round.Campaign.Rounds", "models.Round"),
+			},
+		},
+		Creator: struct {
+			field.RelationField
+		}{
+			RelationField: field.NewRelation("Round.Creator", "models.User"),
+		},
+		DependsOnRound: struct {
+			field.RelationField
+		}{
+			RelationField: field.NewRelation("Round.DependsOnRound", "models.Round"),
 		},
 		Roles: struct {
 			field.RelationField
 		}{
-			RelationField: field.NewRelation("Campaign.Roles", "models.Role"),
+			RelationField: field.NewRelation("Round.Roles", "models.Role"),
 		},
-		Rounds: struct {
-			field.RelationField
-		}{
-			RelationField: field.NewRelation("Campaign.Rounds", "models.Round"),
-		},
+	}
+
+	_role.Campaign = roleBelongsToCampaign{
+		db: db.Session(&gorm.Session{}),
+
+		RelationField: field.NewRelation("Campaign", "models.Campaign"),
 	}
 
 	_role.User = roleBelongsToUser{
 		db: db.Session(&gorm.Session{}),
 
 		RelationField: field.NewRelation("User", "models.User"),
-	}
-
-	_role.Round = roleBelongsToRound{
-		db: db.Session(&gorm.Session{}),
-
-		RelationField: field.NewRelation("Round", "models.Round"),
 	}
 
 	_role.Project = roleBelongsToProject{
@@ -193,11 +199,11 @@ type role struct {
 	TotalScore      field.Int
 	Permission      field.Field
 	DeletedAt       field.Field
-	Campaign        roleBelongsToCampaign
+	Round           roleBelongsToRound
+
+	Campaign roleBelongsToCampaign
 
 	User roleBelongsToUser
-
-	Round roleBelongsToRound
 
 	Project roleBelongsToProject
 
@@ -270,53 +276,124 @@ func (r role) replaceDB(db *gorm.DB) role {
 	return r
 }
 
-type roleBelongsToCampaign struct {
+type roleBelongsToRound struct {
 	db *gorm.DB
 
 	field.RelationField
 
-	CreatedBy struct {
+	Campaign struct {
 		field.RelationField
-		LeadingProject struct {
+		CreatedBy struct {
+			field.RelationField
+			LeadingProject struct {
+				field.RelationField
+			}
+		}
+		Project struct {
 			field.RelationField
 		}
-	}
-	Project struct {
-		field.RelationField
-	}
-	LatestRound struct {
-		field.RelationField
-		Campaign struct {
-			field.RelationField
-		}
-		Creator struct {
-			field.RelationField
-		}
-		DependsOnRound struct {
+		LatestRound struct {
 			field.RelationField
 		}
 		Roles struct {
 			field.RelationField
+			Round struct {
+				field.RelationField
+			}
 			Campaign struct {
 				field.RelationField
 			}
 			User struct {
 				field.RelationField
 			}
-			Round struct {
-				field.RelationField
-			}
 			Project struct {
 				field.RelationField
 			}
 		}
+		Rounds struct {
+			field.RelationField
+		}
+	}
+	Creator struct {
+		field.RelationField
+	}
+	DependsOnRound struct {
+		field.RelationField
 	}
 	Roles struct {
 		field.RelationField
 	}
-	Rounds struct {
-		field.RelationField
+}
+
+func (a roleBelongsToRound) Where(conds ...field.Expr) *roleBelongsToRound {
+	if len(conds) == 0 {
+		return &a
 	}
+
+	exprs := make([]clause.Expression, 0, len(conds))
+	for _, cond := range conds {
+		exprs = append(exprs, cond.BeCond().(clause.Expression))
+	}
+	a.db = a.db.Clauses(clause.Where{Exprs: exprs})
+	return &a
+}
+
+func (a roleBelongsToRound) WithContext(ctx context.Context) *roleBelongsToRound {
+	a.db = a.db.WithContext(ctx)
+	return &a
+}
+
+func (a roleBelongsToRound) Session(session *gorm.Session) *roleBelongsToRound {
+	a.db = a.db.Session(session)
+	return &a
+}
+
+func (a roleBelongsToRound) Model(m *models.Role) *roleBelongsToRoundTx {
+	return &roleBelongsToRoundTx{a.db.Model(m).Association(a.Name())}
+}
+
+type roleBelongsToRoundTx struct{ tx *gorm.Association }
+
+func (a roleBelongsToRoundTx) Find() (result *models.Round, err error) {
+	return result, a.tx.Find(&result)
+}
+
+func (a roleBelongsToRoundTx) Append(values ...*models.Round) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Append(targetValues...)
+}
+
+func (a roleBelongsToRoundTx) Replace(values ...*models.Round) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Replace(targetValues...)
+}
+
+func (a roleBelongsToRoundTx) Delete(values ...*models.Round) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Delete(targetValues...)
+}
+
+func (a roleBelongsToRoundTx) Clear() error {
+	return a.tx.Clear()
+}
+
+func (a roleBelongsToRoundTx) Count() int64 {
+	return a.tx.Count()
+}
+
+type roleBelongsToCampaign struct {
+	db *gorm.DB
+
+	field.RelationField
 }
 
 func (a roleBelongsToCampaign) Where(conds ...field.Expr) *roleBelongsToCampaign {
@@ -452,77 +529,6 @@ func (a roleBelongsToUserTx) Clear() error {
 }
 
 func (a roleBelongsToUserTx) Count() int64 {
-	return a.tx.Count()
-}
-
-type roleBelongsToRound struct {
-	db *gorm.DB
-
-	field.RelationField
-}
-
-func (a roleBelongsToRound) Where(conds ...field.Expr) *roleBelongsToRound {
-	if len(conds) == 0 {
-		return &a
-	}
-
-	exprs := make([]clause.Expression, 0, len(conds))
-	for _, cond := range conds {
-		exprs = append(exprs, cond.BeCond().(clause.Expression))
-	}
-	a.db = a.db.Clauses(clause.Where{Exprs: exprs})
-	return &a
-}
-
-func (a roleBelongsToRound) WithContext(ctx context.Context) *roleBelongsToRound {
-	a.db = a.db.WithContext(ctx)
-	return &a
-}
-
-func (a roleBelongsToRound) Session(session *gorm.Session) *roleBelongsToRound {
-	a.db = a.db.Session(session)
-	return &a
-}
-
-func (a roleBelongsToRound) Model(m *models.Role) *roleBelongsToRoundTx {
-	return &roleBelongsToRoundTx{a.db.Model(m).Association(a.Name())}
-}
-
-type roleBelongsToRoundTx struct{ tx *gorm.Association }
-
-func (a roleBelongsToRoundTx) Find() (result *models.Round, err error) {
-	return result, a.tx.Find(&result)
-}
-
-func (a roleBelongsToRoundTx) Append(values ...*models.Round) (err error) {
-	targetValues := make([]interface{}, len(values))
-	for i, v := range values {
-		targetValues[i] = v
-	}
-	return a.tx.Append(targetValues...)
-}
-
-func (a roleBelongsToRoundTx) Replace(values ...*models.Round) (err error) {
-	targetValues := make([]interface{}, len(values))
-	for i, v := range values {
-		targetValues[i] = v
-	}
-	return a.tx.Replace(targetValues...)
-}
-
-func (a roleBelongsToRoundTx) Delete(values ...*models.Round) (err error) {
-	targetValues := make([]interface{}, len(values))
-	for i, v := range values {
-		targetValues[i] = v
-	}
-	return a.tx.Delete(targetValues...)
-}
-
-func (a roleBelongsToRoundTx) Clear() error {
-	return a.tx.Clear()
-}
-
-func (a roleBelongsToRoundTx) Count() int64 {
 	return a.tx.Count()
 }
 

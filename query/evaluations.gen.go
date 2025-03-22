@@ -88,13 +88,13 @@ func newEvaluation(db *gorm.DB, opts ...gen.DOOption) evaluation {
 				}
 				Roles struct {
 					field.RelationField
+					Round struct {
+						field.RelationField
+					}
 					Campaign struct {
 						field.RelationField
 					}
 					User struct {
-						field.RelationField
-					}
-					Round struct {
 						field.RelationField
 					}
 					Project struct {
@@ -133,13 +133,13 @@ func newEvaluation(db *gorm.DB, opts ...gen.DOOption) evaluation {
 				}
 				Roles struct {
 					field.RelationField
+					Round struct {
+						field.RelationField
+					}
 					Campaign struct {
 						field.RelationField
 					}
 					User struct {
-						field.RelationField
-					}
-					Round struct {
 						field.RelationField
 					}
 					Project struct {
@@ -165,13 +165,13 @@ func newEvaluation(db *gorm.DB, opts ...gen.DOOption) evaluation {
 				},
 				Roles: struct {
 					field.RelationField
+					Round struct {
+						field.RelationField
+					}
 					Campaign struct {
 						field.RelationField
 					}
 					User struct {
-						field.RelationField
-					}
-					Round struct {
 						field.RelationField
 					}
 					Project struct {
@@ -179,6 +179,11 @@ func newEvaluation(db *gorm.DB, opts ...gen.DOOption) evaluation {
 					}
 				}{
 					RelationField: field.NewRelation("Submission.Campaign.LatestRound.Roles", "models.Role"),
+					Round: struct {
+						field.RelationField
+					}{
+						RelationField: field.NewRelation("Submission.Campaign.LatestRound.Roles.Round", "models.Round"),
+					},
 					Campaign: struct {
 						field.RelationField
 					}{
@@ -188,11 +193,6 @@ func newEvaluation(db *gorm.DB, opts ...gen.DOOption) evaluation {
 						field.RelationField
 					}{
 						RelationField: field.NewRelation("Submission.Campaign.LatestRound.Roles.User", "models.User"),
-					},
-					Round: struct {
-						field.RelationField
-					}{
-						RelationField: field.NewRelation("Submission.Campaign.LatestRound.Roles.Round", "models.Round"),
 					},
 					Project: struct {
 						field.RelationField
@@ -386,13 +386,13 @@ type evaluationBelongsToSubmission struct {
 			}
 			Roles struct {
 				field.RelationField
+				Round struct {
+					field.RelationField
+				}
 				Campaign struct {
 					field.RelationField
 				}
 				User struct {
-					field.RelationField
-				}
-				Round struct {
 					field.RelationField
 				}
 				Project struct {

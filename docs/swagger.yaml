@@ -331,6 +331,26 @@ definitions:
         description: The URL of the project's website
         type: string
     type: object
+  models.ProjectExtended:
+    properties:
+      createdAt:
+        type: string
+      createdById:
+        type: string
+      logoUrl:
+        type: string
+      name:
+        type: string
+      projectId:
+        type: string
+      projectLeads:
+        items:
+          type: string
+        type: array
+      url:
+        description: The URL of the project's website
+        type: string
+    type: object
   models.ProjectRequest:
     properties:
       logoUrl:
@@ -437,7 +457,7 @@ definitions:
         type: integer
       isOpen:
         type: boolean
-      isPublic:
+      isPublicJury:
         type: boolean
       jury:
         additionalProperties:
@@ -554,6 +574,8 @@ definitions:
         items:
           type: integer
         type: array
+      pageId:
+        type: integer
       participantId:
         type: string
       resolution:
@@ -694,6 +716,17 @@ definitions:
       prev:
         type: string
     type: object
+  routes.ResponseList-models_ProjectExtended:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/models.ProjectExtended'
+        type: array
+      next:
+        type: string
+      prev:
+        type: string
+    type: object
   routes.ResponseList-models_Round:
     properties:
       data:
@@ -767,10 +800,20 @@ definitions:
       data:
         $ref: '#/definitions/routes.RedirectResponse'
     type: object
+  routes.ResponseSingle-routes_RoundDeletedResponse:
+    properties:
+      data:
+        $ref: '#/definitions/routes.RoundDeletedResponse'
+    type: object
   routes.ResponseSingle-services_TaskResponse:
     properties:
       data:
         $ref: '#/definitions/services.TaskResponse'
+    type: object
+  routes.RoundDeletedResponse:
+    properties:
+      roundId:
+        type: string
     type: object
   routes.UpdateStatusRequest:
     properties:
@@ -935,7 +978,7 @@ definitions:
         type: integer
       isOpen:
         type: boolean
-      isPublic:
+      isPublicJury:
         type: boolean
       jury:
         items:
@@ -1275,6 +1318,20 @@ paths:
       tags:
       - Evaluation
   /project/:
+    get:
+      description: List all projects
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.ResponseList-models_ProjectExtended'
+      security:
+      - ApiKeyAuth: []
+      summary: List all projects
+      tags:
+      - Project
     post:
       description: Create a new project
       parameters:
@@ -1422,6 +1479,24 @@ paths:
       tags:
       - Round
   /round/{roundId}:
+    delete:
+      description: Delete a round
+      parameters:
+      - description: The round ID
+        in: path
+        name: roundId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.ResponseSingle-routes_RoundDeletedResponse'
+      summary: Delete a round
+      tags:
+      - Round
     get:
       description: Get a round
       parameters:

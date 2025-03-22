@@ -42,11 +42,11 @@ func (c *CampaignRepository) ListAllCampaigns(conn *gorm.DB, query *models.Campa
 			stmt = stmt.Where("id IN (?)", idCopies)
 		}
 		if query.IsClosed != nil {
-			fq := &models.Campaign{CampaignWithWriteableFields: models.CampaignWithWriteableFields{Status: models.RoundStatusCompleted}}
+			fq := &models.Campaign{CampaignWithWriteableFields: models.CampaignWithWriteableFields{Status: models.RoundStatusActive}}
 			if *query.IsClosed {
-				stmt = stmt.Where(fq)
-			} else {
 				stmt = stmt.Not(fq)
+			} else {
+				stmt = stmt.Where(fq)
 			}
 		}
 		if query.IsHidden != nil {

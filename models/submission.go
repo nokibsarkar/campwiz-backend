@@ -47,6 +47,7 @@ type Submission struct {
 	Name         string                 `json:"title"`
 	CampaignID   IDType                 `json:"campaignId" gorm:"null;index;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	URL          string                 `json:"url"`
+	PageID       uint64                 `json:"pageId"`
 	// The Average Score of the submission
 	Score ScoreType `json:"score" gorm:"default:0"`
 	// The Actual Author in the Wikimedia

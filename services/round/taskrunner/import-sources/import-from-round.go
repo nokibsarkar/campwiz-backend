@@ -16,8 +16,8 @@ type RoundCategoryListSource struct {
 // ImportImageResults imports images from previous rounds
 // For Each invocation it will import images from a single round
 // If all rounds are imported it will return nil
-func (c *RoundCategoryListSource) ImportImageResults(failedImageReason *map[string]string) ([]models.ImageResult, *map[string]string) {
-	imageResults := []models.ImageResult{}
+func (c *RoundCategoryListSource) ImportImageResults(failedImageReason *map[string]string) ([]models.MediaResult, *map[string]string) {
+	imageResults := []models.MediaResult{}
 	q, close := repository.GetDBWithGen()
 	defer close()
 	Submission := q.Submission

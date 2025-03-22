@@ -31,6 +31,7 @@ func newSubmission(db *gorm.DB, opts ...gen.DOOption) submission {
 	_submission.Name = field.NewString(tableName, "name")
 	_submission.CampaignID = field.NewString(tableName, "campaign_id")
 	_submission.URL = field.NewString(tableName, "url")
+	_submission.PageID = field.NewUint64(tableName, "page_id")
 	_submission.Score = field.NewFloat64(tableName, "score")
 	_submission.Author = field.NewString(tableName, "author")
 	_submission.SubmittedByID = field.NewString(tableName, "submitted_by_id")
@@ -216,6 +217,7 @@ type submission struct {
 	Name               field.String
 	CampaignID         field.String
 	URL                field.String
+	PageID             field.Uint64
 	Score              field.Float64
 	Author             field.String
 	SubmittedByID      field.String
@@ -272,6 +274,7 @@ func (s *submission) updateTableName(table string) *submission {
 	s.Name = field.NewString(table, "name")
 	s.CampaignID = field.NewString(table, "campaign_id")
 	s.URL = field.NewString(table, "url")
+	s.PageID = field.NewUint64(table, "page_id")
 	s.Score = field.NewFloat64(table, "score")
 	s.Author = field.NewString(table, "author")
 	s.SubmittedByID = field.NewString(table, "submitted_by_id")
@@ -313,11 +316,12 @@ func (s *submission) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (s *submission) fillFieldMap() {
-	s.fieldMap = make(map[string]field.Expr, 35)
+	s.fieldMap = make(map[string]field.Expr, 36)
 	s.fieldMap["submission_id"] = s.SubmissionID
 	s.fieldMap["name"] = s.Name
 	s.fieldMap["campaign_id"] = s.CampaignID
 	s.fieldMap["url"] = s.URL
+	s.fieldMap["page_id"] = s.PageID
 	s.fieldMap["score"] = s.Score
 	s.fieldMap["author"] = s.Author
 	s.fieldMap["submitted_by_id"] = s.SubmittedByID

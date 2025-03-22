@@ -15,6 +15,10 @@ import (
 
 const COMMONS_API = "http://commons.wikimedia.org/w/api.php"
 
+var COMMONS_AUDIO_THUMB = "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png"
+var COMMONS_THUMB_WIDTH uint64 = 512
+var COMMONS_THUMB_HEIGHT uint64 = 512
+
 // This Repository would be used to communicate with wikimedia commons
 type CommonsRepository struct {
 	endpoint    string
@@ -38,7 +42,7 @@ func (c *CommonsRepository) Get(values url.Values) (_ io.ReadCloser, err error) 
 }
 
 // returns images from commons categories
-func (c *CommonsRepository) GetImagesFromCommonsCategories(category string) ([]models.ImageResult, map[string]string) {
+func (c *CommonsRepository) GetImagesFromCommonsCategories(category string) ([]models.MediaResult, map[string]string) {
 	// Get images from commons category
 	// Create batch from commons category
 	log.Println("Getting images from commons category: ", category)
@@ -61,7 +65,7 @@ func (c *CommonsRepository) GetImagesFromCommonsCategories(category string) ([]m
 		log.Println("Error: ", err)
 		return nil, nil
 	}
-	result := []models.ImageResult{}
+	result := []models.MediaResult{}
 	for image := range images {
 		// Append images to result
 		if image == nil {
@@ -72,8 +76,8 @@ func (c *CommonsRepository) GetImagesFromCommonsCategories(category string) ([]m
 			continue
 		}
 		info := image.Info[0]
-		img := models.ImageResult{
-			ID:               uint64(image.Pageid),
+		img := models.MediaResult{
+			PageID:           uint64(image.PageID),
 			Name:             image.Title,
 			URL:              info.URL,
 			UploaderUsername: info.User,
@@ -90,10 +94,118 @@ func (c *CommonsRepository) GetImagesFromCommonsCategories(category string) ([]m
 			img.Description = html2text.HTML2Text(info.ExtMetadata.GetImageDescription())
 			img.CreditHTML = info.ExtMetadata.GetCredit()
 		}
+		if info.MediaType == string(models.MediaTypeAudio) {
+			img.ThumbURL = &COMMONS_AUDIO_THUMB
+			img.ThumbWidth = &COMMONS_THUMB_WIDTH
+			img.ThumbHeight = &COMMONS_THUMB_HEIGHT
+		}
+		result = append(result, img)
+	}
+	return result, map[string]string{}
+}
+
+// returns images from commons categories
+func (c *CommonsRepository) GetImagesThubsFromCommonsCategories(category string) ([]models.MediaResult, map[string]string) {
+	// Get images from commons category
+	// Create batch from commons category
+	log.Println("Getting images from commons category: ", category)
+	paginator := NewPaginator[models.ImageInfoPage](c)
+	params := url.Values{
+		"action":      {"query"},
+		"format":      {"json"},
+		"prop":        {"imageinfo"},
+		"generator":   {"categorymembers"},
+		"gcmtitle":    {category},
+		"gcmtype":     {"file"},
+		"iiprop":      {"url"},
+		"limit":       {"50"},
+		"iiurlwidth":  {"640"},
+		"iiurlheight": {"480"},
+	}
+	images, err := paginator.Query(params)
+	if err != nil {
+		log.Println("Error: ", err)
+		return nil, nil
+	}
+	result := []models.MediaResult{}
+	for image := range images {
+		// Append images to result
+		if image == nil {
+			break
+		}
+		if len(image.Info) == 0 {
+			log.Println("No image info found. Skipping")
+			continue
+		}
+		info := image.Info[0]
+		img := models.MediaResult{
+			PageID:      uint64(image.PageID),
+			Name:        image.Title,
+			URL:         info.URL,
+			ThumbURL:    &info.ThumbURL,
+			ThumbHeight: &info.ThumbHeight,
+			ThumbWidth:  &info.Width,
+		}
 		result = append(result, img)
 	}
 	log.Println("Found images: ", len(result))
 	return result, map[string]string{}
+}
+
+// returns images from commons categories
+func (c *CommonsRepository) GetImagesThumbsFromIPageIDs(pageids []uint64) []models.MediaResult {
+	// Get images from commons category
+	// Create batch from commons category
+	start := 0
+	total := len(pageids)
+
+	result := []models.MediaResult{}
+	for start < total {
+		end := min(start+50, total)
+		batch := []string{}
+		for _, pageid := range pageids[start:end] {
+			batch = append(batch, fmt.Sprintf("%d", pageid))
+		}
+		paginator := NewPaginator[models.ImageInfoPage](c)
+		params := url.Values{
+			"action":      {"query"},
+			"format":      {"json"},
+			"prop":        {"imageinfo"},
+			"pageids":     {strings.Join(batch, "|")},
+			"iiprop":      {"url"},
+			"limit":       {"50"},
+			"iilimit":     {"1"},
+			"iiurlwidth":  {"640"},
+			"iiurlheight": {"480"},
+		}
+		log.Println("Getting images from commons pageids: ", strings.Join(batch, "|"))
+		images, err := paginator.Query(params)
+		if err != nil {
+			log.Println("Error: ", err)
+			return nil
+		}
+		for image := range images {
+			// Append images to result
+			if image == nil {
+				break
+			}
+			if len(image.Info) == 0 {
+				log.Println("No image info found. Skipping")
+				continue
+			}
+			info := image.Info[0]
+			img := models.MediaResult{
+				PageID:      uint64(image.PageID),
+				ThumbURL:    &info.ThumbURL,
+				ThumbHeight: &info.ThumbHeight,
+				ThumbWidth:  &info.Width,
+			}
+			result = append(result, img)
+		}
+		start = end
+		log.Println("Found images: ", len(result))
+	}
+	return result
 }
 
 // returns images from commons categories

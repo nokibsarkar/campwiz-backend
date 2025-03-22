@@ -263,7 +263,7 @@ func (b *RoundService) GetById(roundId models.IDType) (*models.Round, error) {
 	defer close()
 	return round_repo.FindByID(conn, roundId)
 }
-func (b *RoundService) DistributeTaskAmongExistingJuries(images []models.ImageResult) {
+func (b *RoundService) DistributeTaskAmongExistingJuries(images []models.MediaResult) {
 	juries := []*Jury{}
 	for i := 1; i <= 100; i++ {
 		juries = append(juries, &Jury{ID: uint64(i), totalAssigned: rand.IntN(100)})
@@ -308,7 +308,7 @@ func (b *RoundService) DistributeTaskAmongExistingJuries(images []models.ImageRe
 		for j := 0; j < evaluationCountRequired; j++ {
 			evaluations = append(evaluations, Evaluation{
 				JuryID:            sortedJuryByAssigned[j].ID,
-				ImageID:           images[i].ID,
+				ImageID:           images[i].PageID,
 				Name:              images[i].Name,
 				DistributionRound: j + 1,
 			})

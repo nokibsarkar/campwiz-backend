@@ -2,8 +2,8 @@ package models
 
 import "time"
 
-type ImageResult struct {
-	ID               uint64 `json:"pageid"`
+type MediaResult struct {
+	PageID           uint64 `json:"pageid"`
 	SubmissionID     IDType `json:"-"`
 	Name             string `json:"title"`
 	URL              string
@@ -63,7 +63,7 @@ type ImageInfo struct {
 	} `json:"imageinfo"`
 }
 type Page struct {
-	Pageid int    `json:"pageid"`
+	PageID int    `json:"pageid"`
 	Ns     int    `json:"ns"`
 	Title  string `json:"title"`
 }

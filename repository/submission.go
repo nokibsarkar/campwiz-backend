@@ -117,3 +117,10 @@ func (r *SubmissionRepository) FindNextUnevaluatedSubmissionForPublicJury(tx *go
 		First())
 	return submission, error
 }
+func (r *SubmissionRepository) GetPageIDsForWithout(tx *gorm.DB, roundID models.IDType) ([]uint64, error) {
+	pageIds := []uint64{}
+	q := query.Use(tx)
+	s := q.Submission
+	err := s.Select(s.PageID).Where(s.RoundID.Eq(roundID.String())).Scan(&pageIds)
+	return pageIds, err
+}

@@ -18,7 +18,7 @@ type CommonsCategoryListSource struct {
 // If there are no images in the category it will return nil
 // If there are images in the category it will return the images
 // If there are failed images in the category it will return the reason as value of the map
-func (c *CommonsCategoryListSource) ImportImageResults(failedImageReason *map[string]string) ([]models.ImageResult, *map[string]string) {
+func (c *CommonsCategoryListSource) ImportImageResults(failedImageReason *map[string]string) ([]models.MediaResult, *map[string]string) {
 	if c.currentIndex < len(c.Categories) {
 		category := c.Categories[c.currentIndex]
 		c.currentIndex++

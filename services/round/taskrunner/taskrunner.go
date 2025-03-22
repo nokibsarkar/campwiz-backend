@@ -22,7 +22,7 @@ type IImportSource interface {
 	// It should return the images that were successfully imported and the images that failed to import
 	// If there are no images to import it should return nil
 	// If there are failed images it should return the reason as a map
-	ImportImageResults(failedImageReason *map[string]string) ([]models.ImageResult, *map[string]string)
+	ImportImageResults(failedImageReason *map[string]string) ([]models.MediaResult, *map[string]string)
 }
 type IDistributionStrategy interface {
 	AssignJuries(tx *gorm.DB, round *models.Round, juries []models.Role) (success int, fail int, err error)
@@ -91,7 +91,7 @@ func (b *TaskRunner) importImages(conn *gorm.DB, task *models.Task) (successCoun
 		if successBatch == nil {
 			break
 		}
-		images := []models.ImageResult{}
+		images := []models.MediaResult{}
 		log.Println("Processing batch of images")
 		for _, image := range successBatch {
 			// not allowed to submit images
@@ -120,6 +120,7 @@ func (b *TaskRunner) importImages(conn *gorm.DB, task *models.Task) (successCoun
 			sId := types.SubmissionIDType(idgenerator.GenerateID("s"))
 			submission := models.Submission{
 				SubmissionID:      sId,
+				PageID:            image.PageID,
 				Name:              image.Name,
 				CampaignID:        *task.AssociatedCampaignID,
 				URL:               image.URL,
@@ -132,9 +133,6 @@ func (b *TaskRunner) importImages(conn *gorm.DB, task *models.Task) (successCoun
 				ImportTaskID:      task.TaskID,
 				MediaSubmission: models.MediaSubmission{
 					MediaType:   models.MediaType(image.MediaType),
-					ThumbURL:    image.URL,
-					ThumbWidth:  image.Width,
-					ThumbHeight: image.Height,
 					License:     strings.ToUpper(image.License),
 					CreditHTML:  image.CreditHTML,
 					Description: image.Description,
@@ -148,6 +146,11 @@ func (b *TaskRunner) importImages(conn *gorm.DB, task *models.Task) (successCoun
 						Height: image.Height,
 					},
 				},
+			}
+			if image.ThumbURL != nil {
+				submission.ThumbURL = *image.ThumbURL
+				submission.ThumbWidth = *image.ThumbWidth
+				submission.ThumbHeight = *image.ThumbHeight
 			}
 			submissions = append(submissions, submission)
 			submissionCount++
@@ -184,6 +187,32 @@ func (b *TaskRunner) importImages(conn *gorm.DB, task *models.Task) (successCoun
 		}
 		perBatch.Commit()
 	}
+
+	commonsRepo := repository.NewCommonsRepository()
+	submissionRepo := repository.NewSubmissionRepository()
+	pageids, err := submissionRepo.GetPageIDsForWithout(conn, *task.AssociatedRoundID)
+	if err != nil {
+		log.Println("Error fetching page ids: ", err)
+		task.Status = models.TaskStatusFailed
+		return
+	}
+	images := commonsRepo.GetImagesThumbsFromIPageIDs(pageids)
+
+	tx := conn.Begin()
+	if len(images) > 0 {
+		for _, image := range images {
+			res := tx.Model(&models.Submission{}).Where(&models.Submission{PageID: image.PageID}).Updates(image)
+
+			if res.Error != nil {
+				log.Println("Error updating image: ", res.Error)
+				tx.Rollback()
+				task.Status = models.TaskStatusFailed
+				return
+			}
+		}
+	}
+	tx.Commit()
+
 	{
 		task.Status = models.TaskStatusSuccess
 		round.LatestDistributionTaskID = nil // Reset the latest task id

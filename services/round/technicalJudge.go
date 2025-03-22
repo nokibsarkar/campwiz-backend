@@ -32,7 +32,7 @@ func NewTechnicalJudgeService(round *models.Round) *TechnicalJudgeService {
 //   - Minimum Resolution
 //   - Minimum Size
 //   - Whether Image allowed or not
-func (j *TechnicalJudgeService) PreventionReason(img models.MediaResult) string {
+func (j *TechnicalJudgeService) RejectReason(img models.MediaResult) string {
 	if !j.MinimumUploadDate.IsZero() && img.SubmittedAt.Before(j.MinimumUploadDate) {
 		// log.Printf("Image %s is not allowed because it was uploaded before %s", img.Name, j.MinimumUploadDate)
 		return "before-minimum-upload-date"

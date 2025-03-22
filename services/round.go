@@ -683,7 +683,7 @@ func (e *RoundService) DeleteRound(sess *cache.Session, roundID models.IDType) e
 	}
 	if round.Status == models.RoundStatusActive {
 		tx.Rollback()
-		return errors.New("Active round cannot be deleted")
+		return errors.New("active round cannot be deleted")
 	}
 	campaign := round.Campaign
 	if campaign == nil {
@@ -700,6 +700,13 @@ func (e *RoundService) DeleteRound(sess *cache.Session, roundID models.IDType) e
 		return err
 	}
 	err = round_repo.Delete(tx, roundID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	campaign_repo := repository.NewCampaignRepository()
+	err = campaign_repo.UpdateLatestRound(tx, campaign.CampaignID)
 	if err != nil {
 		tx.Rollback()
 		return err

@@ -63,3 +63,14 @@ func (c *CampaignRepository) Update(conn *gorm.DB, campaign *models.Campaign) er
 	result := conn.Updates(campaign)
 	return result.Error
 }
+func (c *CampaignRepository) UpdateLatestRound(tx *gorm.DB, campaignID models.IDType) error {
+	q := query.Use(tx)
+	Campaign := q.Campaign
+	Round := q.Round
+	latestRound := Round.Select(Round.RoundID).Where(Round.CampaignID.Eq(campaignID.String())).Order(Round.RoundID.Desc()).Limit(1)
+	result, err := Campaign.Where(Campaign.CampaignID.Eq(campaignID.String())).Update(Campaign.LatestRoundID, latestRound)
+	if err != nil {
+		return err
+	}
+	return result.Error
+}

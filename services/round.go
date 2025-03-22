@@ -72,10 +72,10 @@ func (s *RoundService) CreateRound(request *RoundRequest) (*models.Round, error)
 		tx.Rollback()
 		return nil, errors.New("campaign not found")
 	}
-	if campaign.Status != models.RoundStatusActive {
-		tx.Rollback()
-		return nil, errors.New("campaign is not active")
-	}
+	// if campaign.Status != models.RoundStatusActive {
+	// 	tx.Rollback()
+	// 	return nil, errors.New("campaign is not active")
+	// }
 	previousRound := campaign.LatestRound
 	if previousRound != nil {
 		log.Println("Previous round found with ID: ", previousRound.RoundID)

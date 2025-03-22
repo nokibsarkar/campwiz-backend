@@ -98,3 +98,8 @@ func (r *RoundRepository) GetResultSummary(conn *gorm.DB, roundID models.IDType)
 	return results, err
 
 }
+func (r *RoundRepository) Delete(conn *gorm.DB, id models.IDType) error {
+	round := &models.Round{RoundID: id}
+	result := conn.Delete(round)
+	return result.Error
+}

@@ -64,3 +64,9 @@ func (r *RoleRepository) FindRoleByUserIDAndRoundID(tx *gorm.DB, userID models.I
 	result := tx.First(jury, &models.Role{UserID: userID, RoundID: &roundID, Type: roleType})
 	return jury, result.Error
 }
+func (r *RoleRepository) DeleteRolesByRoundID(tx *gorm.DB, roundID models.IDType) error {
+	result := tx.Unscoped().Delete(&models.Role{
+		RoundID: &roundID,
+	})
+	return result.Error
+}

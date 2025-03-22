@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"log"
 	"math/rand/v2"
+	"nokib/campwiz/consts"
 	"nokib/campwiz/models"
 	"nokib/campwiz/query"
 	"nokib/campwiz/repository"
+	"nokib/campwiz/repository/cache"
 	idgenerator "nokib/campwiz/services/idGenerator"
 	importservice "nokib/campwiz/services/round/taskrunner"
 	distributionstrategy "nokib/campwiz/services/round/taskrunner/distribution-strategy"
@@ -663,4 +665,45 @@ func (e *RoundService) GetResults(currentUserID models.IDType, roundID models.ID
 		return nil, errors.New("user is not a coordinator")
 	}
 	return round_repo.GetResults(conn, roundID, q)
+}
+func (e *RoundService) DeleteRound(sess *cache.Session, roundID models.IDType) error {
+	round_repo := repository.NewRoundRepository()
+	role_repo := repository.NewRoleRepository()
+	conn, close := repository.GetDB()
+	defer close()
+	tx := conn.Begin()
+	round, err := round_repo.FindByID(tx.Preload("Campaign"), roundID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	if round == nil {
+		tx.Rollback()
+		return errors.New("round not found")
+	}
+	if round.Status == models.RoundStatusActive {
+		tx.Rollback()
+		return errors.New("Active round cannot be deleted")
+	}
+	campaign := round.Campaign
+	if campaign == nil {
+		tx.Rollback()
+		return errors.New("campaign not found")
+	}
+	if !sess.Permission.HasPermission(consts.PermissionDeleteRound) && !CheckAccess(consts.PermissionDeleteRound, campaign, &sess.UserID, tx) {
+		tx.Rollback()
+		return errors.New("user does not have permission to delete the round")
+	}
+	err = role_repo.DeleteRolesByRoundID(tx, roundID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	err = round_repo.Delete(tx, roundID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	tx.Commit()
+	return nil
 }

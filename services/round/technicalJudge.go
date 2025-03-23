@@ -1,6 +1,7 @@
 package round
 
 import (
+	"log"
 	"nokib/campwiz/models"
 	"time"
 )
@@ -10,6 +11,7 @@ type TechnicalJudgeService struct {
 	MinimumUploadDate time.Time
 	MinimumResolution uint64
 	MinimumSize       uint64
+	MaximumUploadDate time.Time
 	// This would be a list of persons who are not allowed to submit images
 	// Thes include the banned users, judges, coordinators, moderators etc
 	Blacklist []string
@@ -19,6 +21,7 @@ func NewTechnicalJudgeService(round *models.Round) *TechnicalJudgeService {
 	return &TechnicalJudgeService{
 		AllowedTypes:      round.AllowedMediaTypes,
 		MinimumUploadDate: round.StartDate,
+		MaximumUploadDate: round.EndDate,
 		MinimumResolution: uint64(round.ImageMinimumResolution),
 		MinimumSize:       uint64(round.ArticleMinimumTotalBytes),
 		Blacklist:         []string{},
@@ -33,9 +36,14 @@ func NewTechnicalJudgeService(round *models.Round) *TechnicalJudgeService {
 //   - Minimum Size
 //   - Whether Image allowed or not
 func (j *TechnicalJudgeService) RejectReason(img models.MediaResult) string {
+	log.Printf("Checking image %s", img.SubmittedAt)
 	if !j.MinimumUploadDate.IsZero() && img.SubmittedAt.Before(j.MinimumUploadDate) {
 		// log.Printf("Image %s is not allowed because it was uploaded before %s", img.Name, j.MinimumUploadDate)
 		return "before-minimum-upload-date"
+	}
+	if !j.MaximumUploadDate.IsZero() && img.SubmittedAt.After(j.MaximumUploadDate) {
+		// log.Printf("Image %s is not allowed because it was uploaded after %s", img.Name, j.MaximumUploadDate)
+		return "after-maximum-upload-date"
 	}
 	if img.Resolution < j.MinimumResolution {
 		// log.Printf("Image %s is not allowed because it has a resolution of %d which is less than %d", img.Name, img.Resolution, j.MinimumResolution)

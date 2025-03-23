@@ -8,6 +8,7 @@ import (
 	"nokib/campwiz/models"
 	"nokib/campwiz/repository/cache"
 	"nokib/campwiz/services"
+	idgenerator "nokib/campwiz/services/idGenerator"
 
 	"github.com/gin-gonic/gin"
 )
@@ -383,14 +384,37 @@ func NextPublicSubmission(c *gin.Context, sess *cache.Session) {
 	if roundID == "" {
 		c.JSON(400, ResponseError{Detail: "Invalid request : Round ID is required"})
 	}
+	qry := &models.EvaluationFilter{}
+	err := c.ShouldBindQuery(&qry)
+	if err != nil {
+		c.JSON(400, ResponseError{Detail: "Invalid request : " + err.Error()})
+		return
+	}
 	u := GetCurrentUser(c)
+	qry.RoundID = models.IDType(roundID)
 	round_service := services.NewRoundService()
-	submission, err := round_service.GetNextUnevaluatedSubmissionForPublicJury(u.UserID, models.IDType(roundID))
+	submissions, err := round_service.GetNextUnevaluatedSubmissionForPublicJury(u.UserID, qry)
 	if err != nil {
 		c.JSON(400, ResponseError{Detail: "Failed to get next submission : " + err.Error()})
 		return
 	}
-	c.JSON(200, ResponseSingle[*models.Submission]{Data: submission})
+	ev := []models.Evaluation{}
+	for _, submission := range submissions {
+		evaluation := models.Evaluation{
+			SubmissionID: submission.SubmissionID,
+			JudgeID:      &u.UserID,
+			RoundID:      models.IDType(roundID),
+			EvaluationID: idgenerator.GenerateID("e"),
+			Submission:   submission,
+			Type:         models.EvaluationTypeBinary,
+		}
+		ev = append(ev, evaluation)
+	}
+	result := ResponseList[models.Evaluation]{Data: ev}
+	if len(ev) > 0 {
+		result.ContinueToken = string(ev[len(ev)-1].SubmissionID)
+	}
+	c.JSON(200, result)
 }
 func NextSubmissionEvaluation(c *gin.Context, sess *cache.Session) {
 	roundID := c.Param("roundId")

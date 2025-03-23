@@ -38,6 +38,8 @@ func (c *RoundCategoryListSource) ImportImageResults(failedImageReason *map[stri
 			Submission.ThumbWidth.As("ThumbWidth"),
 			Submission.ThumbURL.As("ThumbURL"),
 			Submission.Resolution.As("Resolution"),
+			Submission.SubmittedAt.As("SubmittedAt"),
+			Submission.PageID.As("PageID"),
 		).Where(Submission.SubmissionID.Gt(c.currentIndex)).
 		Where(Submission.RoundID.Eq(c.RoundId)).
 		Where(Submission.Score.In(c.Scores...)).

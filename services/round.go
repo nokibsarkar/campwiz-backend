@@ -495,13 +495,13 @@ func (r *RoundService) GetResultSummary(roundID models.IDType) (results []models
 	}
 	return
 }
-func (e *RoundService) GetNextUnevaluatedSubmissionForPublicJury(userID models.IDType, roundID models.IDType) (*models.Submission, error) {
+func (e *RoundService) GetNextUnevaluatedSubmissionForPublicJury(userID models.IDType, filter *models.EvaluationFilter) ([]*models.Submission, error) {
 	conn, close := repository.GetDB()
 	defer close()
 	submission_repo := repository.NewSubmissionRepository()
 	round_repo := repository.NewRoundRepository()
 	role_repo := repository.NewRoleRepository()
-	round, err := round_repo.FindByID(conn, roundID)
+	round, err := round_repo.FindByID(conn, filter.RoundID)
 	if err != nil {
 		return nil, err
 	}
@@ -509,7 +509,7 @@ func (e *RoundService) GetNextUnevaluatedSubmissionForPublicJury(userID models.I
 		return nil, errors.New("round not found")
 	}
 	var roleID *models.IDType
-	role, err := role_repo.FindRoleByUserIDAndRoundID(conn, userID, roundID, models.RoleTypeJury)
+	role, err := role_repo.FindRoleByUserIDAndRoundID(conn, userID, filter.RoundID, models.RoleTypeJury)
 	if err != nil {
 		if err.Error() != "record not found" {
 			return nil, err
@@ -518,11 +518,12 @@ func (e *RoundService) GetNextUnevaluatedSubmissionForPublicJury(userID models.I
 	if role.RoleID != "" {
 		roleID = &role.RoleID
 	}
-	submission, err := submission_repo.FindNextUnevaluatedSubmissionForPublicJury(conn, roleID, round)
+	filter.JuryRoleID = *roleID
+	submissions, err := submission_repo.FindNextUnevaluatedSubmissionForPublicJury(conn, filter, round)
 	if err != nil {
 		return nil, err
 	}
-	return submission, nil
+	return submissions, nil
 }
 func (e *RoundService) UpdateStatus(currenUserID models.IDType, roundID models.IDType, status models.RoundStatus) (*models.Round, error) {
 	round_repo := repository.NewRoundRepository()

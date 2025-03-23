@@ -91,14 +91,14 @@ func (r *SubmissionRepository) ListAllSubmissionIDs(tx *gorm.DB, filter *models.
 	result := stmt.Model(&models.Submission{}).Find(&submissionIDs)
 	return submissionIDs, result.Error
 }
-func (r *SubmissionRepository) FindNextUnevaluatedSubmissionForPublicJury(tx *gorm.DB, juryID *models.IDType, round *models.Round) (*models.Submission, error) {
+func (r *SubmissionRepository) FindNextUnevaluatedSubmissionForPublicJury(tx *gorm.DB, filter *models.EvaluationFilter, round *models.Round) ([]*models.Submission, error) {
 	alreadyCoveredSubmissionIDs := []string{}
-	if juryID != nil {
+	if filter.JuryRoleID != "" {
 		type submissionID struct {
 			SubmissionID types.SubmissionIDType
 		}
 		results := []submissionID{}
-		stmt := tx.Model(&models.Evaluation{}).Find(&results, &models.Evaluation{JudgeID: juryID})
+		stmt := tx.Model(&models.Evaluation{}).Find(&results, &models.Evaluation{JudgeID: &filter.JuryRoleID})
 		if stmt.Error != nil {
 			return nil, stmt.Error
 		}
@@ -109,13 +109,20 @@ func (r *SubmissionRepository) FindNextUnevaluatedSubmissionForPublicJury(tx *go
 
 	q := query.Use(tx)
 	s := q.Submission
-	submission, error := (s.
+	stmt := s.
 		Where(s.RoundID.Eq(round.RoundID.String())).
 		Where(s.SubmissionID.NotIn(alreadyCoveredSubmissionIDs...)).
-		Where(s.EvaluationCount.Lt(round.Quorum)).
-		Order(s.EvaluationCount).
-		First())
-	return submission, error
+		Where(s.EvaluationCount.Lt(round.Quorum))
+	if filter.ContinueToken != "" {
+		stmt = stmt.Where(s.SubmissionID.Gt(filter.ContinueToken))
+	}
+	if filter.Limit > 0 {
+		stmt = stmt.Limit(filter.Limit)
+	}
+	submissions, error := (stmt.
+		Order(s.EvaluationCount.Asc()).
+		Find())
+	return submissions, error
 }
 func (r *SubmissionRepository) GetPageIDsForWithout(tx *gorm.DB, roundID models.IDType) ([]uint64, error) {
 	pageIds := []uint64{}

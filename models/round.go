@@ -116,6 +116,10 @@ type Round struct {
 	Jury  map[IDType]WikimediaUsernameType `json:"jury" gorm:"-"`
 	// Project Project `json:"-" gorm:"foreignKey:ProjectID;constraint:OnUpdate:CASCADE,OnDelete:Cascade"`
 }
+type RoundExtended struct {
+	Round
+	AmIJury bool `json:"amIJury"`
+}
 type RoundFilter struct {
 	CampaignID IDType      `form:"campaignId"`
 	Status     RoundStatus `form:"status"`

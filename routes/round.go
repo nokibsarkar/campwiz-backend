@@ -393,6 +393,15 @@ func NextPublicSubmission(c *gin.Context, sess *cache.Session) {
 	u := GetCurrentUser(c)
 	qry.RoundID = models.IDType(roundID)
 	round_service := services.NewRoundService()
+	round, err := round_service.GetById(models.IDType(roundID))
+	if err != nil {
+		c.JSON(400, ResponseError{Detail: "Failed to get round : " + err.Error()})
+		return
+	}
+	if !round.IsPublicJury {
+		c.JSON(400, ResponseError{Detail: "Invalid request : Round is not public jury"})
+		return
+	}
 	submissions, err := round_service.GetNextUnevaluatedSubmissionForPublicJury(u.UserID, qry)
 	if err != nil {
 		c.JSON(400, ResponseError{Detail: "Failed to get next submission : " + err.Error()})
@@ -403,10 +412,10 @@ func NextPublicSubmission(c *gin.Context, sess *cache.Session) {
 		evaluation := models.Evaluation{
 			SubmissionID: submission.SubmissionID,
 			JudgeID:      &u.UserID,
-			RoundID:      models.IDType(roundID),
+			RoundID:      round.RoundID,
 			EvaluationID: idgenerator.GenerateID("e"),
 			Submission:   submission,
-			Type:         models.EvaluationTypeBinary,
+			Type:         round.Type,
 		}
 		ev = append(ev, evaluation)
 	}

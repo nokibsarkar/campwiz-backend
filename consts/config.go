@@ -4,6 +4,13 @@ import (
 	"github.com/spf13/viper"
 )
 
+type SentryConfig struct {
+	DSN         string            `mapstructure:"DSN"`
+	Environment string            `mapstructure:"Environment"`
+	Debug       bool              `mapstructure:"Debug"`
+	Release     string            `mapstructure:"Release"`
+	Tags        map[string]string `mapstructure:"Tags"`
+}
 type DistributionConfiguration struct {
 	Strategy          string `mapstructure:"Algorithm"`
 	MinimumBatchSize  int    `mapstructure:"MinimumBatchSize"`
@@ -52,6 +59,7 @@ type ApplicationConfiguration struct {
 	Database     DatabaseConfiguration       `mapstructure:"Database"`
 	Auth         AuthenticationConfiguration `mapstructure:"Authentication"`
 	Distribution DistributionConfiguration   `mapstructure:"DistributionStrategy"`
+	Sentry       SentryConfig                `mapstructure:"Sentry"`
 }
 
 var Config *ApplicationConfiguration

@@ -909,6 +909,8 @@ definitions:
         type: string
       score:
         $ref: '#/definitions/models.ScoreType'
+      submissionId:
+        type: string
     type: object
   services.ImportFromCommonsPayload:
     properties:
@@ -1283,6 +1285,35 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Update an evaluation
+      tags:
+      - Evaluation
+  /evaluation/public/{roundId}:
+    post:
+      description: Submit a new bulk public evaluation
+      parameters:
+      - description: The round ID
+        in: path
+        name: roundId
+        required: true
+        type: string
+      - description: The evaluation request
+        in: body
+        name: evaluationRequest
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/services.EvaluationRequest'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.ResponseList-models_Evaluation'
+      security:
+      - ApiKeyAuth: []
+      summary: Submit a new bulk public evaluation
       tags:
       - Evaluation
   /evaluation/public/{roundId}/{submissionId}:

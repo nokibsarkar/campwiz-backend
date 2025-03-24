@@ -130,6 +130,7 @@ func (p *ProjectService) AssignProjectLead(tx *gorm.DB, projectReq *models.Proje
 	return currentLeads, nil
 }
 func (p *ProjectService) UpdateProject(projectReq *models.ProjectRequest) (*models.ProjectExtended, error) {
+	log.Printf("Updating project %v\n", projectReq)
 	project_repo := repository.NewProjectRepository()
 	conn, close := repository.GetDB()
 	defer close()

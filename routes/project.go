@@ -65,13 +65,13 @@ func UpdateProject(c *gin.Context, sess *cache.Session) {
 		return
 	}
 	projectRequest := &models.ProjectRequest{}
-	err := c.ShouldBindJSON(projectRequest)
+	err := c.ShouldBindBodyWithJSON(projectRequest)
 	if err != nil {
 		c.JSON(400, ResponseError{Detail: "Invalid request: " + err.Error()})
 		return
 	}
 	projectRequest.ProjectID = models.IDType(projectId)
-	projectRequest.CreatedByID = sess.UserID
+	// projectRequest.CreatedByID = sess.UserID
 	project_service := services.NewProjectService()
 	project, err := project_service.UpdateProject(projectRequest)
 	if err != nil {

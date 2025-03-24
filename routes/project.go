@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"log"
 	"nokib/campwiz/consts"
 	"nokib/campwiz/models"
 	"nokib/campwiz/repository/cache"
@@ -148,9 +147,6 @@ func GetSingleProject(c *gin.Context, sess *cache.Session) {
 // @Error 403 {object} ResponseError
 // @Error 404 {object} ResponseError
 func ListProjects(c *gin.Context, sess *cache.Session) {
-	t := 0
-	p := 5 / t
-	log.Println(p)
 	q := &models.ProjectFilter{}
 	err := c.ShouldBindQuery(q)
 	if err != nil {

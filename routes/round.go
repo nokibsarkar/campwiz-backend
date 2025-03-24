@@ -8,7 +8,6 @@ import (
 	"nokib/campwiz/models"
 	"nokib/campwiz/repository/cache"
 	"nokib/campwiz/services"
-	idgenerator "nokib/campwiz/services/idGenerator"
 
 	"github.com/gin-gonic/gin"
 )
@@ -413,9 +412,9 @@ func NextPublicSubmission(c *gin.Context, sess *cache.Session) {
 			SubmissionID: submission.SubmissionID,
 			JudgeID:      &u.UserID,
 			RoundID:      round.RoundID,
-			EvaluationID: idgenerator.GenerateID("e"),
-			Submission:   submission,
-			Type:         round.Type,
+			// EvaluationID: idgenerator.GenerateID("e"),
+			Submission: submission,
+			Type:       round.Type,
 		}
 		ev = append(ev, evaluation)
 	}

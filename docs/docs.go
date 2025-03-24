@@ -348,6 +348,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/evaluation/public/{roundId}": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Submit a new bulk public evaluation",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Evaluation"
+                ],
+                "summary": "Submit a new bulk public evaluation",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The round ID",
+                        "name": "roundId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "The evaluation request",
+                        "name": "evaluationRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/services.EvaluationRequest"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.ResponseList-models_Evaluation"
+                        }
+                    }
+                }
+            }
+        },
         "/evaluation/public/{roundId}/{submissionId}": {
             "post": {
                 "security": [
@@ -2546,6 +2592,9 @@ const docTemplate = `{
                 },
                 "score": {
                     "$ref": "#/definitions/models.ScoreType"
+                },
+                "submissionId": {
+                    "type": "string"
                 }
             }
         },

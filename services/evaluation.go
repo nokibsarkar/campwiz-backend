@@ -180,7 +180,7 @@ func (e *EvaluationService) PublicBulkEvaluate(currentUserID models.IDType, eval
 	var juryRole *models.Role
 	newEvaluationRequests := []EvaluationRequest{}
 	existingEvaluationRequestMap := map[models.IDType]EvaluationRequest{}
-	newEvaluationSubmissionMap := map[models.IDType]EvaluationRequest{}
+	newEvaluationSubmissionMap := map[types.SubmissionIDType]EvaluationRequest{}
 	newEvalutionSubmissionIds := []string{}
 	combinedSubmissionIds := []types.SubmissionIDType{}
 	q := query.Use(tx)
@@ -203,8 +203,8 @@ func (e *EvaluationService) PublicBulkEvaluate(currentUserID models.IDType, eval
 				// Submission ID is given
 				evaluationRequest.EvaluationID = idgenerator.GenerateID("e")
 				newEvaluationRequests = append(newEvaluationRequests, evaluationRequest)
-				newEvaluationSubmissionMap[evaluationRequest.SubmissionID] = evaluationRequest
-				newEvalutionSubmissionIds = append(newEvalutionSubmissionIds, evaluationRequest.EvaluationID.String())
+				newEvaluationSubmissionMap[types.SubmissionIDType(evaluationRequest.SubmissionID)] = evaluationRequest
+				newEvalutionSubmissionIds = append(newEvalutionSubmissionIds, evaluationRequest.SubmissionID.String())
 			}
 		} else {
 			// evaluationId is given
@@ -218,7 +218,7 @@ func (e *EvaluationService) PublicBulkEvaluate(currentUserID models.IDType, eval
 
 	now := time.Now().UTC()
 	if len(newEvaluationRequests) > 0 {
-		submissions, err := Submission.Select(Submission.RoundID).Where(Submission.SubmissionID.In(newEvalutionSubmissionIds...)).Find()
+		submissions, err := Submission.Where(Submission.SubmissionID.In(newEvalutionSubmissionIds...)).Find()
 		if err != nil {
 			tx.Rollback()
 			return nil, err
@@ -226,7 +226,7 @@ func (e *EvaluationService) PublicBulkEvaluate(currentUserID models.IDType, eval
 		newEvaluations := []*models.Evaluation{}
 		for _, submission := range submissions {
 			if currentRound == nil {
-				currentRound, err = round_repo.FindByID(tx.Preload("Campaign"), submission.RoundID)
+				currentRound, err = round_repo.FindByID(tx.Preload("Roles").Preload("Campaign"), submission.RoundID)
 				if err != nil {
 					tx.Rollback()
 					return nil, err
@@ -253,7 +253,8 @@ func (e *EvaluationService) PublicBulkEvaluate(currentUserID models.IDType, eval
 					return nil, errors.New("user is not allowed to evaluate")
 				}
 			}
-			eReq, ok := newEvaluationSubmissionMap[models.IDType(submission.SubmissionID)]
+			log.Println(newEvaluationSubmissionMap, submission.SubmissionID)
+			eReq, ok := newEvaluationSubmissionMap[submission.SubmissionID]
 			if !ok {
 				tx.Rollback()
 				return nil, errors.New("eReq not found")
@@ -273,7 +274,9 @@ func (e *EvaluationService) PublicBulkEvaluate(currentUserID models.IDType, eval
 			newEvaluations = append(newEvaluations, ev)
 			combinedSubmissionIds = append(combinedSubmissionIds, submission.SubmissionID)
 		}
-		res := tx.Create(newEvaluations)
+		ctx, closeCtx := context.WithTimeout(context.Background(), 5*time.Second)
+		defer closeCtx()
+		res := tx.WithContext(ctx).Create(newEvaluations)
 		if res.Error != nil {
 			return nil, res.Error
 		}

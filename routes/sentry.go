@@ -19,6 +19,12 @@ func NewSentryMiddleWare() gin.HandlerFunc {
 		Tags: map[string]string{
 			"base-url": consts.Config.Server.BaseURL,
 		},
+		EnableTracing:    true,
+		TracesSampleRate: 1.0,
+		Release:          consts.Config.Sentry.Release,
+		AttachStacktrace: true,
+		SampleRate:       1.0,
+		SendDefaultPII:   true,
 	}); err != nil {
 		fmt.Printf("Sentry initialization failed: %v\n", err)
 	}

@@ -2,11 +2,14 @@ package routes
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"nokib/campwiz/consts"
 	"nokib/campwiz/services"
 	"strings"
 
+	"github.com/getsentry/sentry-go"
+	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
 )
 
@@ -115,6 +118,7 @@ func (a *AuthenticationMiddleWare) Authenticate2(c *gin.Context) {
 			return
 		}
 	} else {
+
 		auth_service := services.NewAuthenticationService()
 		accessToken, session, err, setCookie := auth_service.Authenticate(token)
 		if err != nil {
@@ -130,6 +134,19 @@ func (a *AuthenticationMiddleWare) Authenticate2(c *gin.Context) {
 				c.SetCookie(AuthenticationCookieName, accessToken, consts.Config.Auth.Expiry, "/", "", false, true)
 			}
 			c.Set(SESSION_KEY, session)
+		}
+		if hub := sentrygin.GetHubFromContext(c); hub != nil {
+			hub.Scope().SetUser(sentry.User{
+				ID:        session.UserID.String(),
+				Username:  string(session.Username),
+				IPAddress: c.ClientIP(),
+				Name:      string(session.Username),
+				Data: map[string]string{
+					"sessionId":  session.ID.String(),
+					"permission": fmt.Sprintf("%d", session.Permission),
+					"expiresAt":  session.ExpiresAt.String(),
+				},
+			})
 		}
 	}
 	c.Next()

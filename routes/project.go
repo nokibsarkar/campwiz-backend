@@ -118,7 +118,7 @@ func GetSingleProject(c *gin.Context, sess *cache.Session) {
 	}
 	// User does not have permission for other projects
 	// User does not have
-	if !u.Permission.HasPermission(consts.PermissionOtherProjectAccess) && u.LeadingProjectID != nil && *u.LeadingProjectID == models.IDType(projectId) {
+	if !u.Permission.HasPermission(consts.PermissionOtherProjectAccess) && u.LeadingProjectID != nil && *u.LeadingProjectID != models.IDType(projectId) {
 		c.JSON(403, ResponseError{Detail: "User does not have permission to access this project"})
 		return
 	}

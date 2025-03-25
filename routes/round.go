@@ -4,7 +4,6 @@ import (
 	"encoding/csv"
 	"fmt"
 	"log"
-	"nokib/campwiz/consts"
 	"nokib/campwiz/models"
 	"nokib/campwiz/repository/cache"
 	"nokib/campwiz/services"
@@ -26,7 +25,7 @@ type RoundDeletedResponse struct {
 // @Tags Round
 // @Error 400 {object} ResponseError
 func CreateRound(c *gin.Context, sess *cache.Session) {
-	defer HandleError("Create Round")
+	// defer HandleError("Create Round")
 	requestedRounds := services.RoundRequest{
 		CreatedByID: sess.UserID,
 	}
@@ -483,10 +482,10 @@ func NewRoundRoutes(parent *gin.RouterGroup) {
 	r.GET("/:roundId/results/summary", WithSession(GetResultSummary))
 	r.GET("/:roundId/results/:format", WithSession(GetResults))
 	r.POST("/:roundId/status", WithSession(UpdateStatus))
-	r.POST("/", WithPermission(consts.PermissionCreateCampaign, CreateRound))
+	r.POST("/", WithSession(CreateRound))
 	r.POST("/:roundId", WithSession(UpdateRoundDetails))
-	r.POST("/import/:roundId/commons", WithPermission(consts.PermissionLogin, ImportFromCommons))
-	r.POST("/import/:roundId/previous", WithPermission(consts.PermissionLogin, ImportFromPreviousRound))
-	r.POST("/distribute/:roundId", WithPermission(consts.PermissionCreateCampaign, DistributeEvaluations))
+	r.POST("/import/:roundId/commons", WithSession(ImportFromCommons))
+	r.POST("/import/:roundId/previous", WithSession(ImportFromPreviousRound))
+	r.POST("/distribute/:roundId", WithSession(DistributeEvaluations))
 
 }

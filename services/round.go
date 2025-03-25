@@ -72,6 +72,7 @@ func (s *RoundService) CreateRound(request *RoundRequest) (*models.Round, error)
 		tx.Rollback()
 		return nil, errors.New("campaign not found")
 	}
+	log.Println("Campaign found with ID: ", campaign.CampaignID)
 	// if campaign.Status != models.RoundStatusActive {
 	// 	tx.Rollback()
 	// 	return nil, errors.New("campaign is not active")

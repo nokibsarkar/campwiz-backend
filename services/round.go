@@ -256,7 +256,7 @@ func (b *RoundService) ImportFromPreviousRound(currentUserId models.IDType, targ
 	}
 	tx.Commit()
 	log.Println("Task created with ID: ", task.TaskID)
-	previousRoundSource := importsources.NewRoundCategoryListSource(filter.Scores, sourceRound.RoundID)
+	previousRoundSource := importsources.NewRoundCategoryListSource(filter.Scores[0], sourceRound.RoundID)
 	batch_processor := importservice.NewImportTaskRunner(task.TaskID, previousRoundSource)
 	go batch_processor.Run()
 	return task, nil

@@ -6,7 +6,7 @@ import (
 )
 
 type RoundCategoryListSource struct {
-	Scores       []float64
+	Score        float64
 	RoundId      string
 	currentIndex string
 	limit        int
@@ -42,7 +42,7 @@ func (c *RoundCategoryListSource) ImportImageResults(failedImageReason *map[stri
 			Submission.PageID.As("PageID"),
 		).Where(Submission.SubmissionID.Gt(c.currentIndex)).
 		Where(Submission.RoundID.Eq(c.RoundId)).
-		Where(Submission.Score.In(c.Scores...)).
+		Where(Submission.Score.Gte(c.Score)).
 		Limit(c.limit).
 		Scan(&imageResults)
 	if err != nil {
@@ -55,16 +55,14 @@ func (c *RoundCategoryListSource) ImportImageResults(failedImageReason *map[stri
 	c.currentIndex = imageResults[len(imageResults)-1].SubmissionID.String()
 	return imageResults, failedImageReason
 }
-func NewRoundCategoryListSource(scores []models.ScoreType, roundId models.IDType) *RoundCategoryListSource {
+func NewRoundCategoryListSource(scores models.ScoreType, roundId models.IDType) *RoundCategoryListSource {
 	res := &RoundCategoryListSource{
-		Scores:       []float64{},
+		Score:        float64(scores),
 		RoundId:      roundId.String(),
 		currentIndex: "",
 		round_repo:   repository.NewRoundRepository(),
 		limit:        100,
 	}
-	for _, score := range scores {
-		res.Scores = append(res.Scores, float64(score))
-	}
+
 	return res
 }

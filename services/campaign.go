@@ -49,13 +49,30 @@ func (service *CampaignService) CreateCampaign(campaignRequest *CampaignCreateRe
 		tx.Rollback()
 		return nil, err
 	}
-	if !currentUser.Permission.HasPermission(consts.PermissionCreateCampaign) {
-		tx.Rollback()
-		return nil, fmt.Errorf("user does not have permission to create campaign")
+	// if !currentUser.Permission.HasPermission(consts.PermissionCreateCampaign) {
+	// 	tx.Rollback()
+	// 	return nil, fmt.Errorf("user does not have permission to create campaign")
+	// }
+	if campaignRequest.ProjectID == "" {
+		if currentUser.LeadingProjectID == nil {
+			tx.Rollback()
+			return nil, fmt.Errorf("user is not leading any project. So project id is required")
+		} else {
+			campaignRequest.ProjectID = *currentUser.LeadingProjectID
+		}
+	} else {
+		// project id is provided
+		if currentUser.LeadingProjectID == nil && !currentUser.Permission.HasPermission(consts.PermissionOtherProjectAccess) {
+			tx.Rollback()
+			return nil, fmt.Errorf("user is not leading any project and does not have permission to create campaign in other's project")
+		} else if currentUser.LeadingProjectID != nil && *currentUser.LeadingProjectID != campaignRequest.ProjectID && !currentUser.Permission.HasPermission(consts.PermissionOtherProjectAccess) {
+			tx.Rollback()
+			return nil, fmt.Errorf("user does not have permission to create campaign in other's project")
+		}
 	}
-	if currentUser.LeadingProjectID == nil {
+	if *currentUser.LeadingProjectID != campaignRequest.ProjectID && !currentUser.Permission.HasPermission(consts.PermissionOtherProjectAccess) {
 		tx.Rollback()
-		return nil, fmt.Errorf("user is not leading any project")
+		return nil, fmt.Errorf("user does not have permission to create campaign in other's project")
 	}
 	campaign := &models.Campaign{
 		CampaignID: idgenerator.GenerateID("c"),

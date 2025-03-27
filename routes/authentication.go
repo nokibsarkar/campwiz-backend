@@ -59,7 +59,7 @@ func (a *AuthenticationMiddleWare) checkIfUnauthenticatedAllowed(c *gin.Context)
 		"/user/login",
 		"/user/callback",
 		"/api/v2/campaign/",
-		"/api/v2/user/logout",
+		// "/api/v2/user/logout",
 	}
 	for _, p := range UnRestrictedPaths {
 		if strings.HasSuffix(p, "*") {

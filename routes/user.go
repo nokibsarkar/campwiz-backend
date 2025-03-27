@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"log"
 	"nokib/campwiz/models"
 	"nokib/campwiz/repository/cache"
 	"nokib/campwiz/services"
@@ -23,6 +24,7 @@ func GetMe(c *gin.Context, session *cache.Session) {
 		})
 		return
 	}
+	c.Header("Cache-Control", "force-cache")
 	c.JSON(200, ResponseSingle[*models.ExtendedUserDetails]{user})
 }
 func GetUser(c *gin.Context) {
@@ -58,7 +60,12 @@ func Logout(c *gin.Context) {
 	}
 	c.SetCookie(AuthenticationCookieName, "", -1, "/", "", false, true)
 	c.SetCookie(RefreshCookieName, "", -1, "/", "", false, true)
-	c.Redirect(302, redirect)
+	log.Println("Logged out")
+	c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
+	c.Header("Location", redirect)
+	c.JSON(302, ResponseSingle[RedirectResponse]{
+		Data: RedirectResponse{Redirect: redirect},
+	})
 }
 
 func NewUserRoutes(parent *gin.RouterGroup) {
@@ -69,5 +76,5 @@ func NewUserRoutes(parent *gin.RouterGroup) {
 	r.POST("/:id", UpdateUser)
 	r.GET("/translation/:language", GetTranslation)
 	r.POST("/translation/:lang", UpdateTranslation)
-	r.GET("/logout", Logout)
+	r.POST("/logout", Logout)
 }

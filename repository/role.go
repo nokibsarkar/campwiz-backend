@@ -2,6 +2,7 @@ package repository
 
 import (
 	"nokib/campwiz/models"
+	"nokib/campwiz/query"
 
 	"gorm.io/gorm"
 )
@@ -69,4 +70,46 @@ func (r *RoleRepository) DeleteRolesByRoundID(tx *gorm.DB, roundID models.IDType
 		RoundID: &roundID,
 	})
 	return result.Error
+}
+func (r *RoleRepository) FindRolesByUsername(tx *gorm.DB, usernames []models.WikimediaUsernameType, filter *models.RoleFilter) ([]models.Role, error) {
+	roles := []models.Role{}
+	Usernames := []string{}
+	for _, username := range usernames {
+		Usernames = append(Usernames, string(username))
+	}
+	q := query.Use(tx)
+	Role := q.Role
+	stmt := Role.Join(q.User, q.User.UserID.EqCol(Role.UserID)).
+		Where(q.User.Username.In(Usernames...))
+	if filter != nil {
+		// if filter.IncludeDeleted != nil {
+		// 	if *filter.IncludeDeleted {
+		// 		stmt = stmt.Unscoped()
+		// 	}
+		// }
+		if filter.ProjectID != "" {
+			stmt = stmt.Where(Role.ProjectID.Eq(filter.ProjectID.String()))
+		}
+		if filter.TargetProjectID != nil {
+			stmt = stmt.Where(Role.TargetProjectID.Eq(filter.TargetProjectID.String()))
+		}
+		if filter.CampaignID != nil {
+			stmt = stmt.Where(Role.CampaignID.Eq(filter.CampaignID.String()))
+		}
+		if filter.RoundID != nil {
+			stmt = stmt.Where(Role.RoundID.Eq(filter.RoundID.String()))
+		}
+		if filter.Type != nil {
+			stmt = stmt.Where(Role.Type.Eq(string(*filter.Type)))
+		}
+		if filter.UserID != nil {
+			stmt = stmt.Where(Role.UserID.Eq(filter.UserID.String()))
+		}
+		if filter.Limit > 0 {
+			stmt = stmt.Limit(filter.Limit)
+		}
+
+	}
+	err := stmt.Scan(&roles)
+	return roles, err
 }

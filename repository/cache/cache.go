@@ -5,7 +5,6 @@ import (
 	"log"
 	"nokib/campwiz/consts"
 	"nokib/campwiz/models"
-	"os"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -29,9 +28,9 @@ func GetCacheDB() (db *gorm.DB, close func()) {
 	}
 }
 func GetTaskCacheDB(taskID models.IDType) (db *gorm.DB, close func()) {
-	dsn := fmt.Sprintf(consts.Config.Database.Cache.TaskDSN, taskID)
+	dsn := fmt.Sprintf(consts.Config.Database.Task.DSN, taskID)
 	logMode := logger.Warn
-	if consts.Config.Server.Mode == "debug" {
+	if consts.Config.Database.Task.Debug {
 		logMode = logger.Info
 	}
 	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{
@@ -47,7 +46,7 @@ func GetTaskCacheDB(taskID models.IDType) (db *gorm.DB, close func()) {
 			log.Fatal("failed to get cache database on close")
 		}
 		raw_db.Close()
-		os.Remove(dsn)
+		// os.Remove(dsn)
 	}
 }
 func GetTestCacheDB() (db *gorm.DB, close func()) {

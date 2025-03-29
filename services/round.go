@@ -29,7 +29,7 @@ type RoundRequest struct {
 }
 
 type DistributionRequest struct {
-	AmongJuries []models.IDType `json:"juries"`
+	AmongJuriesUsername []models.WikimediaUsernameType `json:"juries"`
 }
 type ImportFromCommonsPayload struct {
 	// Categories from which images will be fetched
@@ -481,7 +481,7 @@ func (r *RoundService) DistributeEvaluations(currentUserID models.IDType, roundI
 	}
 	tx.Commit()
 	log.Println("Task created with ID: ", task.TaskID)
-	strategy := distributionstrategy.NewRoundRobinDistributionStrategyV3(task.TaskID)
+	strategy := distributionstrategy.NewRoundRobinDistributionStrategy(task.TaskID, distributionReq.AmongJuriesUsername)
 	runner := importservice.NewDistributionTaskRunner(task.TaskID, strategy)
 	go runner.Run()
 	return task, nil

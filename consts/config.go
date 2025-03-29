@@ -19,15 +19,21 @@ type DistributionConfiguration struct {
 type MainDatabaseConfiguration struct {
 	DSN     string `mapstructure:"DSN"`
 	TestDSN string `mapstructure:"TestDSN"`
+	Debug   bool   `mapstructure:"Debug"`
 }
 type CacheDatabaseConfiguration struct {
 	DSN     string `mapstructure:"DSN"`
 	TestDSN string `mapstructure:"TestDSN"`
-	TaskDSN string `mapstructure:"TaskDSN"`
+	Debug   bool   `mapstructure:"Debug"`
+}
+type TaskCacheDatabaseConfiguration struct {
+	DSN   string `mapstructure:"DSN"`
+	Debug bool   `mapstructure:"Debug"`
 }
 type DatabaseConfiguration struct {
-	Main  MainDatabaseConfiguration  `mapstructure:"Main"`
-	Cache CacheDatabaseConfiguration `mapstructure:"Cache"`
+	Main  MainDatabaseConfiguration      `mapstructure:"Main"`
+	Cache CacheDatabaseConfiguration     `mapstructure:"Cache"`
+	Task  TaskCacheDatabaseConfiguration `mapstructure:"Task"`
 }
 type ServerConfiguration struct {
 	Port    string `mapstructure:"Port"`

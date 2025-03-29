@@ -158,7 +158,7 @@ func (b *TaskRunner) importImages(conn *gorm.DB, task *models.Task) (successCoun
 			}
 			submissions = append(submissions, submission)
 			submissionCount++
-			if submissionCount%200 == 0 {
+			if submissionCount%100 == 0 {
 				log.Println("Saving batch of submissions")
 
 				res := perBatch.Clauses(clause.Insert{Modifier: "IGNORE"}).Create(submissions)
@@ -262,21 +262,6 @@ func (b *TaskRunner) distributeEvaluations(tx *gorm.DB, task *models.Task) (succ
 	}
 	j := models.RoleTypeJury
 	filter.Type = &j
-	// cacheDB, closeCache := cache.GetCacheDB()
-	// defer closeCache()
-	// _, err = cache.ExportToCache(tx, cacheDB, &models.EvaluationFilter{
-	// 	// RoundID:    round.RoundID,
-	// 	// CampaignID: round.CampaignID,
-	// 	CommonFilter: repository.CommonFilter{
-	// 		Limit: 50,
-	// 	},
-	// }) //, task.TaskID)
-	// if err != nil {
-	// 	log.Println("Error exporting to cache: ", err)
-	// 	cacheDB.Rollback()
-	// 	return
-	// }
-	// cacheDB.Commit()
 	juries, err := jury_repo.ListAllRoles(tx, filter)
 	if err != nil {
 		log.Println("Error fetching juries: ", err)
@@ -287,7 +272,6 @@ func (b *TaskRunner) distributeEvaluations(tx *gorm.DB, task *models.Task) (succ
 		return
 	}
 	log.Printf("Found %d juries\n", len(juries))
-
 	successCount, failedCount, err = b.DistributionStrategy.AssignJuries(tx, round, juries)
 	if err != nil {
 		log.Println("Error assigning juries: ", err)

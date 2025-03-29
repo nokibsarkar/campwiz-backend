@@ -12,16 +12,16 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-func getLogMode() logger.LogLevel {
-	if consts.Config.Server.Mode == "release" {
-		return logger.Warn
+func getLogMode(debug bool) logger.LogLevel {
+	if debug {
+		return logger.Info
 	}
-	return logger.Info
+	return logger.Warn
 }
 func GetDB() (db *gorm.DB, close func()) {
 	dsn := consts.Config.Database.Main.DSN
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(getLogMode()),
+		Logger: logger.Default.LogMode(getLogMode(consts.Config.Database.Main.Debug || consts.Config.Server.Mode == "debug")),
 	})
 
 	if err != nil {
@@ -43,7 +43,7 @@ func GetDB() (db *gorm.DB, close func()) {
 func GetDbWithoutDefaultTransaction() (db *gorm.DB, close func()) {
 	dsn := consts.Config.Database.Main.DSN
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
-		Logger:                 logger.Default.LogMode(getLogMode()),
+		Logger:                 logger.Default.LogMode(getLogMode(consts.Config.Database.Main.Debug || consts.Config.Server.Mode == "debug")),
 		SkipDefaultTransaction: true,
 	})
 	if err != nil {
@@ -75,8 +75,9 @@ func GetTestDB() (db *gorm.DB, close func()) {
 }
 func GetDBWithGen() (q *query.Query, close func()) {
 	dsn := consts.Config.Database.Main.DSN
+	// logMode := logger.Warn
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(getLogMode()),
+		Logger: logger.Default.LogMode(getLogMode(consts.Config.Database.Cache.Debug || consts.Config.Server.Mode == "debug")),
 	})
 	if err != nil {
 		panic("failed to connect database")

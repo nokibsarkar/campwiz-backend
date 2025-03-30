@@ -106,7 +106,6 @@ func (r *SubmissionRepository) FindNextUnevaluatedSubmissionForPublicJury(tx *go
 			alreadyCoveredSubmissionIDs = append(alreadyCoveredSubmissionIDs, s.SubmissionID.String())
 		}
 	}
-
 	q := query.Use(tx)
 	s := q.Submission
 	stmt := s.

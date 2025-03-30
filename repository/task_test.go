@@ -158,3 +158,35 @@ func TestTaskFindByIDSuccess(t *testing.T) {
 		t.Errorf("expected task ID %s, got %s", testTask.TaskID, foundTask.TaskID)
 	}
 }
+func TestTaskUpdateError(t *testing.T) {
+	// Initialize the database connection
+	db, mock, close := repository.GetTestDB()
+	defer close()
+	// Mock the database behavior
+	testTask := &models.Task{
+		TaskID:               "testtask",
+		Type:                 models.TaskTypeDistributeEvaluations,
+		Status:               models.TaskStatusPending,
+		AssociatedRoundID:    nil,
+		AssociatedCampaignID: nil,
+		AssociatedUserID:     nil,
+		Data:                 nil,
+		CreatedAt:            time.Now(),
+		UpdatedAt:            time.Now(),
+	}
+	// mock.ExpectBegin()
+	mock.ExpectExec("UPDATE `tasks`").
+		WithArgs(testTask.TaskID, testTask.Type, testTask.Status,
+			testTask.AssociatedRoundID, testTask.AssociatedCampaignID, testTask.AssociatedUserID,
+			testTask.Data, testTask.CreatedAt,
+			testTask.UpdatedAt,
+			testTask.SuccessCount, testTask.FailedCount,
+			nil, testTask.RemainingCount, testTask.CreatedByID).
+		WillReturnError(fmt.Errorf("error updating task"))
+	// mock.ExpectRollback()
+	taskRepo := repository.NewTaskRepository()
+	_, err := taskRepo.Update(db, testTask)
+	if err == nil {
+		t.Errorf("expected error, got nil")
+	}
+}

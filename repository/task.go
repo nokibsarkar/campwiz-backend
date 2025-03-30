@@ -29,7 +29,7 @@ func (r *TaskRepository) FindByID(tx *gorm.DB, taskId models.IDType) (*models.Ta
 	return task, nil
 }
 func (r *TaskRepository) Update(tx *gorm.DB, task *models.Task) (*models.Task, error) {
-	err := tx.Save(task).Error
+	err := tx.Updates(task).Error
 	if err != nil {
 		return nil, err
 	}

@@ -63,7 +63,7 @@ func GetTestDB() (db *gorm.DB, mock sqlmock.Sqlmock, close func()) {
 	if err != nil {
 		log.Fatalf("failed to open sqlmock database: %s", err)
 	}
-	mock.ExpectQuery("SELECT VERSION()").WillReturnRows(sqlmock.NewRows([]string{"version()"}).AddRow("5.7.31"))
+	// mock.ExpectQuery("SELECT VERSION()").WillReturnRows(sqlmock.NewRows([]string{"version()"}).AddRow("5.7.31"))
 	db, err = gorm.Open(mysql.New(mysql.Config{
 		Conn: mockDb,
 	}), &gorm.Config{

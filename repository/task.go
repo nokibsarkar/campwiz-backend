@@ -22,7 +22,7 @@ func (r *TaskRepository) Create(tx *gorm.DB, task *models.Task) (*models.Task, e
 }
 func (r *TaskRepository) FindByID(tx *gorm.DB, taskId models.IDType) (*models.Task, error) {
 	task := &models.Task{}
-	err := tx.Find(task, &models.Task{TaskID: taskId}).First(task).Error
+	err := tx.Limit(1).Find(task, &models.Task{TaskID: taskId}).First(task).Error
 	if err != nil {
 		return nil, err
 	}

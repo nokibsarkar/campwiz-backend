@@ -28,3 +28,24 @@ func TestTaskFindByIDError(t *testing.T) {
 		t.Errorf("expected error, got nil")
 	}
 }
+func TestTaskCreateError(t *testing.T) {
+	// Initialize the database connection
+	db, mock, close := repository.GetTestDB()
+	defer close()
+	// Create a new user repository
+	taskRepo := repository.NewTaskRepository()
+
+	// Mock the database behavior
+	testTask := &models.Task{
+		TaskID: "testtask",
+	}
+	// mock.ExpectBegin()
+	mock.ExpectQuery("INSERT INTO").
+		WithArgs(testTask.TaskID, 1).
+		WillReturnError(fmt.Errorf("record not found"))
+	// mock.ExpectRollback()
+	_, err := taskRepo.Create(db, testTask)
+	if err == nil {
+		t.Errorf("expected error, got nil")
+	}
+}

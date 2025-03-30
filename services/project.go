@@ -21,7 +21,10 @@ func NewProjectService() *ProjectService {
 }
 func (p *ProjectService) GetProjectByID(id models.IDType, includeProjectLeads bool) (*models.ProjectExtended, error) {
 	project_repo := repository.NewProjectRepository()
-	conn, close := repository.GetDB()
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		return nil, err
+	}
 	defer close()
 	project, err := project_repo.FindProjectByID(conn, id)
 	if err != nil {
@@ -43,7 +46,10 @@ func (p *ProjectService) GetProjectByID(id models.IDType, includeProjectLeads bo
 }
 func (p *ProjectService) CreateProject(projectReq *models.ProjectRequest, includeProjectLeads bool) (*models.ProjectExtended, error) {
 	project_repo := repository.NewProjectRepository()
-	conn, close := repository.GetDB()
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		return nil, err
+	}
 	defer close()
 	tx := conn.Begin()
 	project := &models.Project{
@@ -53,7 +59,7 @@ func (p *ProjectService) CreateProject(projectReq *models.ProjectRequest, includ
 		Link:        projectReq.Link,
 		CreatedByID: projectReq.CreatedByID,
 	}
-	err := project_repo.CreateProject(tx, project)
+	err = project_repo.CreateProject(tx, project)
 	if err != nil {
 		tx.Rollback()
 		return nil, err
@@ -132,7 +138,10 @@ func (p *ProjectService) AssignProjectLead(tx *gorm.DB, projectReq *models.Proje
 func (p *ProjectService) UpdateProject(projectReq *models.ProjectRequest) (*models.ProjectExtended, error) {
 	log.Printf("Updating project %v\n", projectReq)
 	project_repo := repository.NewProjectRepository()
-	conn, close := repository.GetDB()
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		return nil, err
+	}
 	defer close()
 	tx := conn.Begin()
 	project, err := project_repo.FindProjectByID(tx, projectReq.ProjectID)
@@ -166,7 +175,10 @@ func (p *ProjectService) UpdateProject(projectReq *models.ProjectRequest) (*mode
 }
 func (p *ProjectService) ListProjects(currentUserProjectID *models.IDType, qrt *models.ProjectFilter) ([]models.ProjectExtended, error) {
 	project_repo := repository.NewProjectRepository()
-	conn, close := repository.GetDB()
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		return nil, err
+	}
 	defer close()
 	projects, err := project_repo.ListProjects(conn, qrt)
 	if err != nil {

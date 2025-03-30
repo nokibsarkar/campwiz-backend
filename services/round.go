@@ -64,7 +64,10 @@ func (s *RoundService) CreateRound(request *RoundRequest) (*models.Round, error)
 	round_repo := repository.NewRoundRepository()
 	campaign_repo := repository.NewCampaignRepository()
 	role_service := NewRoleService()
-	conn, close := repository.GetDB()
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		return nil, err
+	}
 	defer close()
 	tx := conn.Begin()
 	campaign, err := campaign_repo.FindByID(tx.Preload("LatestRound"), request.CampaignID)
@@ -142,7 +145,10 @@ func (s *RoundService) CreateRound(request *RoundRequest) (*models.Round, error)
 }
 func (s *RoundService) ListAllRounds(filter *models.RoundFilter) ([]models.Round, error) {
 	round_repo := repository.NewRoundRepository()
-	conn, close := repository.GetDB()
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		return nil, err
+	}
 	defer close()
 	rounds, err := round_repo.FindAll(conn, filter)
 	if err != nil {
@@ -154,7 +160,10 @@ func (s *RoundService) ListAllRounds(filter *models.RoundFilter) ([]models.Round
 func (b *RoundService) ImportFromCommons(roundId models.IDType, categories []string) (*models.Task, error) {
 	round_repo := repository.NewRoundRepository()
 	task_repo := repository.NewTaskRepository()
-	conn, close := repository.GetDB()
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		return nil, err
+	}
 	defer close()
 	tx := conn.Begin()
 	round, err := round_repo.FindByID(tx, roundId)
@@ -193,7 +202,10 @@ func (b *RoundService) ImportFromCommons(roundId models.IDType, categories []str
 func (b *RoundService) ImportFromPreviousRound(currentUserId models.IDType, targetRoundId models.IDType, filter *ImportFromPreviousRoundPayload) (*models.Task, error) {
 	round_repo := repository.NewRoundRepository()
 	task_repo := repository.NewTaskRepository()
-	conn, close := repository.GetDB()
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		return nil, err
+	}
 	defer close()
 	tx := conn.Begin()
 	targetRound, err := round_repo.FindByID(tx.Preload("Campaign"), targetRoundId)
@@ -263,7 +275,10 @@ func (b *RoundService) ImportFromPreviousRound(currentUserId models.IDType, targ
 }
 func (b *RoundService) GetById(roundId models.IDType) (*models.Round, error) {
 	round_repo := repository.NewRoundRepository()
-	conn, close := repository.GetDB()
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		return nil, err
+	}
 	defer close()
 	return round_repo.FindByID(conn, roundId)
 }
@@ -331,7 +346,10 @@ func (b *RoundService) DistributeTaskAmongExistingJuries(images []models.MediaRe
 func (r *RoundService) UpdateRoundDetails(roundID models.IDType, req *RoundRequest, qry *models.SingleCampaaignFilter) (*models.Round, error) {
 	round_repo := repository.NewRoundRepository()
 	role_service := NewRoleService()
-	conn, close := repository.GetDB()
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		return nil, err
+	}
 	defer close()
 	tx := conn.Begin()
 	q := query.Use(tx)
@@ -446,7 +464,10 @@ func (r *RoundService) UpdateRoundDetails(roundID models.IDType, req *RoundReque
 func (r *RoundService) DistributeEvaluations(currentUserID models.IDType, roundId models.IDType, distributionReq *DistributionRequest) (*models.Task, error) {
 	round_repo := repository.NewRoundRepository()
 	task_repo := repository.NewTaskRepository()
-	conn, close := repository.GetDB()
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		return nil, err
+	}
 	defer close()
 	tx := conn.Begin()
 	round, err := round_repo.FindByID(tx, roundId)
@@ -488,7 +509,10 @@ func (r *RoundService) DistributeEvaluations(currentUserID models.IDType, roundI
 }
 func (r *RoundService) GetResultSummary(roundID models.IDType) (results []models.EvaluationResult, err error) {
 	round_repo := repository.NewRoundRepository()
-	conn, close := repository.GetDB()
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		return nil, err
+	}
 	defer close()
 	results, err = round_repo.GetResultSummary(conn, roundID)
 	if err != nil {
@@ -497,7 +521,10 @@ func (r *RoundService) GetResultSummary(roundID models.IDType) (results []models
 	return
 }
 func (e *RoundService) GetNextUnevaluatedSubmissionForPublicJury(userID models.IDType, filter *models.EvaluationFilter) ([]*models.Submission, error) {
-	conn, close := repository.GetDB()
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		return nil, err
+	}
 	defer close()
 	submission_repo := repository.NewSubmissionRepository()
 	round_repo := repository.NewRoundRepository()
@@ -529,7 +556,10 @@ func (e *RoundService) GetNextUnevaluatedSubmissionForPublicJury(userID models.I
 func (e *RoundService) UpdateStatus(currenUserID models.IDType, roundID models.IDType, status models.RoundStatus) (*models.Round, error) {
 	round_repo := repository.NewRoundRepository()
 	role_repo := repository.NewRoleRepository()
-	conn, close := repository.GetDB()
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		return nil, err
+	}
 	defer close()
 	tx := conn.Begin()
 
@@ -648,7 +678,10 @@ func (e *RoundService) UpdateStatus(currenUserID models.IDType, roundID models.I
 
 func (e *RoundService) GetResults(currentUserID models.IDType, roundID models.IDType, q *models.SubmissionResultQuery) ([]models.SubmissionResult, error) {
 	round_repo := repository.NewRoundRepository()
-	conn, close := repository.GetDB()
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		return nil, err
+	}
 	defer close()
 	round, err := round_repo.FindByID(conn, roundID)
 	if err != nil {
@@ -678,7 +711,10 @@ func (e *RoundService) GetResults(currentUserID models.IDType, roundID models.ID
 func (e *RoundService) DeleteRound(sess *cache.Session, roundID models.IDType) error {
 	round_repo := repository.NewRoundRepository()
 	role_repo := repository.NewRoleRepository()
-	conn, close := repository.GetDB()
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		return err
+	}
 	defer close()
 	tx := conn.Begin()
 	round, err := round_repo.FindByID(tx.Preload("Campaign"), roundID)
@@ -726,7 +762,10 @@ func (e *RoundService) DeleteRound(sess *cache.Session, roundID models.IDType) e
 func (e *RoundService) AddMyselfAsJury(currentUserID models.IDType, roundID models.IDType) (*models.Role, error) {
 	round_repo := repository.NewRoundRepository()
 	role_repo := repository.NewRoleRepository()
-	conn, close := repository.GetDB()
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		return nil, err
+	}
 	defer close()
 	tx := conn.Begin()
 	round, err := round_repo.FindByID(tx, roundID)

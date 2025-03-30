@@ -283,7 +283,11 @@ func (b *TaskRunner) distributeEvaluations(tx *gorm.DB, task *models.Task) (succ
 
 func (b *TaskRunner) Run() {
 	task_repo := repository.NewTaskRepository()
-	conn, close := repository.GetDB()
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		log.Println("Error connecting to database: ", err)
+		return
+	}
 	defer close()
 
 	task, err := task_repo.FindByID(conn, b.TaskId)

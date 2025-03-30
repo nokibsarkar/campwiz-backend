@@ -18,9 +18,9 @@ func getLogMode(debug bool) logger.LogLevel {
 	}
 	return logger.Warn
 }
-func GetDB() (db *gorm.DB, close func()) {
+func GetDB() (db *gorm.DB, close func(), err error) {
 	dsn := consts.Config.Database.Main.DSN
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
+	db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(getLogMode(consts.Config.Database.Main.Debug || consts.Config.Server.Mode == "debug")),
 	})
 
@@ -38,7 +38,7 @@ func GetDB() (db *gorm.DB, close func()) {
 			panic("failed to connect database")
 		}
 		raw_db.Close()
-	}
+	}, nil
 }
 func GetDbWithoutDefaultTransaction() (db *gorm.DB, close func()) {
 	dsn := consts.Config.Database.Main.DSN
@@ -93,7 +93,10 @@ func GetDBWithGen() (q *query.Query, close func()) {
 }
 
 func InitDB(testing bool) {
-	conn, close := GetDB()
+	conn, close, err := GetDB()
+	if err != nil {
+		panic("failed to connect database" + err.Error())
+	}
 	if testing {
 		conn, close = GetTestDB()
 		conn.Exec("DROP DATABASE IF EXISTS campwiz_test;")

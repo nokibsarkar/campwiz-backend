@@ -41,7 +41,10 @@ func (service *CampaignService) CreateCampaign(campaignRequest *CampaignCreateRe
 	campaign_repo := repository.NewCampaignRepository()
 	// user_repo := repository.NewUserRepository()
 	role_service := NewRoleService()
-	conn, close := repository.GetDB()
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		return nil, err
+	}
 	defer close()
 	tx := conn.Begin()
 	currentUser, err := user_repo.FindByID(tx, campaignRequest.CreatedByID)
@@ -110,7 +113,11 @@ func (service *CampaignService) CreateCampaign(campaignRequest *CampaignCreateRe
 	return campaign, nil
 }
 func (service *CampaignService) GetAllCampaigns(query *models.CampaignFilter) []models.Campaign {
-	conn, close := repository.GetDB()
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		log.Println("Error: ", err)
+		return []models.Campaign{}
+	}
 	defer close()
 	campaign_repo := repository.NewCampaignRepository()
 
@@ -143,7 +150,11 @@ type SingleCampaignQuery struct {
 }
 
 func (service *CampaignService) GetCampaignByID(id models.IDType, query *SingleCampaignQuery) (*models.Campaign, error) {
-	conn, close := repository.GetDB()
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		log.Println("Error: ", err)
+		return nil, err
+	}
 	defer close()
 	if query != nil {
 		if query.IncludeRounds {
@@ -169,7 +180,11 @@ func (service *CampaignService) GetCampaignByID(id models.IDType, query *SingleC
 }
 
 func (service *CampaignService) UpdateCampaign(ID models.IDType, campaignRequest *CampaignUpdateRequest) (*models.Campaign, error) {
-	conn, close := repository.GetDB()
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		log.Println("Error: ", err)
+		return nil, err
+	}
 	defer close()
 	campaign_repo := repository.NewCampaignRepository()
 	campaign, err := campaign_repo.FindByID(conn, ID)

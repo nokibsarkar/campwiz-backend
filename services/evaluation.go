@@ -34,7 +34,10 @@ func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluation
 	round_repo := repository.NewRoundRepository()
 
 	// jury_repo := repository.NewRoleRepository()
-	conn, close := repository.GetDB()
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		return nil, err
+	}
 	defer close()
 	tx := conn.Begin()
 	currentUser, err := user_repo.FindByID(tx, currentUserID)
@@ -162,7 +165,10 @@ func (e *EvaluationService) PublicBulkEvaluate(currentUserID models.IDType, eval
 	evaluations := []*models.Evaluation{}
 
 	// jury_repo := repository.NewRoleRepository()
-	conn, close := repository.GetDB()
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		return nil, err
+	}
 	defer close()
 	tx := conn.Begin()
 	currentUser, err := user_repo.FindByID(tx, currentUserID)
@@ -412,7 +418,10 @@ func (e *EvaluationService) Evaluate(currentUserID models.IDType, evaluationID m
 	ev_repo := repository.NewEvaluationRepository()
 	user_repo := repository.NewUserRepository()
 	jury_repo := repository.NewRoleRepository()
-	conn, close := repository.GetDB()
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		return nil, err
+	}
 	defer close()
 	tx := conn.Begin()
 	// first check if user
@@ -500,7 +509,10 @@ func (e *EvaluationService) PublicEvaluate(currentUserID models.IDType, submissi
 	}
 	submission_repo := repository.NewSubmissionRepository()
 	jury_repo := repository.NewRoleRepository()
-	conn, close := repository.GetDB()
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		return nil, err
+	}
 	defer close()
 	tx := conn.Begin()
 	submision, err := submission_repo.FindSubmissionByID(tx.Preload("Round"), submissionID)
@@ -570,7 +582,10 @@ func (e *EvaluationService) GetEvaluationById() {
 
 func (e *EvaluationService) ListEvaluations(filter *models.EvaluationFilter) ([]models.Evaluation, error) {
 	ev_repo := repository.NewEvaluationRepository()
-	conn, close := repository.GetDB()
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		return nil, err
+	}
 	defer close()
 	return ev_repo.ListAllEvaluations(conn, filter)
 }
@@ -588,7 +603,10 @@ func (e *EvaluationService) ListEvaluations(filter *models.EvaluationFilter) ([]
 func (e *EvaluationService) GetNextEvaluations(currenUserID models.IDType, filter *models.EvaluationFilter) ([]models.Evaluation, error) {
 	ev_repo := repository.NewEvaluationRepository()
 	roleRepo := repository.NewRoleRepository()
-	conn, close := repository.GetDB()
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		return nil, err
+	}
 	defer close()
 	juryType := models.RoleTypeJury
 	roles, err := roleRepo.ListAllRoles(conn, &models.RoleFilter{UserID: &currenUserID, RoundID: &filter.RoundID, Type: &juryType})

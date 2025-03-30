@@ -65,7 +65,13 @@ func HandleOAuth2Callback(c *gin.Context) {
 		})
 		return
 	}
-	conn, close := repository.GetDB()
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		c.JSON(500, ResponseError{
+			Detail: err.Error(),
+		})
+		return
+	}
 	defer close()
 	user_service := services.NewUserService()
 	db_user, err := user_service.GetUserByUsername(conn, user.Name)

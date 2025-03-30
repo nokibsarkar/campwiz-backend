@@ -13,14 +13,10 @@ jobs:
           go-version: "1.24.x"
       - name: Install dependencies
         run: go get .
-      - name: Build
-        run: go build -v -o campwiz .
       - name: Run tests
         run: go test -v -coverprofile=coverage.txt ./repository
-      - name: Upload results to Codecov
-        uses: codecov/codecov-action@v5
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Build
+        run: go build -v -o campwiz .
       - name: Setup Deployment Environment
         run: |
           mkdir -p ~/.ssh
@@ -36,3 +32,7 @@ jobs:
       - name: Delete SSH Key
         run: |
           rm id_rsa
+      - name: Upload test code coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}

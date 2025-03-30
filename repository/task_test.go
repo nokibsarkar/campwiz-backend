@@ -110,3 +110,51 @@ func TestTaskCreateError(t *testing.T) {
 		t.Errorf("expected error, got nil")
 	}
 }
+func TestTaskFindByIDSuccess(t *testing.T) {
+	// Initialize the database connection
+	db, mock, close := repository.GetTestDB()
+	defer close()
+	// Mock the database behavior
+	testTask := &models.Task{
+		TaskID:               "testtask",
+		Type:                 models.TaskTypeDistributeEvaluations,
+		Status:               models.TaskStatusPending,
+		AssociatedRoundID:    nil,
+		AssociatedCampaignID: nil,
+		AssociatedUserID:     nil,
+		Data:                 nil,
+		CreatedAt:            time.Now(),
+		UpdatedAt:            time.Now(),
+		SuccessCount:         0,
+		FailedCount:          0,
+	}
+	createdTask, err := taskCreate(db, mock, testTask)
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+	if createdTask.TaskID != testTask.TaskID {
+		t.Errorf("expected task ID %s, got %s", testTask.TaskID, createdTask.TaskID)
+	}
+	mock.ExpectQuery("SELECT").
+		WithArgs(testTask.TaskID, 1).
+		WillReturnRows(sqlmock.NewRows([]string{"task_id", "type", "status", "associated_round_id", "associated_campaign_id", "associated_user_id", "data"}).
+			AddRow(testTask.TaskID, testTask.Type, testTask.Status, testTask.AssociatedRoundID, testTask.AssociatedCampaignID, testTask.AssociatedUserID, testTask.Data))
+	mock.ExpectQuery("SELECT").
+		WithArgs(testTask.TaskID, testTask.TaskID, 1).
+		WillReturnRows(sqlmock.NewRows([]string{"task_id", "type", "status", "associated_round_id", "associated_campaign_id", "associated_user_id", "data"}).
+			AddRow(testTask.TaskID, testTask.Type, testTask.Status, testTask.AssociatedRoundID, testTask.AssociatedCampaignID, testTask.AssociatedUserID, testTask.Data))
+
+	taskRepo := repository.NewTaskRepository()
+	foundTask, err := taskRepo.FindByID(db, testTask.TaskID)
+	if err != nil {
+		t.Errorf("expected1 no error, got %v", err)
+		return
+	}
+	if foundTask == nil {
+		t.Errorf("expected task, got nil")
+		return
+	}
+	if foundTask.TaskID != testTask.TaskID {
+		t.Errorf("expected task ID %s, got %s", testTask.TaskID, foundTask.TaskID)
+	}
+}

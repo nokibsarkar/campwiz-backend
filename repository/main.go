@@ -67,7 +67,7 @@ func GetTestDB() (db *gorm.DB, mock sqlmock.Sqlmock, close func()) {
 	db, err = gorm.Open(mysql.New(mysql.Config{
 		Conn: mockDb,
 	}), &gorm.Config{
-		// Logger: logger.Default.LogMode(logger.Info),
+		Logger: logger.Default.LogMode(logger.Info),
 	})
 	if err != nil {
 		panic("failed to connect database")

@@ -190,3 +190,37 @@ func TestTaskUpdateError(t *testing.T) {
 		t.Errorf("expected error, got nil")
 	}
 }
+func TestTaskUpdateSuccess(t *testing.T) {
+	// Initialize the database connection
+	db, mock, close := repository.GetTestDB()
+	defer close()
+	// Mock the database behavior
+	testTask := &models.Task{
+		TaskID:               "testtask",
+		Type:                 models.TaskTypeDistributeEvaluations,
+		Status:               models.TaskStatusPending,
+		AssociatedRoundID:    nil,
+		AssociatedCampaignID: nil,
+		AssociatedUserID:     nil,
+		Data:                 nil,
+		// CreatedAt:            time.Now(),
+		// UpdatedAt:      time.Now(),
+		SuccessCount:   10,
+		FailedCount:    1,
+		RemainingCount: 5,
+	}
+	mock.ExpectBegin()
+	mock.ExpectExec("UPDATE `tasks`").
+		WithArgs(testTask.Type, testTask.Status,
+			// testTask.CreatedAt,
+			time.Now().Round(time.Millisecond),
+			testTask.SuccessCount, testTask.FailedCount,
+			testTask.RemainingCount, testTask.TaskID).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit()
+	taskRepo := repository.NewTaskRepository()
+	_, err := taskRepo.Update(db, testTask)
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+}

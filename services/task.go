@@ -42,7 +42,10 @@ func (t *TaskService) CreateTask(TaskRequest, handlerFunc func(c ...any)) (*Task
 }
 func (t *TaskService) GetTask(taskId models.IDType) (*models.Task, error) {
 	task_repo := repository.NewTaskRepository()
-	conn, close := repository.GetDB()
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		return nil, err
+	}
 	defer close()
 	return task_repo.FindByID(conn, taskId)
 }

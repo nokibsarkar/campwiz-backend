@@ -56,7 +56,11 @@ func ListAllCampaigns(c *gin.Context) {
 			if *currentUser.LeadingProjectID != qry.ProjectID {
 				// the user is not an admin and the project ID does not match
 				// cross project access is allowed only for jury and coordinators
-				conn, close := repository.GetDB()
+				conn, close, err := repository.GetDB()
+				if err != nil {
+					c.JSON(400, ResponseError{Detail: "Database Error: " + err.Error()})
+					return
+				}
 				defer close()
 				userRepo := repository.NewUserRepository()
 				roleFilter := &models.RoleFilter{ProjectID: qry.ProjectID, UserID: &currentUser.UserID}
@@ -122,7 +126,7 @@ func ListAllCampaignsV2(c *gin.Context, sess *cache.Session) {
 		// 	if *currentUser.LeadingProjectID != qry.ProjectID {
 		// 		// the user is not an admin and the project ID does not match
 		// 		// cross project access is allowed only for jury and coordinators
-		// 		conn, close := repository.GetDB()
+		// 		conn, close, err  := repository.GetDB()
 		// 		defer close()
 		// 		userRepo := repository.NewUserRepository()
 		// 		roleFilter := &models.RoleFilter{ProjectID: qry.ProjectID, UserID: &currentUser.UserID}

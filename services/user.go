@@ -30,13 +30,19 @@ func (u *UserService) GetUserByID_(conn *gorm.DB, id models.IDType) (*models.Use
 }
 func (u *UserService) GetUserByID(id models.IDType) (*models.User, error) {
 	user_repo := repository.NewUserRepository()
-	conn, close := repository.GetDB()
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		return nil, err
+	}
 	defer close()
 	return user_repo.FindByID(conn, id)
 }
 func (u *UserService) GetExtendedDetails(id models.IDType) (*models.ExtendedUserDetails, error) {
 	user_repo := repository.NewUserRepository()
-	conn, close := repository.GetDB()
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		return nil, err
+	}
 	defer close()
 	user, err := user_repo.FindByID(conn, id)
 	if err != nil {

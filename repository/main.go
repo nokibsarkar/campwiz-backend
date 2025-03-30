@@ -6,6 +6,7 @@ import (
 	"nokib/campwiz/models"
 	"nokib/campwiz/query"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-gorm/caches/v4"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -57,15 +58,21 @@ func GetDbWithoutDefaultTransaction() (db *gorm.DB, close func()) {
 		raw_db.Close()
 	}
 }
-func GetTestDB() (db *gorm.DB, close func()) {
-	dsn := consts.Config.Database.Main.TestDSN
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
+func GetTestDB() (db *gorm.DB, mock sqlmock.Sqlmock, close func()) {
+	mockDb, mock, err := sqlmock.New()
+	if err != nil {
+		log.Fatalf("failed to open sqlmock database: %s", err)
+	}
+	mock.ExpectQuery("SELECT VERSION()").WillReturnRows(sqlmock.NewRows([]string{"version()"}).AddRow("5.7.31"))
+	db, err = gorm.Open(mysql.New(mysql.Config{
+		Conn: mockDb,
+	}), &gorm.Config{
+		// Logger: logger.Default.LogMode(logger.Info),
 	})
 	if err != nil {
 		panic("failed to connect database")
 	}
-	return db, func() {
+	return db, mock, func() {
 		raw_db, err := db.DB()
 		if err != nil {
 			panic("failed to connect database")
@@ -98,7 +105,7 @@ func InitDB(testing bool) {
 		panic("failed to connect database" + err.Error())
 	}
 	if testing {
-		conn, close = GetTestDB()
+		conn, _, close = GetTestDB()
 		conn.Exec("DROP DATABASE IF EXISTS campwiz_test;")
 		conn.Exec("CREATE DATABASE campwiz_test;")
 		conn.Exec("USE campwiz_test;")

@@ -1,6 +1,8 @@
 package consts
 
 import (
+	"log"
+
 	"github.com/spf13/viper"
 )
 
@@ -81,12 +83,13 @@ func init() {
 	viper.AutomaticEnv()
 	err := viper.ReadInConfig()
 	if err != nil {
-		panic(err)
+		log.Printf("Error reading config file: %s", err)
+		return
 	}
 
 	err = viper.Unmarshal(Config)
 	if err != nil {
-		panic(err)
+		log.Printf("Error unmarshalling config file: %s", err)
 	}
 
 }

@@ -15,8 +15,13 @@ jobs:
         run: go get .
       - name: Build
         run: go build -v -o campwiz .
+      - name: Run tests
+        run: go test -v -coverprofile=coverage.txt ./...
+      - name: Upload results to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
       - name: Setup Deployment Environment
-
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"gorm.io/gorm"
 )
 
 func TestTaskFindByIDError(t *testing.T) {
@@ -31,25 +32,8 @@ func TestTaskFindByIDError(t *testing.T) {
 		t.Errorf("expected error, got nil")
 	}
 }
-func TestTaskCreateSuccess(t *testing.T) {
-	// Initialize the database connection
-	db, mock, close := repository.GetTestDB()
-	defer close()
-	// Create a new user repository
+func taskCreate(db *gorm.DB, mock sqlmock.Sqlmock, testTask *models.Task) (*models.Task, error) {
 	taskRepo := repository.NewTaskRepository()
-
-	// Mock the database behavior
-	testTask := &models.Task{
-		TaskID:               "testtask",
-		Type:                 models.TaskTypeDistributeEvaluations,
-		CreatedAt:            time.Now(),
-		UpdatedAt:            time.Now(),
-		AssociatedRoundID:    nil,
-		AssociatedCampaignID: nil,
-		AssociatedUserID:     nil,
-		Data:                 nil,
-		SuccessCount:         0,
-	}
 	mock.ExpectBegin()
 	mock.ExpectExec("INSERT INTO `tasks`").
 		//(`task_id`,`type`,`status`,`associated_round_id`,`associated_campaign_id`,`associated_user_id`,`data`,`created_at`,`updated_at`,`success_count`,`failed_count`,`failed_ids`,`remaining_count`,`created_by_id`)
@@ -62,6 +46,25 @@ func TestTaskCreateSuccess(t *testing.T) {
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 	createdTask, err := taskRepo.Create(db, testTask)
+	return createdTask, err
+}
+func TestTaskCreateSuccess(t *testing.T) {
+	// Initialize the database connection
+	db, mock, close := repository.GetTestDB()
+	defer close()
+	// Mock the database behavior
+	testTask := &models.Task{
+		TaskID:               "testtask",
+		Type:                 models.TaskTypeDistributeEvaluations,
+		CreatedAt:            time.Now(),
+		UpdatedAt:            time.Now(),
+		AssociatedRoundID:    nil,
+		AssociatedCampaignID: nil,
+		AssociatedUserID:     nil,
+		Data:                 nil,
+		SuccessCount:         0,
+	}
+	createdTask, err := taskCreate(db, mock, testTask)
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
@@ -73,5 +76,37 @@ func TestTaskCreateSuccess(t *testing.T) {
 	}
 	if createdTask.Status != testTask.Status {
 		t.Errorf("expected task status %s, got %s", testTask.Status, createdTask.Status)
+	}
+
+}
+func TestTaskCreateError(t *testing.T) {
+	// Initialize the database connection
+	db, mock, close := repository.GetTestDB()
+	defer close()
+	// Mock the database behavior
+	testTask := &models.Task{
+		TaskID:               "",
+		Type:                 models.TaskTypeDistributeEvaluations,
+		CreatedAt:            time.Now(),
+		UpdatedAt:            time.Now(),
+		AssociatedRoundID:    nil,
+		AssociatedCampaignID: nil,
+		AssociatedUserID:     nil,
+		Data:                 nil,
+	}
+	mock.ExpectBegin()
+	mock.ExpectExec("INSERT INTO `tasks`").
+		WithArgs(testTask.TaskID, testTask.Type, testTask.Status,
+			testTask.AssociatedRoundID, testTask.AssociatedCampaignID, testTask.AssociatedUserID,
+			testTask.Data, testTask.CreatedAt,
+			testTask.UpdatedAt,
+			testTask.SuccessCount, testTask.FailedCount,
+			nil, testTask.RemainingCount, testTask.CreatedByID).
+		WillReturnError(fmt.Errorf("error inserting task"))
+	mock.ExpectRollback()
+	taskRepo := repository.NewTaskRepository()
+	_, err := taskRepo.Create(db, testTask)
+	if err == nil {
+		t.Errorf("expected error, got nil")
 	}
 }

@@ -61,8 +61,17 @@ func TestTaskCreateSuccess(t *testing.T) {
 			nil, testTask.RemainingCount, testTask.CreatedByID).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
-	_, err := taskRepo.Create(db, testTask)
-	if err == nil {
-		t.Errorf("expected error, got nil")
+	createdTask, err := taskRepo.Create(db, testTask)
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+	if createdTask.TaskID != testTask.TaskID {
+		t.Errorf("expected task ID %s, got %s", testTask.TaskID, createdTask.TaskID)
+	}
+	if createdTask.Type != testTask.Type {
+		t.Errorf("expected task type %s, got %s", testTask.Type, createdTask.Type)
+	}
+	if createdTask.Status != testTask.Status {
+		t.Errorf("expected task status %s, got %s", testTask.Status, createdTask.Status)
 	}
 }

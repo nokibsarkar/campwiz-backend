@@ -140,7 +140,7 @@ func TestTaskFindByIDSuccess(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{"task_id", "type", "status", "associated_round_id", "associated_campaign_id", "associated_user_id", "data"}).
 			AddRow(testTask.TaskID, testTask.Type, testTask.Status, testTask.AssociatedRoundID, testTask.AssociatedCampaignID, testTask.AssociatedUserID, testTask.Data))
 	mock.ExpectQuery("SELECT").
-		WithArgs(testTask.TaskID, testTask.TaskID, 1).
+		WithArgs(testTask.TaskID, 1).
 		WillReturnRows(sqlmock.NewRows([]string{"task_id", "type", "status", "associated_round_id", "associated_campaign_id", "associated_user_id", "data"}).
 			AddRow(testTask.TaskID, testTask.Type, testTask.Status, testTask.AssociatedRoundID, testTask.AssociatedCampaignID, testTask.AssociatedUserID, testTask.Data))
 

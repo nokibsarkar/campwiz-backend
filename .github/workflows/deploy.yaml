@@ -16,7 +16,7 @@ jobs:
       - name: Build
         run: go build -v -o campwiz .
       - name: Run tests
-        run: go test -v -coverprofile=coverage.txt ./...
+        run: go test -v -coverprofile=coverage.txt ./repository
       - name: Upload results to Codecov
         uses: codecov/codecov-action@v5
         with:

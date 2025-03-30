@@ -5,12 +5,15 @@ import (
 	"nokib/campwiz/models"
 	"nokib/campwiz/repository"
 	"testing"
+	"time"
 )
 
 // Create a new user
 var user = &models.User{
-	UserID:   "testuser",
-	Username: "testuser",
+	UserID:       "testuser",
+	Username:     "testuser",
+	RegisteredAt: time.Now(),
+	Permission:   1,
 }
 
 func init() {

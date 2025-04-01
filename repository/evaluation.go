@@ -1,7 +1,10 @@
 package repository
 
 import (
+	"log"
 	"nokib/campwiz/models"
+	"nokib/campwiz/models/types"
+	"nokib/campwiz/query"
 
 	"gorm.io/gorm"
 )
@@ -82,4 +85,42 @@ func (r *EvaluationRepository) ListSubmissionIDWithEvaluationCount(tx *gorm.DB, 
 	}
 	result := stmt.Find(&results)
 	return results, result.Error
+}
+
+// This function would be used to trigger the evaluation score counting
+func (e *EvaluationRepository) TriggerEvaluationScoreCount(tx *gorm.DB, roundID models.IDType, submissionIds []types.SubmissionIDType) error {
+	// This function would be used to trigger the evaluation score counting
+	q := query.Use(tx)
+	submission := q.Submission
+	evaluation := q.Evaluation
+	stringSubmissionIds := make([]string, len(submissionIds))
+	for i, id := range submissionIds {
+		stringSubmissionIds[i] = string(id)
+	}
+	averageScore := evaluation.Select(q.Evaluation.Score.Avg()).Where(evaluation.SubmissionID.EqCol(submission.SubmissionID))
+	stmt, err := submission.Where(submission.SubmissionID.In(stringSubmissionIds...)).Update(submission.Score, averageScore)
+	if err != nil {
+		return err
+	}
+	if stmt.Error != nil {
+		return stmt.Error
+	}
+	evaluated_count := evaluation.Select(evaluation.EvaluationID.Count()).Where(evaluation.SubmissionID.EqCol(submission.SubmissionID)).Where(evaluation.Score.IsNotNull()).Where(evaluation.EvaluatedAt.IsNotNull())
+	stmt, err = submission.Where(submission.SubmissionID.In(stringSubmissionIds...)).Update(submission.EvaluationCount, evaluated_count)
+	if err != nil {
+		return err
+	}
+	if stmt.Error != nil {
+		return stmt.Error
+	}
+	err = q.JuryStatistics.TriggerByRoundID(roundID.String())
+	if err != nil {
+		return err
+	}
+	log.Println("triggerEvaluationScoreCount", stmt.RowsAffected)
+	if stmt.RowsAffected == 0 {
+		return nil
+	}
+	submission_repo := NewSubmissionRepository()
+	return submission_repo.TriggerSubmissionStatistics(tx, stringSubmissionIds)
 }

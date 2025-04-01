@@ -5,6 +5,7 @@ import (
 	"nokib/campwiz/consts"
 	"nokib/campwiz/models"
 	"nokib/campwiz/query"
+	"nokib/campwiz/repository/cache"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-gorm/caches/v4"
@@ -12,6 +13,8 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
+
+var memoryCache = &cache.MemoryCacher{}
 
 func getLogMode(debug bool) logger.LogLevel {
 	if debug {
@@ -22,7 +25,9 @@ func getLogMode(debug bool) logger.LogLevel {
 func GetDB() (db *gorm.DB, close func(), err error) {
 	dsn := consts.Config.Database.Main.DSN
 	db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(getLogMode(consts.Config.Database.Main.Debug || consts.Config.Server.Mode == "debug")),
+		Logger:                 logger.Default.LogMode(getLogMode(consts.Config.Database.Main.Debug || consts.Config.Server.Mode == "debug")),
+		PrepareStmt:            true,
+		SkipDefaultTransaction: true,
 	})
 
 	if err != nil {
@@ -30,6 +35,7 @@ func GetDB() (db *gorm.DB, close func(), err error) {
 	}
 	cachesPlugin := &caches.Caches{Conf: &caches.Config{
 		Easer: true,
+		// Cacher: memoryCache,
 	}}
 	// Use caches plugin
 	db.Use(cachesPlugin)

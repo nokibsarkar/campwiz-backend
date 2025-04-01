@@ -24,7 +24,7 @@ func NewSentryMiddleWare() gin.HandlerFunc {
 		Release:          consts.Config.Sentry.Release,
 		AttachStacktrace: true,
 		SampleRate:       0.8,
-		SendDefaultPII:   true,
+		SendDefaultPII:   false,
 	}); err != nil {
 		fmt.Printf("Sentry initialization failed: %v\n", err)
 	}

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"gorm.io/datatypes"
+	"gorm.io/gen"
 )
 
 type SubmissionListFilter struct {
@@ -94,7 +95,10 @@ type SubmissionStatistics struct {
 	AssignmentCount int
 	EvaluationCount int
 }
+
 type SubmissionStatisticsFetcher interface {
 	// SELECT COUNT(*) AS `AssignmentCount`, SUM(`score` IS NOT NULL) AS EvaluationCount, `submission_id`  FROM `evaluations`  WHERE `round_id` = @round_id GROUP BY `submission_id`
 	FetchByRoundID(round_id string) ([]SubmissionStatistics, error)
+	// UPDATE `submissions` JOIN (SELECT COUNT(`evaluations`.`evaluation_id`) AS `AssignmentCount`, SUM(`evaluations`.`score` IS NOT NULL) AS `EvaluationCount`,`evaluations`.`submission_id` FROM `evaluations` WHERE  `evaluations`.submission_id IN (@submissionIds) GROUP BY `evaluations`.`submission_id`) AS `e` ON `submissions`.`submission_id` = `e`.`submission_id` SET `submissions`.`assignment_count` = `e`.`AssignmentCount`, `submissions`.`evaluation_count` = `e`.`EvaluationCount`;
+	UpdateBySubmissionIds(submissionIds []string) (gen.RowsAffected, error)
 }

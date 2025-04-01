@@ -158,6 +158,7 @@ type ISubmissionStatisticsDo interface {
 	schema.Tabler
 
 	FetchByRoundID(round_id string) (result []models.SubmissionStatistics, err error)
+	UpdateBySubmissionIds(submissionIds []string) (rowsAffected int64, err error)
 }
 
 // SELECT COUNT(*) AS `AssignmentCount`, SUM(`score` IS NOT NULL) AS EvaluationCount, `submission_id`  FROM `evaluations`  WHERE `round_id` = @round_id GROUP BY `submission_id`
@@ -170,6 +171,22 @@ func (s submissionStatisticsDo) FetchByRoundID(round_id string) (result []models
 
 	var executeSQL *gorm.DB
 	executeSQL = s.UnderlyingDB().Raw(generateSQL.String(), params...).Find(&result) // ignore_security_alert
+	err = executeSQL.Error
+
+	return
+}
+
+// UPDATE `submissions` JOIN (SELECT COUNT(`evaluations`.`evaluation_id`) AS `AssignmentCount`, SUM(`evaluations`.`score` IS NOT NULL) AS `EvaluationCount`,`evaluations`.`submission_id` FROM `evaluations` WHERE  `evaluations`.submission_id IN (@submissionIds) GROUP BY `evaluations`.`submission_id`) AS `e` ON `submissions`.`submission_id` = `e`.`submission_id` SET `submissions`.`assignment_count` = `e`.`AssignmentCount`, `submissions`.`evaluation_count` = `e`.`EvaluationCount`;
+func (s submissionStatisticsDo) UpdateBySubmissionIds(submissionIds []string) (rowsAffected int64, err error) {
+	var params []interface{}
+
+	var generateSQL strings.Builder
+	params = append(params, submissionIds)
+	generateSQL.WriteString("UPDATE `submissions` JOIN (SELECT COUNT(`evaluations`.`evaluation_id`) AS `AssignmentCount`, SUM(`evaluations`.`score` IS NOT NULL) AS `EvaluationCount`,`evaluations`.`submission_id` FROM `evaluations` WHERE `evaluations`.submission_id IN (?) GROUP BY `evaluations`.`submission_id`) AS `e` ON `submissions`.`submission_id` = `e`.`submission_id` SET `submissions`.`assignment_count` = `e`.`AssignmentCount`, `submissions`.`evaluation_count` = `e`.`EvaluationCount`; ")
+
+	var executeSQL *gorm.DB
+	executeSQL = s.UnderlyingDB().Exec(generateSQL.String(), params...) // ignore_security_alert
+	rowsAffected = executeSQL.RowsAffected
 	err = executeSQL.Error
 
 	return

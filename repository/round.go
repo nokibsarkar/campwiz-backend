@@ -103,3 +103,8 @@ func (r *RoundRepository) Delete(conn *gorm.DB, id models.IDType) error {
 	result := conn.Delete(round)
 	return result.Error
 }
+func (r *RoundRepository) UpdateStatisticsByRoundID(conn *gorm.DB, roundID models.IDType) error {
+	q := query.Use(conn)
+	err := q.RoundStatistics.UpdateByRoundID(roundID.String())
+	return err
+}

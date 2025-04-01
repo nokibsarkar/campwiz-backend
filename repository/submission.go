@@ -130,3 +130,49 @@ func (r *SubmissionRepository) GetPageIDsForWithout(tx *gorm.DB, roundID models.
 	err := s.Select(s.PageID).Where(s.RoundID.Eq(roundID.String())).Scan(&pageIds)
 	return pageIds, err
 }
+func (r *SubmissionRepository) TriggerSubmissionStatistics(tx *gorm.DB, submissionIds []string) error {
+	if len(submissionIds) == 0 {
+		return nil
+	}
+
+	q := query.Use(tx)
+	rowsAffected, err := q.SubmissionStatistics.UpdateBySubmissionIds(submissionIds)
+	if err != nil {
+		return err
+	}
+	if rowsAffected < 0 {
+		// Nothing changed, no need to trigger further statistics
+		return nil
+	}
+
+	Submission := q.Submission
+	stmt := Submission.Where(Submission.SubmissionID.In(submissionIds...))
+	result, err := stmt.UpdateColumn(Submission.EvaluationCount, Submission.EvaluationCount.Add(1))
+	if err != nil {
+		return err
+	}
+	if result.RowsAffected == 0 {
+		// Nothing changed, no need to trigger further statistics
+		return nil
+	}
+	// Prepare to trigger upper lvl statistics
+	// Get the first submission ID
+	firstSubmissionID := submissionIds[0]
+	if firstSubmissionID == "" {
+		return nil
+	}
+	// Fetch First Submission
+	firstSubmission, err := Submission.Where(Submission.SubmissionID.Eq(firstSubmissionID)).First()
+	if err != nil {
+		// Handle error
+		return err
+	}
+	if firstSubmission == nil {
+		// Handle case where submission is not found
+		return nil
+	}
+	roundId := firstSubmission.RoundID
+	// now trigger the round statistics
+	round_repo := &RoundRepository{}
+	return round_repo.UpdateStatisticsByRoundID(tx, roundId)
+}

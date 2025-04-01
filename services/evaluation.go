@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
-	"gorm.io/gorm"
 )
 
 type EvaluationService struct{}
@@ -32,6 +31,7 @@ func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluation
 	// ev_repo := repository.NewEvaluationRepository()
 	user_repo := repository.NewUserRepository()
 	round_repo := repository.NewRoundRepository()
+	evaluation_repo := repository.NewEvaluationRepository()
 
 	// jury_repo := repository.NewRoleRepository()
 	conn, close, err := repository.GetDB()
@@ -151,7 +151,7 @@ func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluation
 		return nil, errors.New("no evaluations found")
 	}
 	// trigger submission score counting
-	if err := e.triggerEvaluationScoreCount(tx, currentRound.RoundID, submissionIds); err != nil {
+	if err := evaluation_repo.TriggerEvaluationScoreCount(tx, currentRound.RoundID, submissionIds); err != nil {
 		tx.Rollback()
 		return nil, err
 	}
@@ -371,47 +371,14 @@ func (e *EvaluationService) PublicBulkEvaluate(currentUserID models.IDType, eval
 		tx.Rollback()
 		return nil, errors.New("no evaluations found")
 	}
+	evaluation_repo := repository.NewEvaluationRepository()
 	// trigger submission score counting
-	if err := e.triggerEvaluationScoreCount(tx, currentRound.RoundID, combinedSubmissionIds); err != nil {
+	if err := evaluation_repo.TriggerEvaluationScoreCount(tx, currentRound.RoundID, combinedSubmissionIds); err != nil {
 		tx.Rollback()
 		return nil, err
 	}
 	tx.Commit()
 	return evaluations, nil
-}
-
-// This function would be used to trigger the evaluation score counting
-func (e *EvaluationService) triggerEvaluationScoreCount(tx *gorm.DB, roundID models.IDType, submissionIds []types.SubmissionIDType) error {
-	// This function would be used to trigger the evaluation score counting
-	q := query.Use(tx)
-	submission := q.Submission
-	evaluation := q.Evaluation
-	stringSubmissionIds := make([]string, len(submissionIds))
-	for i, id := range submissionIds {
-		stringSubmissionIds[i] = string(id)
-	}
-	averageScore := evaluation.Select(q.Evaluation.Score.Avg()).Where(evaluation.SubmissionID.EqCol(submission.SubmissionID))
-	stmt, err := submission.WithContext(context.Background()).Where(submission.SubmissionID.In(stringSubmissionIds...)).Update(submission.Score, averageScore)
-	if err != nil {
-		return err
-	}
-	if stmt.Error != nil {
-		return stmt.Error
-	}
-	evaluated_count := evaluation.Select(evaluation.EvaluationID.Count()).Where(evaluation.SubmissionID.EqCol(submission.SubmissionID)).Where(evaluation.Score.IsNotNull()).Where(evaluation.EvaluatedAt.IsNotNull())
-	stmt, err = submission.WithContext(context.Background()).Where(submission.SubmissionID.In(stringSubmissionIds...)).Update(submission.EvaluationCount, evaluated_count)
-	if err != nil {
-		return err
-	}
-	if stmt.Error != nil {
-		return stmt.Error
-	}
-	err = q.JuryStatistics.TriggerByRoundID(roundID.String())
-	if err != nil {
-		return err
-	}
-	log.Println("triggerEvaluationScoreCount", stmt.RowsAffected)
-	return nil
 }
 
 func (e *EvaluationService) Evaluate(currentUserID models.IDType, evaluationID models.IDType, evaluationRequest *EvaluationRequest) (*models.Evaluation, error) {
@@ -490,7 +457,7 @@ func (e *EvaluationService) Evaluate(currentUserID models.IDType, evaluationID m
 		return nil, res.Error
 	}
 	// trigger submission score counting
-	if err := e.triggerEvaluationScoreCount(tx, round.RoundID, []types.SubmissionIDType{evaluation.SubmissionID}); err != nil {
+	if err := ev_repo.TriggerEvaluationScoreCount(tx, round.RoundID, []types.SubmissionIDType{evaluation.SubmissionID}); err != nil {
 		tx.Rollback()
 		return nil, err
 	}
@@ -569,8 +536,9 @@ func (e *EvaluationService) PublicEvaluate(currentUserID models.IDType, submissi
 		tx.Rollback()
 		return nil, res.Error
 	}
+	ev_repo := repository.NewEvaluationRepository()
 	// trigger submission score counting
-	if err := e.triggerEvaluationScoreCount(tx, submision.RoundID, []types.SubmissionIDType{submision.SubmissionID}); err != nil {
+	if err := ev_repo.TriggerEvaluationScoreCount(tx, submision.RoundID, []types.SubmissionIDType{submision.SubmissionID}); err != nil {
 		tx.Rollback()
 		return nil, err
 	}

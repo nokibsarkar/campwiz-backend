@@ -145,7 +145,7 @@ func (r *SubmissionRepository) TriggerSubmissionStatistics(tx *gorm.DB, submissi
 		return nil
 	}
 
-	Submission := q.Submission
+	submissionQuery := q.Submission
 	// Prepare to trigger upper lvl statistics
 	// Get the first submission ID
 	firstSubmissionID := submissionIds[0]
@@ -153,7 +153,7 @@ func (r *SubmissionRepository) TriggerSubmissionStatistics(tx *gorm.DB, submissi
 		return nil
 	}
 	// Fetch First Submission
-	firstSubmission, err := Submission.Where(Submission.SubmissionID.Eq(firstSubmissionID)).First()
+	firstSubmission, err := submissionQuery.Where(submissionQuery.SubmissionID.Eq(firstSubmissionID)).First()
 	if err != nil {
 		// Handle error
 		return err

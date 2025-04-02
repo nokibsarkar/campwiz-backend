@@ -18,7 +18,13 @@ import (
 // preRun is a function that will be called before the main function
 func preRun() {
 	gin.SetMode(consts.Config.Server.Mode)
-
+	// conn, close, err := repository.GetDB()
+	// if err != nil {
+	// 	log.Fatal("failed to connect database")
+	// }
+	// defer close()
+	// round_repo := repository.NewRoundRepository()
+	// round_repo.UpdateFullStatisticsByRoundID(conn, "r28rskgij6iv4")
 }
 func postRun() {
 }

@@ -17,11 +17,11 @@ type TechnicalJudgeService struct {
 	Blacklist []string
 }
 
-func NewTechnicalJudgeService(round *models.Round) *TechnicalJudgeService {
+func NewTechnicalJudgeService(round *models.Round, campaign *models.Campaign) *TechnicalJudgeService {
 	return &TechnicalJudgeService{
 		AllowedTypes:      round.AllowedMediaTypes,
-		MinimumUploadDate: round.StartDate,
-		MaximumUploadDate: round.EndDate,
+		MinimumUploadDate: campaign.StartDate,
+		MaximumUploadDate: campaign.EndDate,
 		MinimumResolution: uint64(round.ImageMinimumResolution),
 		MinimumSize:       uint64(round.ArticleMinimumTotalBytes),
 		Blacklist:         []string{},

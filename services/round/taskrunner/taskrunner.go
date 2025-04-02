@@ -48,7 +48,7 @@ func NewDistributionTaskRunner(taskId models.IDType, strategy IDistributionStrat
 }
 func (b *TaskRunner) importImages(conn *gorm.DB, task *models.Task) (successCount, failedCount int) {
 	round_repo := repository.NewRoundRepository()
-	round, err := round_repo.FindByID(conn, *task.AssociatedRoundID)
+	round, err := round_repo.FindByID(conn.Preload("Campaign"), *task.AssociatedRoundID)
 	if err != nil {
 		log.Println("Error fetching round: ", err)
 		return
@@ -80,7 +80,12 @@ func (b *TaskRunner) importImages(conn *gorm.DB, task *models.Task) (successCoun
 		}()
 	}
 	FailedImages := &map[string]string{}
-	technicalJudge := rnd.NewTechnicalJudgeService(round)
+	technicalJudge := rnd.NewTechnicalJudgeService(round, round.Campaign)
+	if technicalJudge == nil {
+		log.Println("Error creating technical judge service")
+		task.Status = models.TaskStatusFailed
+		return
+	}
 	user_repo := repository.NewUserRepository()
 	for {
 		successBatch, failedBatch := b.ImportSource.ImportImageResults(FailedImages)

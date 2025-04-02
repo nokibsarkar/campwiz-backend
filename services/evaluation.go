@@ -482,17 +482,17 @@ func (e *EvaluationService) PublicEvaluate(currentUserID models.IDType, submissi
 	}
 	defer close()
 	tx := conn.Begin()
-	submision, err := submission_repo.FindSubmissionByID(tx.Preload("Round"), submissionID)
+	submission, err := submission_repo.FindSubmissionByID(tx.Preload("Round"), submissionID)
 	if err != nil {
 		tx.Rollback()
 		return nil, err
 	}
-	if submision == nil {
+	if submission == nil {
 		tx.Rollback()
 		return nil, errors.New("submission not found")
 	}
 	// first check if the round exists
-	round := submision.Round
+	round := submission.Round
 	// now round exists, check if jury exists
 	juryRole, err := jury_repo.FindRoleByUserIDAndRoundID(tx, currentUserID, round.RoundID, models.RoleTypeJury)
 	if err != nil {
@@ -522,14 +522,14 @@ func (e *EvaluationService) PublicEvaluate(currentUserID models.IDType, submissi
 	// then create evaluation with the user
 	evaluation := &models.Evaluation{
 		EvaluationID:  idgenerator.GenerateID("e"),
-		SubmissionID:  submision.SubmissionID,
+		SubmissionID:  submission.SubmissionID,
 		JudgeID:       &juryRole.RoleID,
 		Score:         evaluationRequest.Score,
 		Comment:       evaluationRequest.Comment,
 		Type:          models.EvaluationTypeScore,
 		EvaluatedAt:   &now,
-		ParticipantID: submision.ParticipantID,
-		RoundID:       submision.RoundID,
+		ParticipantID: submission.ParticipantID,
+		RoundID:       submission.RoundID,
 	}
 	res := tx.Save(evaluation)
 	if res.Error != nil {
@@ -538,7 +538,7 @@ func (e *EvaluationService) PublicEvaluate(currentUserID models.IDType, submissi
 	}
 	ev_repo := repository.NewEvaluationRepository()
 	// trigger submission score counting
-	if err := ev_repo.TriggerEvaluationScoreCount(tx, []types.SubmissionIDType{submision.SubmissionID}); err != nil {
+	if err := ev_repo.TriggerEvaluationScoreCount(tx, []types.SubmissionIDType{submission.SubmissionID}); err != nil {
 		tx.Rollback()
 		return nil, err
 	}

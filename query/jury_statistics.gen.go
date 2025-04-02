@@ -157,21 +157,8 @@ type IJuryStatisticsDo interface {
 	UnderlyingDB() *gorm.DB
 	schema.Tabler
 
-	UpdateJuryStatistics(roundID string) (err error)
 	GetJuryStatistics(roundID string) (result []models.JuryStatistics, err error)
 	TriggerByRoundID(roundID string) (err error)
-}
-
-// UPDATE `jury` SET
-func (j juryStatisticsDo) UpdateJuryStatistics(roundID string) (err error) {
-	var generateSQL strings.Builder
-	generateSQL.WriteString("UPDATE `jury` SET ")
-
-	var executeSQL *gorm.DB
-	executeSQL = j.UnderlyingDB().Exec(generateSQL.String()) // ignore_security_alert
-	err = executeSQL.Error
-
-	return
 }
 
 // SELECT COUNT(*) AS TotalAssigned, SUM(IF(evaluated_at IS NOT NULL, 1, 0)) AS TotalEvaluated, judge_id FROM `evaluations` WHERE round_id = @roundID AND `judge_id` IS NOT NULL GROUP  BY judge_id
@@ -189,7 +176,7 @@ func (j juryStatisticsDo) GetJuryStatistics(roundID string) (result []models.Jur
 	return
 }
 
-// UPDATE roles AS jury JOIN ( SELECT         judge_id,         COUNT(*) AS c,         SUM(evaluated_at IS NOT NULL) AS ev     FROM         evaluations     WHERE         round_id = @roundID    GROUP BY         judge_id ) AS d ON jury.role_id = d.judge_id SET     jury.total_evaluated = d.ev,     jury.total_assigned = d.c WHERE     jury.round_id = @roundID
+// UPDATE roles AS jury JOIN ( SELECT judge_id, COUNT(*) AS c,    SUM(evaluated_at IS NOT NULL) AS ev  FROM evaluations  WHERE  round_id = @roundID  GROUP BY judge_id ) AS d ON jury.role_id = d.judge_id SET jury.total_evaluated = d.ev, jury.total_assigned = d.c WHERE jury.round_id = @roundID
 func (j juryStatisticsDo) TriggerByRoundID(roundID string) (err error) {
 	var params []interface{}
 

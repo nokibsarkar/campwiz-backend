@@ -151,7 +151,7 @@ func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluation
 		return nil, errors.New("no evaluations found")
 	}
 	// trigger submission score counting
-	if err := evaluation_repo.TriggerEvaluationScoreCount(tx, currentRound.RoundID, submissionIds); err != nil {
+	if err := evaluation_repo.TriggerEvaluationScoreCount(tx, submissionIds); err != nil {
 		tx.Rollback()
 		return nil, err
 	}
@@ -373,7 +373,7 @@ func (e *EvaluationService) PublicBulkEvaluate(currentUserID models.IDType, eval
 	}
 	evaluation_repo := repository.NewEvaluationRepository()
 	// trigger submission score counting
-	if err := evaluation_repo.TriggerEvaluationScoreCount(tx, currentRound.RoundID, combinedSubmissionIds); err != nil {
+	if err := evaluation_repo.TriggerEvaluationScoreCount(tx, combinedSubmissionIds); err != nil {
 		tx.Rollback()
 		return nil, err
 	}
@@ -457,7 +457,7 @@ func (e *EvaluationService) Evaluate(currentUserID models.IDType, evaluationID m
 		return nil, res.Error
 	}
 	// trigger submission score counting
-	if err := ev_repo.TriggerEvaluationScoreCount(tx, round.RoundID, []types.SubmissionIDType{evaluation.SubmissionID}); err != nil {
+	if err := ev_repo.TriggerEvaluationScoreCount(tx, []types.SubmissionIDType{evaluation.SubmissionID}); err != nil {
 		tx.Rollback()
 		return nil, err
 	}
@@ -538,7 +538,7 @@ func (e *EvaluationService) PublicEvaluate(currentUserID models.IDType, submissi
 	}
 	ev_repo := repository.NewEvaluationRepository()
 	// trigger submission score counting
-	if err := ev_repo.TriggerEvaluationScoreCount(tx, submision.RoundID, []types.SubmissionIDType{submision.SubmissionID}); err != nil {
+	if err := ev_repo.TriggerEvaluationScoreCount(tx, []types.SubmissionIDType{submision.SubmissionID}); err != nil {
 		tx.Rollback()
 		return nil, err
 	}

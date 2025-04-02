@@ -106,5 +106,16 @@ func (r *RoundRepository) Delete(conn *gorm.DB, id models.IDType) error {
 func (r *RoundRepository) UpdateStatisticsByRoundID(conn *gorm.DB, roundID models.IDType) error {
 	q := query.Use(conn)
 	err := q.RoundStatistics.UpdateByRoundID(roundID.String())
-	return err
+	if err != nil {
+		return err
+	}
+	return q.JuryStatistics.TriggerByRoundID(roundID.String())
+}
+func (r *RoundRepository) UpdateFullStatisticsByRoundID(conn *gorm.DB, roundID models.IDType) error {
+	q := query.Use(conn)
+	err := q.RoundStatistics.UpdateByRoundID(roundID.String())
+	if err != nil {
+		return err
+	}
+	return q.SubmissionStatistics.TriggerByRoundId(roundID.String())
 }

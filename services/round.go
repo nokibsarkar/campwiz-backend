@@ -672,6 +672,13 @@ func (e *RoundService) UpdateStatus(currenUserID models.IDType, roundID models.I
 		tx.Rollback()
 		return nil, err
 	}
+	log.Println("Round updated with ID: ", round.RoundID)
+	log.Println("Triggering task to update statistics")
+	err = round_repo.UpdateFullStatisticsByRoundID(tx, round.RoundID)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
 	tx.Commit()
 	return round, nil
 }

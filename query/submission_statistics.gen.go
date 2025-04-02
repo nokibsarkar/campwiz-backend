@@ -158,7 +158,8 @@ type ISubmissionStatisticsDo interface {
 	schema.Tabler
 
 	FetchByRoundID(round_id string) (result []models.SubmissionStatistics, err error)
-	UpdateBySubmissionIds(submissionIds []string) (rowsAffected int64, err error)
+	TriggerBySubmissionIds(submissionIds []string) (rowsAffected int64, err error)
+	TriggerByRoundId(round_id string) (err error)
 }
 
 // SELECT COUNT(*) AS `AssignmentCount`, SUM(`score` IS NOT NULL) AS EvaluationCount, `submission_id`  FROM `evaluations`  WHERE `round_id` = @round_id GROUP BY `submission_id`
@@ -176,17 +177,33 @@ func (s submissionStatisticsDo) FetchByRoundID(round_id string) (result []models
 	return
 }
 
-// UPDATE `submissions` JOIN (SELECT COUNT(`evaluations`.`evaluation_id`) AS `AssignmentCount`, SUM(`evaluations`.`score` IS NOT NULL) AS `EvaluationCount`,`evaluations`.`submission_id` FROM `evaluations` WHERE  `evaluations`.submission_id IN (@submissionIds) GROUP BY `evaluations`.`submission_id`) AS `e` ON `submissions`.`submission_id` = `e`.`submission_id` SET `submissions`.`assignment_count` = `e`.`AssignmentCount`, `submissions`.`evaluation_count` = `e`.`EvaluationCount`;
-func (s submissionStatisticsDo) UpdateBySubmissionIds(submissionIds []string) (rowsAffected int64, err error) {
+// UPDATE `submissions` JOIN (SELECT AVG(`evaluations`.`score`) As `Score`, COUNT(`evaluations`.`evaluation_id`) AS `AssignmentCount`, SUM(`evaluations`.`score` IS NOT NULL) AS `EvaluationCount`,`evaluations`.`submission_id` FROM `evaluations` WHERE  `evaluations`.submission_id IN (@submissionIds) GROUP BY `evaluations`.`submission_id`) AS `e` ON `submissions`.`submission_id` = `e`.`submission_id` SET `submissions`.`assignment_count` = `e`.`AssignmentCount`, `submissions`.`evaluation_count` = `e`.`EvaluationCount`, `submissions`.`score` = `e`.`Score` WHERE `submissions`.`submission_id` = `e`.`submission_id`
+func (s submissionStatisticsDo) TriggerBySubmissionIds(submissionIds []string) (rowsAffected int64, err error) {
 	var params []interface{}
 
 	var generateSQL strings.Builder
 	params = append(params, submissionIds)
-	generateSQL.WriteString("UPDATE `submissions` JOIN (SELECT COUNT(`evaluations`.`evaluation_id`) AS `AssignmentCount`, SUM(`evaluations`.`score` IS NOT NULL) AS `EvaluationCount`,`evaluations`.`submission_id` FROM `evaluations` WHERE `evaluations`.submission_id IN (?) GROUP BY `evaluations`.`submission_id`) AS `e` ON `submissions`.`submission_id` = `e`.`submission_id` SET `submissions`.`assignment_count` = `e`.`AssignmentCount`, `submissions`.`evaluation_count` = `e`.`EvaluationCount`; ")
+	generateSQL.WriteString("UPDATE `submissions` JOIN (SELECT AVG(`evaluations`.`score`) As `Score`, COUNT(`evaluations`.`evaluation_id`) AS `AssignmentCount`, SUM(`evaluations`.`score` IS NOT NULL) AS `EvaluationCount`,`evaluations`.`submission_id` FROM `evaluations` WHERE `evaluations`.submission_id IN (?) GROUP BY `evaluations`.`submission_id`) AS `e` ON `submissions`.`submission_id` = `e`.`submission_id` SET `submissions`.`assignment_count` = `e`.`AssignmentCount`, `submissions`.`evaluation_count` = `e`.`EvaluationCount`, `submissions`.`score` = `e`.`Score` WHERE `submissions`.`submission_id` = `e`.`submission_id` ")
 
 	var executeSQL *gorm.DB
 	executeSQL = s.UnderlyingDB().Exec(generateSQL.String(), params...) // ignore_security_alert
 	rowsAffected = executeSQL.RowsAffected
+	err = executeSQL.Error
+
+	return
+}
+
+// UPDATE `submissions` JOIN (SELECT AVG(`evaluations`.`score`) As `Score`, COUNT(`evaluations`.`evaluation_id`) AS `AssignmentCount`, SUM(`evaluations`.`score` IS NOT NULL) AS `EvaluationCount`,`evaluations`.`submission_id` FROM `evaluations` WHERE `evaluations`.`round_id` = @round_id GROUP BY `evaluations`.`submission_id`) AS `e` ON `submissions`.`submission_id` = `e`.`submission_id` SET `submissions`.`assignment_count` = `e`.`AssignmentCount`, `submissions`.`evaluation_count` = `e`.`EvaluationCount`, `submissions`.`score` = `e`.`Score` WHERE `submissions`.`round_id` = @round_id
+func (s submissionStatisticsDo) TriggerByRoundId(round_id string) (err error) {
+	var params []interface{}
+
+	var generateSQL strings.Builder
+	params = append(params, round_id)
+	params = append(params, round_id)
+	generateSQL.WriteString("UPDATE `submissions` JOIN (SELECT AVG(`evaluations`.`score`) As `Score`, COUNT(`evaluations`.`evaluation_id`) AS `AssignmentCount`, SUM(`evaluations`.`score` IS NOT NULL) AS `EvaluationCount`,`evaluations`.`submission_id` FROM `evaluations` WHERE `evaluations`.`round_id` = ? GROUP BY `evaluations`.`submission_id`) AS `e` ON `submissions`.`submission_id` = `e`.`submission_id` SET `submissions`.`assignment_count` = `e`.`AssignmentCount`, `submissions`.`evaluation_count` = `e`.`EvaluationCount`, `submissions`.`score` = `e`.`Score` WHERE `submissions`.`round_id` = ? ")
+
+	var executeSQL *gorm.DB
+	executeSQL = s.UnderlyingDB().Exec(generateSQL.String(), params...) // ignore_security_alert
 	err = executeSQL.Error
 
 	return

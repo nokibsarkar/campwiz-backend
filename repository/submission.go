@@ -136,25 +136,16 @@ func (r *SubmissionRepository) TriggerSubmissionStatistics(tx *gorm.DB, submissi
 	}
 
 	q := query.Use(tx)
-	rowsAffected, err := q.SubmissionStatistics.UpdateBySubmissionIds(submissionIds)
+	rowsAffected, err := q.SubmissionStatistics.TriggerBySubmissionIds(submissionIds)
 	if err != nil {
 		return err
 	}
-	if rowsAffected < 0 {
+	if rowsAffected == 0 {
 		// Nothing changed, no need to trigger further statistics
 		return nil
 	}
 
 	Submission := q.Submission
-	stmt := Submission.Where(Submission.SubmissionID.In(submissionIds...))
-	result, err := stmt.UpdateColumn(Submission.EvaluationCount, Submission.EvaluationCount.Add(1))
-	if err != nil {
-		return err
-	}
-	if result.RowsAffected == 0 {
-		// Nothing changed, no need to trigger further statistics
-		return nil
-	}
 	// Prepare to trigger upper lvl statistics
 	// Get the first submission ID
 	firstSubmissionID := submissionIds[0]
@@ -174,5 +165,7 @@ func (r *SubmissionRepository) TriggerSubmissionStatistics(tx *gorm.DB, submissi
 	roundId := firstSubmission.RoundID
 	// now trigger the round statistics
 	round_repo := &RoundRepository{}
-	return round_repo.UpdateStatisticsByRoundID(tx, roundId)
+	err = round_repo.UpdateStatisticsByRoundID(tx, roundId)
+	return err
+
 }

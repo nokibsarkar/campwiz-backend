@@ -31,7 +31,7 @@ func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluation
 	// ev_repo := repository.NewEvaluationRepository()
 	user_repo := repository.NewUserRepository()
 	round_repo := repository.NewRoundRepository()
-	evaluationRepo := repository.NewEvaluationRepository()
+	evaluation_repo := repository.NewEvaluationRepository()
 
 	// jury_repo := repository.NewRoleRepository()
 	conn, close, err := repository.GetDB()
@@ -151,7 +151,7 @@ func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluation
 		return nil, errors.New("no evaluations found")
 	}
 	// trigger submission score counting
-	if err := evaluationRepo.TriggerEvaluationScoreCount(tx, submissionIds); err != nil {
+	if err := evaluation_repo.TriggerEvaluationScoreCount(tx, submissionIds); err != nil {
 		tx.Rollback()
 		return nil, err
 	}
@@ -373,7 +373,7 @@ func (e *EvaluationService) PublicBulkEvaluate(currentUserID models.IDType, eval
 	}
 	evaluation_repo := repository.NewEvaluationRepository()
 	// trigger submission score counting
-	if err := evaluationRepo.TriggerEvaluationScoreCount(tx, combinedSubmissionIds); err != nil {
+	if err := evaluation_repo.TriggerEvaluationScoreCount(tx, combinedSubmissionIds); err != nil {
 		tx.Rollback()
 		return nil, err
 	}
@@ -382,7 +382,7 @@ func (e *EvaluationService) PublicBulkEvaluate(currentUserID models.IDType, eval
 }
 
 func (e *EvaluationService) Evaluate(currentUserID models.IDType, evaluationID models.IDType, evaluationRequest *EvaluationRequest) (*models.Evaluation, error) {
-	evaluationRepo := repository.NewEvaluationRepository()
+	ev_repo := repository.NewEvaluationRepository()
 	user_repo := repository.NewUserRepository()
 	jury_repo := repository.NewRoleRepository()
 	conn, close, err := repository.GetDB()
@@ -538,7 +538,7 @@ func (e *EvaluationService) PublicEvaluate(currentUserID models.IDType, submissi
 	}
 	ev_repo := repository.NewEvaluationRepository()
 	// trigger submission score counting
-	if err := evaluationRepo.TriggerEvaluationScoreCount(tx, []types.SubmissionIDType{submision.SubmissionID}); err != nil {
+	if err := ev_repo.TriggerEvaluationScoreCount(tx, []types.SubmissionIDType{submision.SubmissionID}); err != nil {
 		tx.Rollback()
 		return nil, err
 	}

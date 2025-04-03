@@ -56,8 +56,8 @@ func TestTaskCreateSuccess(t *testing.T) {
 	testTask := &models.Task{
 		TaskID:               "testtask",
 		Type:                 models.TaskTypeDistributeEvaluations,
-		CreatedAt:            time.Now(),
-		UpdatedAt:            time.Now(),
+		CreatedAt:            time.Now().Round(time.Millisecond),
+		UpdatedAt:            time.Now().Round(time.Millisecond),
 		AssociatedRoundID:    nil,
 		AssociatedCampaignID: nil,
 		AssociatedUserID:     nil,
@@ -87,8 +87,8 @@ func TestTaskCreateError(t *testing.T) {
 	testTask := &models.Task{
 		TaskID:               "",
 		Type:                 models.TaskTypeDistributeEvaluations,
-		CreatedAt:            time.Now(),
-		UpdatedAt:            time.Now(),
+		CreatedAt:            time.Now().Round(time.Millisecond),
+		UpdatedAt:            time.Now().Round(time.Millisecond),
 		AssociatedRoundID:    nil,
 		AssociatedCampaignID: nil,
 		AssociatedUserID:     nil,
@@ -123,8 +123,8 @@ func TestTaskFindByIDSuccess(t *testing.T) {
 		AssociatedCampaignID: nil,
 		AssociatedUserID:     nil,
 		Data:                 nil,
-		CreatedAt:            time.Now(),
-		UpdatedAt:            time.Now(),
+		CreatedAt:            time.Now().Round(time.Millisecond),
+		UpdatedAt:            time.Now().Round(time.Millisecond),
 		SuccessCount:         0,
 		FailedCount:          0,
 	}
@@ -171,8 +171,8 @@ func TestTaskUpdateError(t *testing.T) {
 		AssociatedCampaignID: nil,
 		AssociatedUserID:     nil,
 		Data:                 nil,
-		CreatedAt:            time.Now(),
-		UpdatedAt:            time.Now(),
+		CreatedAt:            time.Now().Round(time.Millisecond),
+		UpdatedAt:            time.Now().Round(time.Millisecond),
 	}
 	// mock.ExpectBegin()
 	mock.ExpectExec("UPDATE `tasks`").
@@ -203,8 +203,8 @@ func TestTaskUpdateSuccess(t *testing.T) {
 		AssociatedCampaignID: nil,
 		AssociatedUserID:     nil,
 		Data:                 nil,
-		// CreatedAt:            time.Now(),
-		// UpdatedAt:      time.Now(),
+		// CreatedAt:            time.Now().Round(time.Millisecond),
+		// UpdatedAt:      time.Now().Round(time.Millisecond),
 		SuccessCount:   10,
 		FailedCount:    1,
 		RemainingCount: 5,

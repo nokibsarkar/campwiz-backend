@@ -203,11 +203,11 @@ func TestTaskUpdateSuccess(t *testing.T) {
 		AssociatedCampaignID: nil,
 		AssociatedUserID:     nil,
 		Data:                 nil,
-		// CreatedAt:            time.Now().Round(time.Millisecond),
-		// UpdatedAt:      time.Now().Round(time.Millisecond),
-		SuccessCount:   10,
-		FailedCount:    1,
-		RemainingCount: 5,
+		CreatedAt:            time.Now().Round(time.Millisecond),
+		UpdatedAt:            time.Now().Round(time.Millisecond),
+		SuccessCount:         10,
+		FailedCount:          1,
+		RemainingCount:       5,
 	}
 	mock.ExpectBegin()
 	mock.ExpectExec("UPDATE `tasks`").

@@ -320,22 +320,3 @@ func ImportEvaluationFromFountain(c *gin.Context) {
 		"message": "Hello, World!",
 	})
 }
-
-/*
-NewCampaignRoutes will create all the routes for the /campaign endpoint
-*/
-func NewCampaignRoutes(parent *gin.RouterGroup) {
-	defer HandleError("/campaign")
-	r := parent.Group("/campaign")
-	r.GET("/", WithSessionOptional(ListAllCampaignsV2))
-	r.GET("/timeline2", GetAllCampaignTimeLine)
-	r.GET("/:campaignId/result", GetCampaignResultSummary)
-	r.GET("/jury", ListAllJury)
-	r.POST("/", WithSession(CreateCampaign))
-	r.POST("/:campaignId", WithSession(UpdateCampaign))
-	r.GET("/:campaignId/submissions", GetCampaignSubmissions)
-	r.GET("/:campaignId/next", GetNextSubmission)
-	r.POST("/:campaignId/status", ApproveCampaign)
-	r.POST("/:campaignId/fountain", ImportEvaluationFromFountain)
-	r.GET("/:campaignId", WithSession(GetSingleCampaign))
-}

@@ -183,15 +183,3 @@ func ListProjects(c *gin.Context, sess *cache.Session) {
 
 	c.JSON(200, ResponseList[models.ProjectExtended]{Data: projects})
 }
-
-func NewProjectRoutes(parent *gin.RouterGroup) *gin.RouterGroup {
-	r := parent.Group("/project")
-	r.GET("/", WithSession(ListProjects))
-	// Only super admin can create a project
-	r.POST("/", WithPermission(consts.PermissionCreateCampaign, CreateProject))
-	// Only super admin can update a project
-	r.POST("/:projectId", WithPermission(consts.PermissionUpdateProject, UpdateProject))
-	r.GET("/:projectId", WithSession(GetSingleProject))
-
-	return r
-}

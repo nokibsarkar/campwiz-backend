@@ -80,5 +80,4 @@ func NewTaskRoutes(p *gin.RouterGroup) {
 	task := p.Group("/task")
 	task.GET("/:taskId", WithSession(GetTaskById))
 	task.GET("/:taskId/stream", WithSession(GetTaskByIDStream))
-
 }

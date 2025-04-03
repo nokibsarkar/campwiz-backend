@@ -67,14 +67,3 @@ func Logout(c *gin.Context) {
 		Data: RedirectResponse{Redirect: redirect},
 	})
 }
-
-func NewUserRoutes(parent *gin.RouterGroup) {
-	r := parent.Group("/user")
-	r.GET("/", ListUsers)
-	r.GET("/me", WithSession(GetMe))
-	r.GET("/:id", GetUser)
-	r.POST("/:id", UpdateUser)
-	r.GET("/translation/:language", GetTranslation)
-	r.POST("/translation/:lang", UpdateTranslation)
-	r.POST("/logout", Logout)
-}

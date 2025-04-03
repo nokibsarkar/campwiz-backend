@@ -102,19 +102,3 @@ func CreateLateSubmission(c *gin.Context) {
 func EvaluateSubmission(c *gin.Context) {
 	// ...
 }
-
-func NewSubmissionRoutes(parent *gin.RouterGroup) {
-	r := parent.Group("/submission")
-	r.GET("/", ListAllSubmissions)
-	r.POST("/draft", CreateDraftSubmission)
-	r.POST("/draft/late", CreateLateDraftSubmission)
-	r.GET("/draft/:id", GetDraftSubmission)
-
-	r.DELETE("/:id", DeleteSubmission)
-
-	r.GET("/:submissionId", GetSubmission)
-	// r.GET("/:submissionId/judge", GetEvaluation)
-	r.POST("/", CreateSubmission)
-	r.POST("/late", CreateLateSubmission)
-	r.POST("/:submissionId/judge", EvaluateSubmission)
-}

@@ -472,20 +472,3 @@ func addMySelfAsJury(c *gin.Context, sess *cache.Session) {
 	}
 	c.JSON(200, ResponseSingle[*models.Role]{Data: role})
 }
-func NewRoundRoutes(parent *gin.RouterGroup) {
-	r := parent.Group("/round")
-	r.GET("/", WithSession(ListAllRounds))
-	r.GET("/:roundId", GetRound)
-	r.DELETE("/:roundId", WithSession(DeleteRound))
-	r.POST("/:roundId/addMyselfAsPublicJury", WithSession(addMySelfAsJury))
-	r.GET("/:roundId/next/public", WithSession(NextPublicSubmission))
-	r.GET("/:roundId/results/summary", WithSession(GetResultSummary))
-	r.GET("/:roundId/results/:format", WithSession(GetResults))
-	r.POST("/:roundId/status", WithSession(UpdateStatus))
-	r.POST("/", WithSession(CreateRound))
-	r.POST("/:roundId", WithSession(UpdateRoundDetails))
-	r.POST("/import/:roundId/commons", WithSession(ImportFromCommons))
-	r.POST("/import/:roundId/previous", WithSession(ImportFromPreviousRound))
-	r.POST("/distribute/:roundId", WithSession(DistributeEvaluations))
-
-}

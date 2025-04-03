@@ -1,14 +1,21 @@
-//go:build !readonly
+//go:build readonly
 
 package routes
 
 import (
-	"nokib/campwiz/consts"
+	"log"
 
 	"github.com/gin-gonic/gin"
 )
 
+func ReadOnlyMode(c *gin.Context) {
+	c.JSON(500, ResponseError{
+		Detail: "Internal Server Error: Sorry, the server is in read-only mode. Please try again later.",
+	})
+}
+
 func NewRoutes(nonAPIParent *gin.RouterGroup) *gin.RouterGroup {
+	log.Println("Creating Routes for ReadOnly Mode")
 	r := nonAPIParent.Group("/api/v2")
 	authenticatorService := NewAuthenticationService()
 	NewUserAuthenticationRoutes(r)
@@ -27,48 +34,50 @@ func NewRoundRoutes(parent *gin.RouterGroup) {
 	r := parent.Group("/round")
 	r.GET("/", WithSession(ListAllRounds))
 	r.GET("/:roundId", GetRound)
-	r.DELETE("/:roundId", WithSession(DeleteRound))
-	r.POST("/:roundId/addMyselfAsPublicJury", WithSession(addMySelfAsJury))
+	r.DELETE("/:roundId", ReadOnlyMode)
+	r.POST("/:roundId/addMyselfAsPublicJury", ReadOnlyMode)
 	r.GET("/:roundId/next/public", WithSession(NextPublicSubmission))
 	r.GET("/:roundId/results/summary", WithSession(GetResultSummary))
 	r.GET("/:roundId/results/:format", WithSession(GetResults))
-	r.POST("/:roundId/status", WithSession(UpdateStatus))
-	r.POST("/", WithSession(CreateRound))
-	r.POST("/:roundId", WithSession(UpdateRoundDetails))
-	r.POST("/import/:roundId/commons", WithSession(ImportFromCommons))
-	r.POST("/import/:roundId/previous", WithSession(ImportFromPreviousRound))
-	r.POST("/distribute/:roundId", WithSession(DistributeEvaluations))
-
+	r.POST("/:roundId/status", ReadOnlyMode)
+	r.POST("/", ReadOnlyMode)
+	r.POST("/:roundId", ReadOnlyMode)
+	r.POST("/import/:roundId/commons", ReadOnlyMode)
+	r.POST("/import/:roundId/previous", ReadOnlyMode)
+	r.POST("/distribute/:roundId", ReadOnlyMode)
 }
+
 func NewSubmissionRoutes(parent *gin.RouterGroup) {
 	r := parent.Group("/submission")
 	r.GET("/", ListAllSubmissions)
-	r.POST("/draft", CreateDraftSubmission)
-	r.POST("/draft/late", CreateLateDraftSubmission)
+	r.POST("/draft", ReadOnlyMode)
+	r.POST("/draft/late", ReadOnlyMode)
 	r.GET("/draft/:id", GetDraftSubmission)
 
-	r.DELETE("/:id", DeleteSubmission)
+	r.DELETE("/:id", ReadOnlyMode)
 
 	r.GET("/:submissionId", GetSubmission)
 	// r.GET("/:submissionId/judge", GetEvaluation)
-	r.POST("/", CreateSubmission)
-	r.POST("/late", CreateLateSubmission)
-	r.POST("/:submissionId/judge", EvaluateSubmission)
+	r.POST("/", ReadOnlyMode)
+	r.POST("/late", ReadOnlyMode)
+	r.POST("/:submissionId/judge", ReadOnlyMode)
 }
+
 func NewUserAuthenticationRoutes(parent *gin.RouterGroup) {
 	user := parent.Group("/")
 	user.GET("/user/login", RedirectForLogin)
 	user.GET("/user/callback", HandleOAuth2Callback)
 }
+
 func NewUserRoutes(parent *gin.RouterGroup) {
 	r := parent.Group("/user")
 	r.GET("/", ListUsers)
 	r.GET("/me", WithSession(GetMe))
 	r.GET("/:id", GetUser)
-	r.POST("/:id", UpdateUser)
+	r.POST("/:id", ReadOnlyMode)
 	r.GET("/translation/:language", GetTranslation)
-	r.POST("/translation/:lang", UpdateTranslation)
-	r.POST("/logout", Logout)
+	r.POST("/translation/:lang", ReadOnlyMode)
+	r.POST("/logout", ReadOnlyMode)
 }
 
 /*
@@ -81,30 +90,31 @@ func NewCampaignRoutes(parent *gin.RouterGroup) {
 	r.GET("/timeline2", GetAllCampaignTimeLine)
 	r.GET("/:campaignId/result", GetCampaignResultSummary)
 	r.GET("/jury", ListAllJury)
-	r.POST("/", WithSession(CreateCampaign))
-	r.POST("/:campaignId", WithSession(UpdateCampaign))
+	r.POST("/", ReadOnlyMode)
+	r.POST("/:campaignId", ReadOnlyMode)
 	r.GET("/:campaignId/submissions", GetCampaignSubmissions)
 	r.GET("/:campaignId/next", GetNextSubmission)
-	r.POST("/:campaignId/status", ApproveCampaign)
-	r.POST("/:campaignId/fountain", ImportEvaluationFromFountain)
+	r.POST("/:campaignId/status", ReadOnlyMode)
+	r.POST("/:campaignId/fountain", ReadOnlyMode)
 	r.GET("/:campaignId", WithSession(GetSingleCampaign))
 }
+
 func NewEvaluationRoutes(r *gin.RouterGroup) {
 	route := r.Group("/evaluation")
 	route.GET("/", WithSession(ListEvaluations))
-	route.POST("/", WithSession(BulkEvaluate))
-	route.POST("/:evaluationId", WithPermission(consts.PermissionCreateCampaign, UpdateEvaluation))
-	route.POST("/public/:roundId/:submissionId", WithPermission(consts.PermissionCreateCampaign, SubmitNewPublicEvaluation))
-	route.POST("/public/:roundId", WithPermission(consts.PermissionCreateCampaign, SubmitNewBulkPublicEvaluation))
+	route.POST("/", ReadOnlyMode)
+	route.POST("/:evaluationId", ReadOnlyMode)
+	route.POST("/public/:roundId/:submissionId", ReadOnlyMode)
+	route.POST("/public/:roundId", ReadOnlyMode)
 }
 
 func NewProjectRoutes(parent *gin.RouterGroup) *gin.RouterGroup {
 	r := parent.Group("/project")
 	r.GET("/", WithSession(ListProjects))
 	// Only super admin can create a project
-	r.POST("/", WithPermission(consts.PermissionCreateCampaign, CreateProject))
+	r.POST("/", ReadOnlyMode)
 	// Only super admin can update a project
-	r.POST("/:projectId", WithPermission(consts.PermissionUpdateProject, UpdateProject))
+	r.POST("/:projectId", ReadOnlyMode)
 	r.GET("/:projectId", WithSession(GetSingleProject))
 
 	return r

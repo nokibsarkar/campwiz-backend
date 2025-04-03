@@ -143,6 +143,48 @@ func HandleOAuth2Callback(c *gin.Context) {
 	tx.Commit()
 }
 
+func WithSession(callback func(*gin.Context, *cache.Session)) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		session := GetSession(c)
+		if session == nil {
+			c.JSON(401, ResponseError{
+				Detail: "Internal Server Error : Session not found",
+			})
+			return
+		}
+		callback(c, session)
+	}
+}
+func WithSessionOptional(callback func(*gin.Context, *cache.Session)) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		session := GetSession(c)
+		callback(c, session)
+	}
+}
+func GetSession(c *gin.Context) *cache.Session {
+	sess, ok := c.Get(SESSION_KEY)
+	if !ok {
+		return nil
+	}
+	session, ok := sess.(*cache.Session)
+	if !ok {
+		return nil
+	}
+	return session
+}
+func GetCurrentUser(c *gin.Context) *models.User {
+	session := GetSession(c)
+	if session == nil {
+		return nil
+	}
+	user_service := services.NewUserService()
+	user, err := user_service.GetUserByID(session.UserID)
+	if err != nil {
+		return nil
+	}
+	return user
+}
+
 // RedirectForLogin godoc
 // @Summary Redirect to the OAuth2 login
 // @Description Redirect to the OAuth2 login
@@ -160,10 +202,4 @@ func RedirectForLogin(c *gin.Context) {
 	}
 	redirect_uri := oauth2_service.Init(callback)
 	c.JSON(200, ResponseSingle[RedirectResponse]{Data: RedirectResponse{Redirect: redirect_uri}})
-}
-
-func NewUserAuthenticationRoutes(parent *gin.RouterGroup) {
-	user := parent.Group("/")
-	user.GET("/user/login", RedirectForLogin)
-	user.GET("/user/callback", HandleOAuth2Callback)
 }

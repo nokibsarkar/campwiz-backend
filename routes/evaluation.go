@@ -2,7 +2,6 @@ package routes
 
 import (
 	"log"
-	"nokib/campwiz/consts"
 	"nokib/campwiz/models"
 	"nokib/campwiz/models/types"
 	"nokib/campwiz/repository/cache"
@@ -176,12 +175,4 @@ func SubmitNewBulkPublicEvaluation(c *gin.Context, sess *cache.Session) {
 		return
 	}
 	c.JSON(200, ResponseList[*models.Evaluation]{Data: evaluations})
-}
-func NewEvaluationRoutes(r *gin.RouterGroup) {
-	route := r.Group("/evaluation")
-	route.GET("/", WithSession(ListEvaluations))
-	route.POST("/", WithSession(BulkEvaluate))
-	route.POST("/:evaluationId", WithPermission(consts.PermissionCreateCampaign, UpdateEvaluation))
-	route.POST("/public/:roundId/:submissionId", WithPermission(consts.PermissionCreateCampaign, SubmitNewPublicEvaluation))
-	route.POST("/public/:roundId", WithPermission(consts.PermissionCreateCampaign, SubmitNewBulkPublicEvaluation))
 }

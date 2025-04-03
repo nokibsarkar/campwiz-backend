@@ -212,8 +212,8 @@ func TestTaskUpdateSuccess(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectExec("UPDATE `tasks`").
 		WithArgs(testTask.Type, testTask.Status,
-			// testTask.CreatedAt,
-			time.Now().Round(time.Millisecond),
+			testTask.CreatedAt,
+			testTask.UpdatedAt,
 			testTask.SuccessCount, testTask.FailedCount,
 			testTask.RemainingCount, testTask.TaskID).
 		WillReturnResult(sqlmock.NewResult(1, 1))

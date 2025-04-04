@@ -63,7 +63,7 @@ func Logout(c *gin.Context) {
 	log.Println("Logged out")
 	c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
 	c.Header("Location", redirect)
-	c.JSON(302, ResponseSingle[RedirectResponse]{
+	c.JSON(200, ResponseSingle[RedirectResponse]{
 		Data: RedirectResponse{Redirect: redirect},
 	})
 }

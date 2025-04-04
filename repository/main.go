@@ -4,7 +4,6 @@ import (
 	"log"
 	"nokib/campwiz/consts"
 	"nokib/campwiz/query"
-	"nokib/campwiz/repository/cache"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-gorm/caches/v4"
@@ -13,7 +12,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-var memoryCache = &cache.MemoryCacher{}
+// var memoryCache = &cache.MemoryCacher{}
 
 func getLogMode(debug bool) logger.LogLevel {
 	if debug {

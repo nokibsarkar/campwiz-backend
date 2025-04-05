@@ -160,7 +160,6 @@ func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluation
 		tx.Rollback()
 		return nil, res.Error
 	}
-
 	tx.Commit()
 	result = &models.EvaluationListResponseWithCurrentStats{
 		ResponseList: models.ResponseList[*models.Evaluation]{

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"nokib/campwiz/consts"
+	"nokib/campwiz/models"
 	"nokib/campwiz/services"
 	"strings"
 
@@ -88,7 +89,7 @@ func (a *AuthenticationMiddleWare) Authenticate(c *gin.Context) {
 		if err != nil {
 			log.Println("Error", err)
 			c.Set("error", err)
-			c.AbortWithStatusJSON(401, ResponseError{Detail: "Unauthorized : No token found"})
+			c.AbortWithStatusJSON(401, models.ResponseError{Detail: "Unauthorized : No token found"})
 			return
 		} else {
 			auth_service := services.NewAuthenticationService()
@@ -96,7 +97,7 @@ func (a *AuthenticationMiddleWare) Authenticate(c *gin.Context) {
 			if err != nil {
 				log.Println("Error", err)
 				c.Set("error", err)
-				c.AbortWithStatusJSON(401, ResponseError{Detail: "Unauthorized : Invalid token"})
+				c.AbortWithStatusJSON(401, models.ResponseError{Detail: "Unauthorized : Invalid token"})
 				return
 			} else {
 				if setCookie {
@@ -115,7 +116,7 @@ func (a *AuthenticationMiddleWare) Authenticate2(c *gin.Context) {
 		if !a.checkIfUnauthenticatedAllowed(c) {
 			log.Println("Error", err)
 			c.Set("error", err)
-			c.AbortWithStatusJSON(401, ResponseError{Detail: "Unauthorized : No token found"})
+			c.AbortWithStatusJSON(401, models.ResponseError{Detail: "Unauthorized : No token found"})
 			return
 		}
 	} else {
@@ -126,7 +127,7 @@ func (a *AuthenticationMiddleWare) Authenticate2(c *gin.Context) {
 			if !a.checkIfUnauthenticatedAllowed(c) {
 				log.Println("Error", err)
 				c.Set("error", err)
-				c.AbortWithStatusJSON(401, ResponseError{Detail: "Unauthorized : Invalid token"})
+				c.AbortWithStatusJSON(401, models.ResponseError{Detail: "Unauthorized : Invalid token"})
 				return
 			}
 		} else {

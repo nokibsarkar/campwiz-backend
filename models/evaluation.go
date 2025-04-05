@@ -60,6 +60,11 @@ type NewEvaluationRequest struct {
 	SubmissionID IDType
 	Times        int
 }
+type EvaluationListResponseWithCurrentStats struct {
+	ResponseList[*Evaluation]
+	TotalEvaluatedCount  int `json:"totalEvaluatedCount"`
+	TotalAssignmentCount int `json:"totalAssignmentCount"`
+}
 type Evaluator interface {
 	// DELETE FROM `evaluations` WHERE `evaluations`.`evaluated_at` IS NULL AND `round_id` = @roundID AND `submission_id` IN (SELECT `submission_id` FROM `submissions` WHERE `evaluation_count` <= @quorum` AND `round_id` = @roundID)
 	RemoveRedundantEvaluation(roundID string, quorum int)

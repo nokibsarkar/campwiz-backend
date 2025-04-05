@@ -84,7 +84,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseList-models_Campaign"
+                            "$ref": "#/definitions/models.ResponseList-models_Campaign"
                         }
                     }
                 }
@@ -162,7 +162,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseSingle-models_CampaignExtended"
+                            "$ref": "#/definitions/models.ResponseSingle-models_CampaignExtended"
                         }
                     }
                 }
@@ -200,7 +200,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseSingle-models_Campaign"
+                            "$ref": "#/definitions/models.ResponseSingle-models_Campaign"
                         }
                     }
                 }
@@ -305,7 +305,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseList-models_Evaluation"
+                            "$ref": "#/definitions/models.ResponseList-models_Evaluation"
                         }
                     }
                 }
@@ -342,7 +342,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseList-models_Evaluation"
+                            "$ref": "#/definitions/models.ResponseList-models_Evaluation"
                         }
                     }
                 }
@@ -388,7 +388,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseList-models_Evaluation"
+                            "$ref": "#/definitions/models.ResponseList-models_Evaluation"
                         }
                     }
                 }
@@ -438,7 +438,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseSingle-models_Evaluation"
+                            "$ref": "#/definitions/models.ResponseSingle-models_Evaluation"
                         }
                     }
                 }
@@ -481,7 +481,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseSingle-models_Evaluation"
+                            "$ref": "#/definitions/models.ResponseSingle-models_Evaluation"
                         }
                     }
                 }
@@ -506,7 +506,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseList-models_ProjectExtended"
+                            "$ref": "#/definitions/models.ResponseList-models_ProjectExtended"
                         }
                     }
                 }
@@ -546,7 +546,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseSingle-models_Project"
+                            "$ref": "#/definitions/models.ResponseSingle-models_Project"
                         }
                     }
                 }
@@ -586,7 +586,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseSingle-models_Project"
+                            "$ref": "#/definitions/models.ResponseSingle-models_Project"
                         }
                     }
                 }
@@ -627,7 +627,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseSingle-models_Project"
+                            "$ref": "#/definitions/models.ResponseSingle-models_Project"
                         }
                     }
                 }
@@ -698,7 +698,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseList-models_Round"
+                            "$ref": "#/definitions/models.ResponseList-models_Round"
                         }
                     }
                 }
@@ -727,7 +727,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseSingle-models_Round"
+                            "$ref": "#/definitions/models.ResponseSingle-models_Round"
                         }
                     }
                 }
@@ -765,7 +765,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseSingle-models_Task"
+                            "$ref": "#/definitions/models.ResponseSingle-models_Task"
                         }
                     }
                 }
@@ -803,7 +803,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseSingle-models_Task"
+                            "$ref": "#/definitions/models.ResponseSingle-models_Task"
                         }
                     }
                 }
@@ -841,7 +841,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseSingle-models_Task"
+                            "$ref": "#/definitions/models.ResponseSingle-models_Task"
                         }
                     }
                 }
@@ -870,7 +870,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseSingle-models_Round"
+                            "$ref": "#/definitions/models.ResponseSingle-models_Round"
                         }
                     }
                 }
@@ -906,7 +906,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseSingle-models_Round"
+                            "$ref": "#/definitions/models.ResponseSingle-models_Round"
                         }
                     }
                 }
@@ -933,7 +933,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseSingle-routes_RoundDeletedResponse"
+                            "$ref": "#/definitions/models.ResponseSingle-routes_RoundDeletedResponse"
                         }
                     }
                 }
@@ -962,7 +962,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseSingle-models_Submission"
+                            "$ref": "#/definitions/models.ResponseSingle-models_Submission"
                         }
                     }
                 }
@@ -991,7 +991,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseList-models_EvaluationResult"
+                            "$ref": "#/definitions/models.ResponseList-models_EvaluationResult"
                         }
                     }
                 }
@@ -1068,7 +1068,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseList-models_SubmissionResult"
+                            "$ref": "#/definitions/models.ResponseList-models_SubmissionResult"
                         }
                     }
                 }
@@ -1111,7 +1111,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseSingle-models_Round"
+                            "$ref": "#/definitions/models.ResponseSingle-models_Round"
                         }
                     }
                 }
@@ -1163,7 +1163,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseList-models_Submission"
+                            "$ref": "#/definitions/models.ResponseList-models_Submission"
                         }
                     }
                 }
@@ -1221,7 +1221,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseSingle-services_TaskResponse"
+                            "$ref": "#/definitions/models.ResponseSingle-services_TaskResponse"
                         }
                     }
                 }
@@ -1284,7 +1284,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseSingle-routes_RedirectResponse"
+                            "$ref": "#/definitions/models.ResponseSingle-routes_RedirectResponse"
                         }
                     }
                 }
@@ -1312,7 +1312,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.ResponseSingle-routes_RedirectResponse"
+                            "$ref": "#/definitions/models.ResponseSingle-routes_RedirectResponse"
                         }
                     }
                 }
@@ -1793,6 +1793,205 @@ const docTemplate = `{
                 }
             }
         },
+        "models.ResponseList-models_Campaign": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Campaign"
+                    }
+                },
+                "next": {
+                    "type": "string"
+                },
+                "prev": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ResponseList-models_Evaluation": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Evaluation"
+                    }
+                },
+                "next": {
+                    "type": "string"
+                },
+                "prev": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ResponseList-models_EvaluationResult": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.EvaluationResult"
+                    }
+                },
+                "next": {
+                    "type": "string"
+                },
+                "prev": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ResponseList-models_ProjectExtended": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ProjectExtended"
+                    }
+                },
+                "next": {
+                    "type": "string"
+                },
+                "prev": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ResponseList-models_Round": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Round"
+                    }
+                },
+                "next": {
+                    "type": "string"
+                },
+                "prev": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ResponseList-models_Submission": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Submission"
+                    }
+                },
+                "next": {
+                    "type": "string"
+                },
+                "prev": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ResponseList-models_SubmissionResult": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.SubmissionResult"
+                    }
+                },
+                "next": {
+                    "type": "string"
+                },
+                "prev": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ResponseSingle-models_Campaign": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/models.Campaign"
+                }
+            }
+        },
+        "models.ResponseSingle-models_CampaignExtended": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/models.CampaignExtended"
+                }
+            }
+        },
+        "models.ResponseSingle-models_Evaluation": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/models.Evaluation"
+                }
+            }
+        },
+        "models.ResponseSingle-models_Project": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/models.Project"
+                }
+            }
+        },
+        "models.ResponseSingle-models_Round": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/models.Round"
+                }
+            }
+        },
+        "models.ResponseSingle-models_Submission": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/models.Submission"
+                }
+            }
+        },
+        "models.ResponseSingle-models_Task": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/models.Task"
+                }
+            }
+        },
+        "models.ResponseSingle-routes_RedirectResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/routes.RedirectResponse"
+                }
+            }
+        },
+        "models.ResponseSingle-routes_RoundDeletedResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/routes.RoundDeletedResponse"
+                }
+            }
+        },
+        "models.ResponseSingle-services_TaskResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/services.TaskResponse"
+                }
+            }
+        },
         "models.Role": {
             "type": "object",
             "properties": {
@@ -2244,205 +2443,6 @@ const docTemplate = `{
                 "redirect": {
                     "description": "Redirect is the URL to redirect to",
                     "type": "string"
-                }
-            }
-        },
-        "routes.ResponseList-models_Campaign": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.Campaign"
-                    }
-                },
-                "next": {
-                    "type": "string"
-                },
-                "prev": {
-                    "type": "string"
-                }
-            }
-        },
-        "routes.ResponseList-models_Evaluation": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.Evaluation"
-                    }
-                },
-                "next": {
-                    "type": "string"
-                },
-                "prev": {
-                    "type": "string"
-                }
-            }
-        },
-        "routes.ResponseList-models_EvaluationResult": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.EvaluationResult"
-                    }
-                },
-                "next": {
-                    "type": "string"
-                },
-                "prev": {
-                    "type": "string"
-                }
-            }
-        },
-        "routes.ResponseList-models_ProjectExtended": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.ProjectExtended"
-                    }
-                },
-                "next": {
-                    "type": "string"
-                },
-                "prev": {
-                    "type": "string"
-                }
-            }
-        },
-        "routes.ResponseList-models_Round": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.Round"
-                    }
-                },
-                "next": {
-                    "type": "string"
-                },
-                "prev": {
-                    "type": "string"
-                }
-            }
-        },
-        "routes.ResponseList-models_Submission": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.Submission"
-                    }
-                },
-                "next": {
-                    "type": "string"
-                },
-                "prev": {
-                    "type": "string"
-                }
-            }
-        },
-        "routes.ResponseList-models_SubmissionResult": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.SubmissionResult"
-                    }
-                },
-                "next": {
-                    "type": "string"
-                },
-                "prev": {
-                    "type": "string"
-                }
-            }
-        },
-        "routes.ResponseSingle-models_Campaign": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/models.Campaign"
-                }
-            }
-        },
-        "routes.ResponseSingle-models_CampaignExtended": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/models.CampaignExtended"
-                }
-            }
-        },
-        "routes.ResponseSingle-models_Evaluation": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/models.Evaluation"
-                }
-            }
-        },
-        "routes.ResponseSingle-models_Project": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/models.Project"
-                }
-            }
-        },
-        "routes.ResponseSingle-models_Round": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/models.Round"
-                }
-            }
-        },
-        "routes.ResponseSingle-models_Submission": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/models.Submission"
-                }
-            }
-        },
-        "routes.ResponseSingle-models_Task": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/models.Task"
-                }
-            }
-        },
-        "routes.ResponseSingle-routes_RedirectResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/routes.RedirectResponse"
-                }
-            }
-        },
-        "routes.ResponseSingle-routes_RoundDeletedResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/routes.RoundDeletedResponse"
-                }
-            }
-        },
-        "routes.ResponseSingle-services_TaskResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/services.TaskResponse"
                 }
             }
         },

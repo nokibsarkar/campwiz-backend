@@ -368,6 +368,133 @@ definitions:
     required:
     - name
     type: object
+  models.ResponseList-models_Campaign:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/models.Campaign'
+        type: array
+      next:
+        type: string
+      prev:
+        type: string
+    type: object
+  models.ResponseList-models_Evaluation:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/models.Evaluation'
+        type: array
+      next:
+        type: string
+      prev:
+        type: string
+    type: object
+  models.ResponseList-models_EvaluationResult:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/models.EvaluationResult'
+        type: array
+      next:
+        type: string
+      prev:
+        type: string
+    type: object
+  models.ResponseList-models_ProjectExtended:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/models.ProjectExtended'
+        type: array
+      next:
+        type: string
+      prev:
+        type: string
+    type: object
+  models.ResponseList-models_Round:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/models.Round'
+        type: array
+      next:
+        type: string
+      prev:
+        type: string
+    type: object
+  models.ResponseList-models_Submission:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/models.Submission'
+        type: array
+      next:
+        type: string
+      prev:
+        type: string
+    type: object
+  models.ResponseList-models_SubmissionResult:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/models.SubmissionResult'
+        type: array
+      next:
+        type: string
+      prev:
+        type: string
+    type: object
+  models.ResponseSingle-models_Campaign:
+    properties:
+      data:
+        $ref: '#/definitions/models.Campaign'
+    type: object
+  models.ResponseSingle-models_CampaignExtended:
+    properties:
+      data:
+        $ref: '#/definitions/models.CampaignExtended'
+    type: object
+  models.ResponseSingle-models_Evaluation:
+    properties:
+      data:
+        $ref: '#/definitions/models.Evaluation'
+    type: object
+  models.ResponseSingle-models_Project:
+    properties:
+      data:
+        $ref: '#/definitions/models.Project'
+    type: object
+  models.ResponseSingle-models_Round:
+    properties:
+      data:
+        $ref: '#/definitions/models.Round'
+    type: object
+  models.ResponseSingle-models_Submission:
+    properties:
+      data:
+        $ref: '#/definitions/models.Submission'
+    type: object
+  models.ResponseSingle-models_Task:
+    properties:
+      data:
+        $ref: '#/definitions/models.Task'
+    type: object
+  models.ResponseSingle-routes_RedirectResponse:
+    properties:
+      data:
+        $ref: '#/definitions/routes.RedirectResponse'
+    type: object
+  models.ResponseSingle-routes_RoundDeletedResponse:
+    properties:
+      data:
+        $ref: '#/definitions/routes.RoundDeletedResponse'
+    type: object
+  models.ResponseSingle-services_TaskResponse:
+    properties:
+      data:
+        $ref: '#/definitions/services.TaskResponse'
+    type: object
   models.Role:
     properties:
       campaignId:
@@ -683,133 +810,6 @@ definitions:
         description: Redirect is the URL to redirect to
         type: string
     type: object
-  routes.ResponseList-models_Campaign:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/models.Campaign'
-        type: array
-      next:
-        type: string
-      prev:
-        type: string
-    type: object
-  routes.ResponseList-models_Evaluation:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/models.Evaluation'
-        type: array
-      next:
-        type: string
-      prev:
-        type: string
-    type: object
-  routes.ResponseList-models_EvaluationResult:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/models.EvaluationResult'
-        type: array
-      next:
-        type: string
-      prev:
-        type: string
-    type: object
-  routes.ResponseList-models_ProjectExtended:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/models.ProjectExtended'
-        type: array
-      next:
-        type: string
-      prev:
-        type: string
-    type: object
-  routes.ResponseList-models_Round:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/models.Round'
-        type: array
-      next:
-        type: string
-      prev:
-        type: string
-    type: object
-  routes.ResponseList-models_Submission:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/models.Submission'
-        type: array
-      next:
-        type: string
-      prev:
-        type: string
-    type: object
-  routes.ResponseList-models_SubmissionResult:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/models.SubmissionResult'
-        type: array
-      next:
-        type: string
-      prev:
-        type: string
-    type: object
-  routes.ResponseSingle-models_Campaign:
-    properties:
-      data:
-        $ref: '#/definitions/models.Campaign'
-    type: object
-  routes.ResponseSingle-models_CampaignExtended:
-    properties:
-      data:
-        $ref: '#/definitions/models.CampaignExtended'
-    type: object
-  routes.ResponseSingle-models_Evaluation:
-    properties:
-      data:
-        $ref: '#/definitions/models.Evaluation'
-    type: object
-  routes.ResponseSingle-models_Project:
-    properties:
-      data:
-        $ref: '#/definitions/models.Project'
-    type: object
-  routes.ResponseSingle-models_Round:
-    properties:
-      data:
-        $ref: '#/definitions/models.Round'
-    type: object
-  routes.ResponseSingle-models_Submission:
-    properties:
-      data:
-        $ref: '#/definitions/models.Submission'
-    type: object
-  routes.ResponseSingle-models_Task:
-    properties:
-      data:
-        $ref: '#/definitions/models.Task'
-    type: object
-  routes.ResponseSingle-routes_RedirectResponse:
-    properties:
-      data:
-        $ref: '#/definitions/routes.RedirectResponse'
-    type: object
-  routes.ResponseSingle-routes_RoundDeletedResponse:
-    properties:
-      data:
-        $ref: '#/definitions/routes.RoundDeletedResponse'
-    type: object
-  routes.ResponseSingle-services_TaskResponse:
-    properties:
-      data:
-        $ref: '#/definitions/services.TaskResponse'
-    type: object
   routes.RoundDeletedResponse:
     properties:
       roundId:
@@ -1092,7 +1092,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.ResponseList-models_Campaign'
+            $ref: '#/definitions/models.ResponseList-models_Campaign'
       summary: List all campaigns
       tags:
       - Campaign
@@ -1142,7 +1142,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.ResponseSingle-models_CampaignExtended'
+            $ref: '#/definitions/models.ResponseSingle-models_CampaignExtended'
       summary: Get a single campaign
       tags:
       - Campaign
@@ -1167,7 +1167,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.ResponseSingle-models_Campaign'
+            $ref: '#/definitions/models.ResponseSingle-models_Campaign'
       summary: Update a campaign
       tags:
       - Campaign
@@ -1231,7 +1231,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.ResponseList-models_Evaluation'
+            $ref: '#/definitions/models.ResponseList-models_Evaluation'
       security:
       - ApiKeyAuth: []
       summary: List all evaluations
@@ -1254,7 +1254,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.ResponseList-models_Evaluation'
+            $ref: '#/definitions/models.ResponseList-models_Evaluation'
       security:
       - ApiKeyAuth: []
       summary: Bulk evaluate
@@ -1281,7 +1281,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.ResponseSingle-models_Evaluation'
+            $ref: '#/definitions/models.ResponseSingle-models_Evaluation'
       security:
       - ApiKeyAuth: []
       summary: Update an evaluation
@@ -1310,7 +1310,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.ResponseList-models_Evaluation'
+            $ref: '#/definitions/models.ResponseList-models_Evaluation'
       security:
       - ApiKeyAuth: []
       summary: Submit a new bulk public evaluation
@@ -1342,7 +1342,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.ResponseSingle-models_Evaluation'
+            $ref: '#/definitions/models.ResponseSingle-models_Evaluation'
       security:
       - ApiKeyAuth: []
       summary: Submit a new public evaluation
@@ -1357,7 +1357,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.ResponseList-models_ProjectExtended'
+            $ref: '#/definitions/models.ResponseList-models_ProjectExtended'
       security:
       - ApiKeyAuth: []
       summary: List all projects
@@ -1382,7 +1382,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.ResponseSingle-models_Project'
+            $ref: '#/definitions/models.ResponseSingle-models_Project'
       security:
       - ApiKeyAuth: []
       summary: Create a new project
@@ -1407,7 +1407,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.ResponseSingle-models_Project'
+            $ref: '#/definitions/models.ResponseSingle-models_Project'
       security:
       - ApiKeyAuth: []
       summary: Get a single project
@@ -1433,7 +1433,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.ResponseSingle-models_Project'
+            $ref: '#/definitions/models.ResponseSingle-models_Project'
       security:
       - ApiKeyAuth: []
       summary: Update a project
@@ -1486,7 +1486,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.ResponseList-models_Round'
+            $ref: '#/definitions/models.ResponseList-models_Round'
       summary: List all rounds
       tags:
       - Round
@@ -1505,7 +1505,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.ResponseSingle-models_Round'
+            $ref: '#/definitions/models.ResponseSingle-models_Round'
       summary: Create a new round
       tags:
       - Round
@@ -1524,7 +1524,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.ResponseSingle-routes_RoundDeletedResponse'
+            $ref: '#/definitions/models.ResponseSingle-routes_RoundDeletedResponse'
       summary: Delete a round
       tags:
       - Round
@@ -1542,7 +1542,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.ResponseSingle-models_Round'
+            $ref: '#/definitions/models.ResponseSingle-models_Round'
       summary: Get a round
       tags:
       - Round
@@ -1566,7 +1566,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.ResponseSingle-models_Round'
+            $ref: '#/definitions/models.ResponseSingle-models_Round'
       summary: Update the details of a round
       tags:
       - Round
@@ -1585,7 +1585,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.ResponseSingle-models_Submission'
+            $ref: '#/definitions/models.ResponseSingle-models_Submission'
       summary: Get the next public submission
       tags:
       - Round
@@ -1634,7 +1634,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.ResponseList-models_SubmissionResult'
+            $ref: '#/definitions/models.ResponseList-models_SubmissionResult'
       security:
       - ApiKeyAuth: []
       summary: Get results of a round
@@ -1655,7 +1655,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.ResponseList-models_EvaluationResult'
+            $ref: '#/definitions/models.ResponseList-models_EvaluationResult'
       summary: Get results of a round
       tags:
       - Round
@@ -1680,7 +1680,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.ResponseSingle-models_Round'
+            $ref: '#/definitions/models.ResponseSingle-models_Round'
       security:
       - ApiKeyAuth: []
       summary: Update the status of a round
@@ -1707,7 +1707,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.ResponseSingle-models_Task'
+            $ref: '#/definitions/models.ResponseSingle-models_Task'
       summary: Distribute evaluations to juries
       tags:
       - Round
@@ -1733,7 +1733,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.ResponseSingle-models_Task'
+            $ref: '#/definitions/models.ResponseSingle-models_Task'
       summary: Import images from commons
       tags:
       - Round
@@ -1759,7 +1759,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.ResponseSingle-models_Task'
+            $ref: '#/definitions/models.ResponseSingle-models_Task'
       summary: Import images from previous round
       tags:
       - Round
@@ -1791,7 +1791,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.ResponseList-models_Submission'
+            $ref: '#/definitions/models.ResponseList-models_Submission'
       summary: List all submissions
       tags:
       - Submission
@@ -1829,7 +1829,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.ResponseSingle-services_TaskResponse'
+            $ref: '#/definitions/models.ResponseSingle-services_TaskResponse'
       summary: Get a task by ID
       tags:
       - Task
@@ -1872,7 +1872,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.ResponseSingle-routes_RedirectResponse'
+            $ref: '#/definitions/models.ResponseSingle-routes_RedirectResponse'
       summary: Handle the OAuth2 callback
       tags:
       - User
@@ -1890,7 +1890,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.ResponseSingle-routes_RedirectResponse'
+            $ref: '#/definitions/models.ResponseSingle-routes_RedirectResponse'
       summary: Redirect to the OAuth2 login
       tags:
       - User

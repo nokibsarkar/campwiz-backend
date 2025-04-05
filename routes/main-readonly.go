@@ -4,12 +4,13 @@ package routes
 
 import (
 	"log"
+	"nokib/campwiz/models"
 
 	"github.com/gin-gonic/gin"
 )
 
 func ReadOnlyMode(c *gin.Context) {
-	c.JSON(500, ResponseError{
+	c.JSON(500, models.ResponseError{
 		Detail: "Internal Server Error: Sorry, the server is in read-only mode. Please try again later.",
 	})
 }

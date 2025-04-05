@@ -21,8 +21,8 @@ func (r *EvaluationRepository) FindEvaluationByID(tx *gorm.DB, evaluationID mode
 	result := tx.First(evaluation, &models.Evaluation{EvaluationID: evaluationID})
 	return evaluation, result.Error
 }
-func (r *EvaluationRepository) ListAllEvaluations(tx *gorm.DB, filter *models.EvaluationFilter) ([]models.Evaluation, error) {
-	var evaluations []models.Evaluation
+func (r *EvaluationRepository) ListAllEvaluations(tx *gorm.DB, filter *models.EvaluationFilter) ([]*models.Evaluation, error) {
+	var evaluations []*models.Evaluation
 	condition := &models.Evaluation{}
 	stmt := tx
 	if filter != nil {

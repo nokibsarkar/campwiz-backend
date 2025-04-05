@@ -25,18 +25,18 @@ type RedirectResponse struct {
 // @Summary Handle the OAuth2 callback
 // @Description Handle the OAuth2 callback
 // @Produce  json
-// @Success 200 {object} ResponseSingle[RedirectResponse]
+// @Success 200 {object} models.ResponseSingle[RedirectResponse]
 // @Router /user/callback [get]
 // @Tags User
 // @Param code query string true "The code from the OAuth2 provider"
 // @Param state query string false "The state"
 // @Param baseURL query string false "The base URL"
-// @Error 400 {object} ResponseError
+// @Error 400 {object} models.ResponseError
 func HandleOAuth2Callback(c *gin.Context) {
 	query := c.Request.URL.Query()
 	code := query.Get("code")
 	if code == "" {
-		c.JSON(400, ResponseError{
+		c.JSON(400, models.ResponseError{
 			Detail: "No code found in the query",
 		})
 		return
@@ -53,21 +53,21 @@ func HandleOAuth2Callback(c *gin.Context) {
 	oauth2_service := services.NewOAuth2Service()
 	accessToken, err := oauth2_service.GetToken(code, baseURL+consts.Config.Auth.OAuth2.RedirectPath)
 	if err != nil {
-		c.JSON(400, ResponseError{
+		c.JSON(400, models.ResponseError{
 			Detail: err.Error(),
 		})
 		return
 	}
 	user, err := oauth2_service.GetUser(accessToken)
 	if err != nil {
-		c.JSON(400, ResponseError{
+		c.JSON(400, models.ResponseError{
 			Detail: err.Error(),
 		})
 		return
 	}
 	conn, close, err := repository.GetDB()
 	if err != nil {
-		c.JSON(500, ResponseError{
+		c.JSON(500, models.ResponseError{
 			Detail: err.Error(),
 		})
 		return
@@ -87,7 +87,7 @@ func HandleOAuth2Callback(c *gin.Context) {
 			}
 			trx := conn.Create(db_user)
 			if trx.Error != nil {
-				c.JSON(500, ResponseError{
+				c.JSON(500, models.ResponseError{
 					Detail: trx.Error.Error(),
 				})
 				return
@@ -95,7 +95,7 @@ func HandleOAuth2Callback(c *gin.Context) {
 			log.Println("User created: ", trx.RowsAffected)
 
 		} else {
-			c.JSON(500, ResponseError{
+			c.JSON(500, models.ResponseError{
 				Detail: err.Error(),
 			})
 			return
@@ -123,7 +123,7 @@ func HandleOAuth2Callback(c *gin.Context) {
 	log.Println("New Access token ", newAccessToken)
 	if err != nil {
 		tx.Rollback()
-		c.JSON(500, ResponseError{
+		c.JSON(500, models.ResponseError{
 			Detail: err.Error(),
 		})
 		return
@@ -132,14 +132,14 @@ func HandleOAuth2Callback(c *gin.Context) {
 	log.Println("Refresh Token :", newRefreshToken)
 	if err != nil {
 		tx.Rollback()
-		c.JSON(500, ResponseError{
+		c.JSON(500, models.ResponseError{
 			Detail: err.Error(),
 		})
 		return
 	}
 	c.SetCookie(AuthenticationCookieName, newAccessToken, consts.Config.Auth.Expiry*60, "/", "", false, false)
 	c.SetCookie(RefreshCookieName, newRefreshToken, consts.Config.Auth.Refresh*60, "/", "", false, false)
-	c.JSON(200, ResponseSingle[RedirectResponse]{Data: RedirectResponse{Redirect: state}})
+	c.JSON(200, models.ResponseSingle[RedirectResponse]{Data: RedirectResponse{Redirect: state}})
 	tx.Commit()
 }
 
@@ -147,7 +147,7 @@ func WithSession(callback func(*gin.Context, *cache.Session)) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		session := GetSession(c)
 		if session == nil {
-			c.JSON(401, ResponseError{
+			c.JSON(401, models.ResponseError{
 				Detail: "Internal Server Error : Session not found",
 			})
 			return
@@ -189,11 +189,11 @@ func GetCurrentUser(c *gin.Context) *models.User {
 // @Summary Redirect to the OAuth2 login
 // @Description Redirect to the OAuth2 login
 // @Produce  json
-// @Success 200 {object} ResponseSingle[RedirectResponse]
+// @Success 200 {object} models.ResponseSingle[RedirectResponse]
 // @Router /user/login [get]
 // @Tags User
 // @Param callback query string false "The callback URL"
-// @Error 400 {object} ResponseError
+// @Error 400 {object} models.ResponseError
 func RedirectForLogin(c *gin.Context) {
 	oauth2_service := services.NewOAuth2Service()
 	callback, ok := c.GetQuery("callback")
@@ -201,5 +201,5 @@ func RedirectForLogin(c *gin.Context) {
 		callback = "/"
 	}
 	redirect_uri := oauth2_service.Init(callback)
-	c.JSON(200, ResponseSingle[RedirectResponse]{Data: RedirectResponse{Redirect: redirect_uri}})
+	c.JSON(200, models.ResponseSingle[RedirectResponse]{Data: RedirectResponse{Redirect: redirect_uri}})
 }

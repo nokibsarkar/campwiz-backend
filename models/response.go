@@ -1,4 +1,4 @@
-package routes
+package models
 
 type ResponseSingle[T any] struct {
 	Data T `json:"data"`

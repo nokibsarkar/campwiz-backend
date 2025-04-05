@@ -15,29 +15,29 @@ import (
 // @Summary List all campaigns
 // @Description get all campaigns
 // @Produce  json
-// @Success 200 {object} ResponseList[models.Campaign]
+// @Success 200 {object} models.ResponseList[models.Campaign]
 // @Router /campaign/ [get]
 // @param CampaignFilter query models.CampaignFilter false "Filter the campaigns"
 // @Tags Campaign
-// @Error 400 {object} ResponseError
+// @Error 400 {object} models.ResponseError
 func ListAllCampaigns(c *gin.Context) {
 	qry := &models.CampaignFilter{}
 	err := c.ShouldBindQuery(qry)
 	if err != nil {
-		c.JSON(400, ResponseError{Detail: "Invalid request : " + err.Error()})
+		c.JSON(400, models.ResponseError{Detail: "Invalid request : " + err.Error()})
 		return
 	}
 	campaignService := services.NewCampaignService()
 	if qry.IsHidden != nil && *qry.IsHidden {
 		sess := GetSession(c)
 		if sess == nil {
-			c.JSON(400, ResponseError{Detail: "Invalid request : User Must be logged in to get hidden campaigns"})
+			c.JSON(400, models.ResponseError{Detail: "Invalid request : User Must be logged in to get hidden campaigns"})
 			return
 		}
 		if !sess.Permission.HasPermission(consts.PermissionOtherProjectAccess) {
 			// user is not an admin
 			if qry.ProjectID == "" {
-				c.JSON(400, ResponseError{Detail: "Invalid request : Project ID is required when isHidden is true and user is not an admin"})
+				c.JSON(400, models.ResponseError{Detail: "Invalid request : Project ID is required when isHidden is true and user is not an admin"})
 				return
 			}
 		}
@@ -46,11 +46,11 @@ func ListAllCampaigns(c *gin.Context) {
 			// check if the user is allowed to access this project
 			currentUser := GetCurrentUser(c)
 			if currentUser == nil {
-				c.JSON(400, ResponseError{Detail: "Invalid request : User not found"})
+				c.JSON(400, models.ResponseError{Detail: "Invalid request : User not found"})
 				return
 			}
 			if currentUser.LeadingProjectID == nil {
-				c.JSON(400, ResponseError{Detail: "Invalid request : User is not leading any project"})
+				c.JSON(400, models.ResponseError{Detail: "Invalid request : User is not leading any project"})
 				return
 			}
 			if *currentUser.LeadingProjectID != qry.ProjectID {
@@ -58,7 +58,7 @@ func ListAllCampaigns(c *gin.Context) {
 				// cross project access is allowed only for jury and coordinators
 				conn, close, err := repository.GetDB()
 				if err != nil {
-					c.JSON(400, ResponseError{Detail: "Database Error: " + err.Error()})
+					c.JSON(400, models.ResponseError{Detail: "Database Error: " + err.Error()})
 					return
 				}
 				defer close()
@@ -66,7 +66,7 @@ func ListAllCampaigns(c *gin.Context) {
 				roleFilter := &models.RoleFilter{ProjectID: qry.ProjectID, UserID: &currentUser.UserID}
 				roles, err := userRepo.FetchRoles(conn, roleFilter)
 				if err != nil {
-					c.JSON(400, ResponseError{Detail: "Invalid request : " + err.Error()})
+					c.JSON(400, models.ResponseError{Detail: "Invalid request : " + err.Error()})
 					return
 				}
 				hasRoles := false
@@ -79,21 +79,21 @@ func ListAllCampaigns(c *gin.Context) {
 					}
 				}
 				if !hasRoles {
-					c.JSON(400, ResponseError{Detail: "Invalid request : User does not have permission to access this project"})
+					c.JSON(400, models.ResponseError{Detail: "Invalid request : User does not have permission to access this project"})
 					return
 				}
 			}
 		}
 	}
 	campaignList := campaignService.GetAllCampaigns(qry)
-	c.JSON(200, ResponseList[models.Campaign]{Data: campaignList})
+	c.JSON(200, models.ResponseList[models.Campaign]{Data: campaignList})
 }
 
 func ListAllCampaignsV2(c *gin.Context, sess *cache.Session) {
 	qry := &models.CampaignFilter{}
 	err := c.ShouldBindQuery(qry)
 	if err != nil {
-		c.JSON(400, ResponseError{Detail: "Invalid request : " + err.Error()})
+		c.JSON(400, models.ResponseError{Detail: "Invalid request : " + err.Error()})
 		return
 	}
 	campaignService := services.NewCampaignService()
@@ -101,13 +101,13 @@ func ListAllCampaignsV2(c *gin.Context, sess *cache.Session) {
 	if qry.IsHidden != nil && *qry.IsHidden {
 		sess := GetSession(c)
 		if sess == nil {
-			c.JSON(400, ResponseError{Detail: "Invalid request : User Must be logged in to get hidden campaigns"})
+			c.JSON(400, models.ResponseError{Detail: "Invalid request : User Must be logged in to get hidden campaigns"})
 			return
 		}
 		// if !sess.Permission.HasPermission(consts.PermissionOtherProjectAccess) {
 		// 	// user is not an admin
 		// 	if qry.ProjectID == "" {
-		// 		c.JSON(400, ResponseError{Detail: "Invalid request : Project ID is required when isHidden is true and user is not an admin"})
+		// 		c.JSON(400, models.ResponseError{Detail: "Invalid request : Project ID is required when isHidden is true and user is not an admin"})
 		// 		return
 		// 	}
 		// }
@@ -116,11 +116,11 @@ func ListAllCampaignsV2(c *gin.Context, sess *cache.Session) {
 		// 	// check if the user is allowed to access this project
 		// 	currentUser := GetCurrentUser(c)
 		// 	if currentUser == nil {
-		// 		c.JSON(400, ResponseError{Detail: "Invalid request : User not found"})
+		// 		c.JSON(400, models.ResponseError{Detail: "Invalid request : User not found"})
 		// 		return
 		// 	}
 		// 	if currentUser.LeadingProjectID == nil {
-		// 		c.JSON(400, ResponseError{Detail: "Invalid request : User is not leading any project"})
+		// 		c.JSON(400, models.ResponseError{Detail: "Invalid request : User is not leading any project"})
 		// 		return
 		// 	}
 		// 	if *currentUser.LeadingProjectID != qry.ProjectID {
@@ -132,7 +132,7 @@ func ListAllCampaignsV2(c *gin.Context, sess *cache.Session) {
 		// 		roleFilter := &models.RoleFilter{ProjectID: qry.ProjectID, UserID: &currentUser.UserID}
 		// 		roles, err := userRepo.FetchRoles(conn, roleFilter)
 		// 		if err != nil {
-		// 			c.JSON(400, ResponseError{Detail: "Invalid request : " + err.Error()})
+		// 			c.JSON(400, models.ResponseError{Detail: "Invalid request : " + err.Error()})
 		// 			return
 		// 		}
 		// 		hasRoles := false
@@ -145,7 +145,7 @@ func ListAllCampaignsV2(c *gin.Context, sess *cache.Session) {
 		// 			}
 		// 		}
 		// 		if !hasRoles {
-		// 			c.JSON(400, ResponseError{Detail: "Invalid request : User does not have permission to access this project"})
+		// 			c.JSON(400, models.ResponseError{Detail: "Invalid request : User does not have permission to access this project"})
 		// 			return
 		// 		}
 		// 	}
@@ -154,7 +154,7 @@ func ListAllCampaignsV2(c *gin.Context, sess *cache.Session) {
 	} else {
 		campaignList = campaignService.GetAllCampaigns(qry)
 	}
-	c.JSON(200, ResponseList[models.Campaign]{Data: campaignList})
+	c.JSON(200, models.ResponseList[models.Campaign]{Data: campaignList})
 }
 
 /*
@@ -170,7 +170,7 @@ func GetAllCampaignTimeLine(c *gin.Context) {
 // @Summary Get a single campaign
 // @Description Get a single campaign
 // @Produce  json
-// @Success 200 {object} ResponseSingle[models.CampaignExtended]
+// @Success 200 {object} models.ResponseSingle[models.CampaignExtended]
 // @Router /campaign/{campaignId} [get]
 // @Param campaignId path string true "The campaign ID"
 // @Param campaignQuery query services.SingleCampaignQuery false "The query for the campaign"
@@ -178,18 +178,18 @@ func GetAllCampaignTimeLine(c *gin.Context) {
 func GetSingleCampaign(c *gin.Context, sess *cache.Session) {
 	campaignId := c.Param("campaignId")
 	if campaignId == "" {
-		c.JSON(400, ResponseError{Detail: "Invalid request : Campaign ID is required"})
+		c.JSON(400, models.ResponseError{Detail: "Invalid request : Campaign ID is required"})
 	}
 	q := &services.SingleCampaignQuery{}
 	err := c.ShouldBindQuery(q)
 	if err != nil {
-		c.JSON(400, ResponseError{Detail: "Invalid request : " + err.Error()})
+		c.JSON(400, models.ResponseError{Detail: "Invalid request : " + err.Error()})
 		return
 	}
 	campaign_service := services.NewCampaignService()
 	campaign, err := campaign_service.GetCampaignByID(models.IDType(campaignId), q)
 	if err != nil {
-		c.JSON(404, ResponseError{Detail: "Failed to get campaign : " + err.Error()})
+		c.JSON(404, models.ResponseError{Detail: "Failed to get campaign : " + err.Error()})
 		return
 	}
 	ex := &models.CampaignExtended{Campaign: *campaign, Coordinators: []models.WikimediaUsernameType{}}
@@ -219,7 +219,7 @@ func GetSingleCampaign(c *gin.Context, sess *cache.Session) {
 			campaign.Rounds[i] = round
 		}
 	}
-	c.JSON(200, ResponseSingle[*models.CampaignExtended]{Data: ex})
+	c.JSON(200, models.ResponseSingle[*models.CampaignExtended]{Data: ex})
 }
 
 func ListAllJury(c *gin.Context) {
@@ -240,7 +240,7 @@ func CreateCampaign(c *gin.Context, sess *cache.Session) {
 	createRequest := &services.CampaignCreateRequest{}
 	err := c.ShouldBindBodyWithJSON(createRequest)
 	if err != nil {
-		c.JSON(400, ResponseError{Detail: "Invalid request : " + err.Error()})
+		c.JSON(400, models.ResponseError{Detail: "Invalid request : " + err.Error()})
 		return
 	}
 	createRequest.CreatedByID = sess.UserID
@@ -256,17 +256,17 @@ func CreateCampaign(c *gin.Context, sess *cache.Session) {
 	createRequest.Status = models.RoundStatusActive
 	campaign, err := camapign_service.CreateCampaign(createRequest)
 	if err != nil {
-		c.JSON(400, ResponseError{Detail: "Failed to create campaign : " + err.Error()})
+		c.JSON(400, models.ResponseError{Detail: "Failed to create campaign : " + err.Error()})
 		return
 	}
-	c.JSON(200, ResponseSingle[*models.Campaign]{Data: campaign})
+	c.JSON(200, models.ResponseSingle[*models.Campaign]{Data: campaign})
 }
 
 // UpdateCampaign godoc
 // @Summary Update a campaign
 // @Description Update a campaign
 // @Produce  json
-// @Success 200 {object} ResponseSingle[models.Campaign]
+// @Success 200 {object} models.ResponseSingle[models.Campaign]
 // @Router /campaign/{id} [post]
 // @Tags Campaign
 // @Param id path string true "The campaign ID"
@@ -274,21 +274,21 @@ func CreateCampaign(c *gin.Context, sess *cache.Session) {
 func UpdateCampaign(c *gin.Context, sess *cache.Session) {
 	campaignId := c.Param("campaignId")
 	if campaignId == "" {
-		c.JSON(400, ResponseError{Detail: "Invalid request : Campaign ID is required"})
+		c.JSON(400, models.ResponseError{Detail: "Invalid request : Campaign ID is required"})
 	}
 	updateRequest := &services.CampaignUpdateRequest{}
 	err := c.ShouldBindBodyWithJSON(updateRequest)
 	if err != nil {
-		c.JSON(400, ResponseError{Detail: "Invalid request : " + err.Error()})
+		c.JSON(400, models.ResponseError{Detail: "Invalid request : " + err.Error()})
 		return
 	}
 	campaign_service := services.NewCampaignService()
 	campaign, err := campaign_service.UpdateCampaign(models.IDType(campaignId), updateRequest)
 	if err != nil {
-		c.JSON(400, ResponseError{Detail: "Failed to update campaign : " + err.Error()})
+		c.JSON(400, models.ResponseError{Detail: "Failed to update campaign : " + err.Error()})
 		return
 	}
-	c.JSON(200, ResponseSingle[*models.Campaign]{Data: campaign})
+	c.JSON(200, models.ResponseSingle[*models.Campaign]{Data: campaign})
 }
 func GetCampaignResultSummary(c *gin.Context) {
 	c.JSON(200, gin.H{

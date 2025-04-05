@@ -14,30 +14,30 @@ import (
 // @Summary Get a task by ID
 // @Description The task represents a background job that can be run by the system
 // @Produce  json
-// @Success 200 {object} ResponseSingle[services.TaskResponse]
+// @Success 200 {object} models.ResponseSingle[services.TaskResponse]
 // @Router /task/{taskId} [get]
 // @Tags Task
 // @Param taskId path string true "The task ID"
-// @Error 400 {object} ResponseError
-// @Error 404 {object} ResponseError
+// @Error 400 {object} models.ResponseError
+// @Error 404 {object} models.ResponseError
 func GetTaskById(c *gin.Context, sess *cache.Session) {
 	defer HandleError("GetTaskById")
 	taskId := c.Param("taskId")
 	if taskId == "" {
-		c.JSON(400, ResponseError{Detail: "Invalid request : Task ID is required"})
+		c.JSON(400, models.ResponseError{Detail: "Invalid request : Task ID is required"})
 		return
 	}
 	task_service := services.NewTaskService()
 	task, err := task_service.GetTask(models.IDType(taskId))
 	if err != nil {
-		c.JSON(400, ResponseError{Detail: "Error getting task : " + err.Error()})
+		c.JSON(400, models.ResponseError{Detail: "Error getting task : " + err.Error()})
 		return
 	}
 	if task == nil {
-		c.JSON(404, ResponseError{Detail: "Task not found"})
+		c.JSON(404, models.ResponseError{Detail: "Task not found"})
 		return
 	}
-	c.JSON(200, ResponseSingle[models.Task]{Data: *task})
+	c.JSON(200, models.ResponseSingle[models.Task]{Data: *task})
 }
 
 // GetTaskByIDStream godoc
@@ -47,13 +47,13 @@ func GetTaskById(c *gin.Context, sess *cache.Session) {
 // @Router /task/{taskId}/stream [get]
 // @Tags Task
 // @Param taskId path string true "The task ID"
-// @Error 400 {object} ResponseError
-// @Error 404 {object} ResponseError
+// @Error 400 {object} models.ResponseError
+// @Error 404 {object} models.ResponseError
 func GetTaskByIDStream(c *gin.Context, sess *cache.Session) {
 	defer HandleError("GetTaskById")
 	taskId := c.Param("taskId")
 	if taskId == "" {
-		c.JSON(400, ResponseError{Detail: "Invalid request : Task ID is required"})
+		c.JSON(400, models.ResponseError{Detail: "Invalid request : Task ID is required"})
 		return
 	}
 	task_service := services.NewTaskService()

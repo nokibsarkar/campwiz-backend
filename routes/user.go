@@ -19,13 +19,13 @@ func GetMe(c *gin.Context, session *cache.Session) {
 	user_services := services.NewUserService()
 	user, err := user_services.GetExtendedDetails(userID)
 	if err != nil {
-		c.JSON(403, ResponseError{
+		c.JSON(403, models.ResponseError{
 			Detail: err.Error(),
 		})
 		return
 	}
 	c.Header("Cache-Control", "force-cache")
-	c.JSON(200, ResponseSingle[*models.ExtendedUserDetails]{user})
+	c.JSON(200, models.ResponseSingle[*models.ExtendedUserDetails]{Data: user})
 }
 func GetUser(c *gin.Context) {
 	// ...
@@ -52,7 +52,7 @@ func Logout(c *gin.Context) {
 		auth_service := services.NewAuthenticationService()
 		err := auth_service.Logout(session)
 		if err != nil {
-			c.JSON(500, ResponseError{
+			c.JSON(500, models.ResponseError{
 				Detail: err.Error(),
 			})
 			return
@@ -63,7 +63,7 @@ func Logout(c *gin.Context) {
 	log.Println("Logged out")
 	c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
 	c.Header("Location", redirect)
-	c.JSON(200, ResponseSingle[RedirectResponse]{
+	c.JSON(200, models.ResponseSingle[RedirectResponse]{
 		Data: RedirectResponse{Redirect: redirect},
 	})
 }

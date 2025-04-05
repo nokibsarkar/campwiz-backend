@@ -27,7 +27,7 @@ type EvaluationRequest struct {
 	SubmissionID models.IDType     `json:"submissionId,omitempty"`
 }
 
-func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluationRequests []EvaluationRequest) ([]*models.Evaluation, error) {
+func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluationRequests []EvaluationRequest) (result *models.EvaluationListResponseWithCurrentStats, err error) {
 	// ev_repo := repository.NewEvaluationRepository()
 	user_repo := repository.NewUserRepository()
 	round_repo := repository.NewRoundRepository()
@@ -155,30 +155,43 @@ func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluation
 		tx.Rollback()
 		return nil, err
 	}
+	res = tx.Model(&models.Role{}).Where(&models.Role{RoleID: juryRole.RoleID, UserID: juryRole.UserID}).First(&juryRole)
+	if res.Error != nil {
+		tx.Rollback()
+		return nil, res.Error
+	}
+
 	tx.Commit()
-	return evaluations, nil
+	result = &models.EvaluationListResponseWithCurrentStats{
+		ResponseList: models.ResponseList[*models.Evaluation]{
+			Data: evaluations,
+		},
+		TotalEvaluatedCount:  juryRole.TotalEvaluated,
+		TotalAssignmentCount: juryRole.TotalAssigned,
+	}
+	return
 }
-func (e *EvaluationService) PublicBulkEvaluate(currentUserID models.IDType, evaluationRequests []EvaluationRequest) ([]*models.Evaluation, error) {
+func (e *EvaluationService) PublicBulkEvaluate(currentUserID models.IDType, evaluationRequests []EvaluationRequest) (evaluations []*models.Evaluation, totalAssignmentCount int, totalEvaluationCount int, err error) {
 	// ev_repo := repository.NewEvaluationRepository()
 	user_repo := repository.NewUserRepository()
 	round_repo := repository.NewRoundRepository()
-	evaluations := []*models.Evaluation{}
+	evaluations = []*models.Evaluation{}
 
 	// jury_repo := repository.NewRoleRepository()
 	conn, close, err := repository.GetDB()
 	if err != nil {
-		return nil, err
+		return nil, 0, 0, err
 	}
 	defer close()
 	tx := conn.Begin()
 	currentUser, err := user_repo.FindByID(tx, currentUserID)
 	if err != nil {
 		tx.Rollback()
-		return nil, err
 	}
 	if currentUser == nil {
 		tx.Rollback()
-		return nil, errors.New("user not found")
+		err = errors.New("user not found")
+		return
 	}
 	existingEvaluationIDs := []string{}
 	var currentRound *models.Round
@@ -193,18 +206,21 @@ func (e *EvaluationService) PublicBulkEvaluate(currentUserID models.IDType, eval
 	for _, evaluationRequest := range evaluationRequests {
 		if evaluationRequest.Score == nil {
 			tx.Rollback()
-			return nil, fmt.Errorf("no score is given for evaluation %s", evaluationRequest.EvaluationID)
+			err = fmt.Errorf("no score is given for evaluation %s", evaluationRequest.EvaluationID)
+			return
 		}
 		if *evaluationRequest.Score > models.MAXIMUM_EVALUATION_SCORE {
 			tx.Rollback()
-			return nil, fmt.Errorf("score is greater than %v", models.MAXIMUM_EVALUATION_SCORE)
+			err = fmt.Errorf("score is greater than %v", models.MAXIMUM_EVALUATION_SCORE)
+			return
 		}
 		if evaluationRequest.EvaluationID == "" {
 			// No evaluation ID is given
 			if evaluationRequest.SubmissionID == "" {
 				// No submission ID is given
 				tx.Rollback()
-				return nil, errors.New("either evaluationId or submission Id must be provided")
+				err = errors.New("either evaluationId or submission Id must be provided")
+				return
 			} else {
 				// Submission ID is given
 				evaluationRequest.EvaluationID = idgenerator.GenerateID("e")
@@ -224,10 +240,11 @@ func (e *EvaluationService) PublicBulkEvaluate(currentUserID models.IDType, eval
 
 	now := time.Now().UTC()
 	if len(newEvaluationRequests) > 0 {
-		submissions, err := Submission.Where(Submission.SubmissionID.In(newEvalutionSubmissionIds...)).Find()
-		if err != nil {
+		submissions, innerErr := Submission.Where(Submission.SubmissionID.In(newEvalutionSubmissionIds...)).Find()
+		if innerErr != nil {
 			tx.Rollback()
-			return nil, err
+			err = innerErr
+			return
 		}
 		newEvaluations := []*models.Evaluation{}
 		for _, submission := range submissions {
@@ -235,35 +252,41 @@ func (e *EvaluationService) PublicBulkEvaluate(currentUserID models.IDType, eval
 				currentRound, err = round_repo.FindByID(tx.Preload("Roles").Preload("Campaign"), submission.RoundID)
 				if err != nil {
 					tx.Rollback()
-					return nil, err
+					return
 				}
 				campaign = currentRound.Campaign
 				if campaign == nil {
 					tx.Rollback()
-					return nil, errors.New("campaign not found")
+					err = errors.New("campaign not found")
+					return
 				}
 
 				roles := currentRound.Roles
 				for _, role := range roles {
 					if role.UserID == currentUser.UserID {
 						juryRole = &role
+						totalAssignmentCount = role.TotalAssigned
+						totalEvaluationCount = role.TotalEvaluated
 						break
 					}
 				}
 				if juryRole == nil {
 					tx.Rollback()
-					return nil, errors.New("user is not a jury")
+					err = errors.New("user is not a jury")
+					return
 				}
 				if juryRole.DeletedAt != nil {
 					tx.Rollback()
-					return nil, errors.New("user is not allowed to evaluate")
+					err = errors.New("user is not allowed to evaluate")
+					return
 				}
 			}
 			log.Println(newEvaluationSubmissionMap, submission.SubmissionID)
 			eReq, ok := newEvaluationSubmissionMap[submission.SubmissionID]
 			if !ok {
 				tx.Rollback()
-				return nil, errors.New("eReq not found")
+				err = errors.New("eReq not found")
+				return
 			}
 			ev := &models.Evaluation{
 				EvaluationID:  eReq.EvaluationID,
@@ -284,42 +307,48 @@ func (e *EvaluationService) PublicBulkEvaluate(currentUserID models.IDType, eval
 		defer closeCtx()
 		res := tx.WithContext(ctx).Create(newEvaluations)
 		if res.Error != nil {
-			return nil, res.Error
+			tx.Rollback()
+			err = res.Error
+			return
 		}
 		evaluations = append(evaluations, newEvaluations...)
 	}
 	if len(existingEvaluationIDs) > 0 {
 		existingEvaluations := []*models.Evaluation{}
-		err := Evaluation.Preload(Evaluation.Submission).Where(Evaluation.EvaluationID.In(existingEvaluationIDs...)).Scan(&existingEvaluations)
+		err = Evaluation.Preload(Evaluation.Submission).Where(Evaluation.EvaluationID.In(existingEvaluationIDs...)).Scan(&existingEvaluations)
 		if err != nil {
 			tx.Rollback()
-			return nil, err
+			return
 		}
 		for _, evaluation := range existingEvaluations {
 			evaluationRequest, ok := existingEvaluationRequestMap[evaluation.EvaluationID]
 			if !ok {
 				tx.Rollback()
-				return nil, errors.New("evaluation not found in request")
+				err = errors.New("evaluation not found in request")
+				return
 			}
 			submission := evaluation.Submission
 			if submission.SubmittedByID == currentUser.UserID {
 				tx.Rollback()
-				return nil, errors.New("user can't evaluate his/her own submission")
+				err = errors.New("user can't evaluate his/her own submission")
+				return
 			}
 			if currentRound == nil {
 				currentRound, err = round_repo.FindByID(tx.Preload("Campaign").Preload(("Roles")), submission.RoundID)
 				if err != nil {
 					tx.Rollback()
-					return nil, err
+					return
 				}
 				campaign = currentRound.Campaign
 				if campaign == nil {
 					tx.Rollback()
-					return nil, errors.New("campaign not found")
+					err = errors.New("campaign not found")
+					return
 				}
 				if campaign.Status != models.RoundStatusActive {
 					tx.Rollback()
-					return nil, errors.New("campaign is not active")
+					err = errors.New("campaign is not active")
+					return
 				}
 				roles := currentRound.Roles
 				for _, role := range roles {
@@ -330,20 +359,24 @@ func (e *EvaluationService) PublicBulkEvaluate(currentUserID models.IDType, eval
 				}
 				if juryRole == nil {
 					tx.Rollback()
-					return nil, errors.New("user is not a jury")
+					err = errors.New("user is not a jury")
+					return
 				}
 				if juryRole.DeletedAt != nil {
 					tx.Rollback()
-					return nil, errors.New("user is not allowed to evaluate")
+					err = errors.New("user is not allowed to evaluate")
+					return
 				}
 			}
 			if submission.RoundID != currentRound.RoundID {
 				tx.Rollback()
-				return nil, errors.New("all submissions must be from the same round")
+				err = errors.New("all submissions must be from the same round")
+				return
 			}
 			if evaluationRequest.Score == nil {
 				tx.Rollback()
-				return nil, errors.New("no score is given")
+				err = errors.New("no score is given")
+				return
 			}
 			if evaluation.Type == models.EvaluationTypeBinary {
 				log.Println("Binary evaluation")
@@ -361,7 +394,8 @@ func (e *EvaluationService) PublicBulkEvaluate(currentUserID models.IDType, eval
 
 			if res.Error != nil {
 				tx.Rollback()
-				return nil, res.Error
+				err = res.Error
+				return
 			}
 			combinedSubmissionIds = append(combinedSubmissionIds, submission.SubmissionID)
 			evaluations = append(evaluations, evaluation)
@@ -369,16 +403,26 @@ func (e *EvaluationService) PublicBulkEvaluate(currentUserID models.IDType, eval
 	}
 	if currentRound == nil {
 		tx.Rollback()
-		return nil, errors.New("no evaluations found")
+		err = errors.New("no evaluations found")
+		return
 	}
 	evaluation_repo := repository.NewEvaluationRepository()
 	// trigger submission score counting
-	if err := evaluation_repo.TriggerEvaluationScoreCount(tx, combinedSubmissionIds); err != nil {
+	if err = evaluation_repo.TriggerEvaluationScoreCount(tx, combinedSubmissionIds); err != nil {
 		tx.Rollback()
-		return nil, err
+		return
+	}
+
+	res := tx.Model(&models.Role{}).Where(&models.Role{RoleID: juryRole.RoleID, UserID: juryRole.UserID}).First(&juryRole)
+	if res.Error != nil {
+		tx.Rollback()
+		err = res.Error
+		return
 	}
 	tx.Commit()
-	return evaluations, nil
+	totalAssignmentCount = juryRole.TotalAssigned
+	totalEvaluationCount = juryRole.TotalEvaluated
+	return
 }
 
 func (e *EvaluationService) Evaluate(currentUserID models.IDType, evaluationID models.IDType, evaluationRequest *EvaluationRequest) (*models.Evaluation, error) {
@@ -548,16 +592,6 @@ func (e *EvaluationService) PublicEvaluate(currentUserID models.IDType, submissi
 func (e *EvaluationService) GetEvaluationById() {
 }
 
-func (e *EvaluationService) ListEvaluations(filter *models.EvaluationFilter) ([]models.Evaluation, error) {
-	ev_repo := repository.NewEvaluationRepository()
-	conn, close, err := repository.GetDB()
-	if err != nil {
-		return nil, err
-	}
-	defer close()
-	return ev_repo.ListAllEvaluations(conn, filter)
-}
-
 // First get the roleID and round ID of the current user
 // if not found, return error
 // check if the role has judge permission
@@ -568,29 +602,33 @@ func (e *EvaluationService) ListEvaluations(filter *models.EvaluationFilter) ([]
 // - if includeEvaluated is nil, no condition
 // - if includeSkipped is true, include skipped submissions
 // - if includeSkipped is false, exclude skipped submissions
-func (e *EvaluationService) GetNextEvaluations(currenUserID models.IDType, filter *models.EvaluationFilter) ([]models.Evaluation, error) {
+func (e *EvaluationService) GetNextEvaluations(currenUserID models.IDType, filter *models.EvaluationFilter) (evaluations []*models.Evaluation, totalAssigned int, totalEvaluated int, err error) {
 	ev_repo := repository.NewEvaluationRepository()
 	roleRepo := repository.NewRoleRepository()
 	conn, close, err := repository.GetDB()
 	if err != nil {
-		return nil, err
+		return
 	}
 	defer close()
 	juryType := models.RoleTypeJury
 	roles, err := roleRepo.ListAllRoles(conn, &models.RoleFilter{UserID: &currenUserID, RoundID: &filter.RoundID, Type: &juryType})
 	if err != nil {
-		return nil, err
+		return
 	}
 	if len(roles) == 0 {
-		return nil, errors.New("user is not a jury")
+		err = errors.New("user is not a jury")
+		return
 	}
 	juryRole := roles[0]
+	totalAssigned = juryRole.TotalAssigned
+	totalEvaluated = juryRole.TotalEvaluated
 	if juryRole.DeletedAt != nil {
-		return nil, errors.New("user is not allowed to evaluate")
+		return nil, 0, 0, errors.New("user is not allowed to evaluate")
 	}
 	juryRoleID := juryRole.RoleID
 	filter.JuryRoleID = juryRoleID
 	falsey := false
 	filter.Evaluated = &falsey
-	return ev_repo.ListAllEvaluations(conn, filter)
+	evaluations, err = ev_repo.ListAllEvaluations(conn, filter)
+	return
 }

@@ -196,7 +196,7 @@ func GetCurrentUser(c *gin.Context) *models.User {
 // @Error 400 {object} models.ResponseError
 func RedirectForLogin(c *gin.Context) {
 	oauth2_service := services.NewOAuth2Service()
-	callback, ok := c.GetQuery("callback")
+	callback, ok := c.GetQuery("next")
 	if !ok {
 		callback = "/"
 	}

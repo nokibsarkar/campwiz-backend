@@ -137,12 +137,12 @@ func (a *AuthenticationMiddleWare) Authenticate2(c *gin.Context) {
 			}
 			c.Set(SESSION_KEY, session)
 		}
-		if hub := sentrygin.GetHubFromContext(c); hub != nil {
+		if hub := sentrygin.GetHubFromContext(c); hub != nil && session != nil {
 			hub.Scope().SetUser(sentry.User{
-				ID:        session.UserID.String(),
-				Username:  string(session.Username),
-				IPAddress: c.ClientIP(),
-				Name:      string(session.Username),
+				ID:       session.UserID.String(),
+				Username: string(session.Username),
+				// IPAddress: c.ClientIP(),
+				Name: string(session.Username),
 				Data: map[string]string{
 					"sessionId":  session.ID.String(),
 					"permission": fmt.Sprintf("%d", session.Permission),

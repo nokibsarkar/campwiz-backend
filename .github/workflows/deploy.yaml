@@ -22,7 +22,7 @@ jobs:
         run: |
           go build -v -o campwiz .
           mkdir -p read-only
-          go build -v -o read-only/campwiz-read-only . -tags=readonly
+          go build -v -o read-only/campwiz-read-only . -tags readonly
           ls read-only
       - name: Setup Deployment Environment
         run: |

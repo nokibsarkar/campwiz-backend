@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var serverInstanceId = idgenerator.GenerateID("ReadOnlyServer")
+var serverInstanceId = idgenerator.GenerateID("Server-")
 
 func NewRoutes(nonAPIParent *gin.RouterGroup) *gin.RouterGroup {
 	r := nonAPIParent.Group("/api/v2")

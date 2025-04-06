@@ -18,8 +18,12 @@ jobs:
         run: go get .
       - name: Run tests
         run: go test -v -coverprofile=coverage.txt ./repository
-      - name: Build
-        run: go build -v -o campwiz .
+      - name: Build The main server
+        run: |
+          go build -v -o campwiz .
+          mkdir -p read-only
+          go build -v -o read-only/campwiz-read-only . -tags=readonly
+          ls read-only
       - name: Setup Deployment Environment
         run: |
           mkdir -p ~/.ssh

@@ -32,7 +32,10 @@ jobs:
           chmod 600 id_rsa
       - name: Send Build to Server
         run: |
-          rsync -Pav --no-perms --omit-dir-times -e "ssh -i id_rsa" campwiz "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.SSH_REMOTE_PATH }}"
+          rsync -Pav --no-perms --omit-dir-times -e "ssh -i id_rsa" campwiz  "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.SSH_REMOTE_PATH }}"
+      - name: Send Read-Only Build to Server
+        run: |
+          rsync -Pav --no-perms --omit-dir-times -e "ssh -i id_rsa" read-only/campwiz-read-only  "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.SSH_REMOTE_PATH }}/read-only"
       - name: Restart Campwiz
         run: |
           ssh -i id_rsa "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" "cd ${{ secrets.SSH_REMOTE_PATH }} && pm2 restart campwiz-backend"

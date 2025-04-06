@@ -57,6 +57,7 @@ func (service *CampaignService) CreateCampaign(campaignRequest *CampaignCreateRe
 	// 	return nil, fmt.Errorf("user does not have permission to create campaign")
 	// }
 	if campaignRequest.ProjectID == "" {
+		log.Println("Project ID is not provided")
 		if currentUser.LeadingProjectID == nil {
 			tx.Rollback()
 			return nil, fmt.Errorf("user is not leading any project. So project id is required")
@@ -64,6 +65,7 @@ func (service *CampaignService) CreateCampaign(campaignRequest *CampaignCreateRe
 			campaignRequest.ProjectID = *currentUser.LeadingProjectID
 		}
 	} else {
+		log.Println("Project ID is provided" + campaignRequest.ProjectID)
 		// project id is provided
 		if currentUser.LeadingProjectID == nil && !currentUser.Permission.HasPermission(consts.PermissionOtherProjectAccess) {
 			tx.Rollback()
@@ -87,7 +89,7 @@ func (service *CampaignService) CreateCampaign(campaignRequest *CampaignCreateRe
 			Language:    campaignRequest.Language,
 			Rules:       campaignRequest.Rules,
 			Image:       campaignRequest.Image,
-			ProjectID:   *currentUser.LeadingProjectID,
+			ProjectID:   campaignRequest.ProjectID,
 			IsPublic:    campaignRequest.IsPublic,
 			Status:      models.RoundStatusActive,
 		},

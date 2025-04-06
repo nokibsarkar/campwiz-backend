@@ -1,7 +1,9 @@
 package consts
 
 import (
+	"flag"
 	"log"
+	"strconv"
 
 	"github.com/spf13/viper"
 )
@@ -90,6 +92,12 @@ func init() {
 	err = viper.Unmarshal(Config)
 	if err != nil {
 		log.Printf("Error unmarshalling config file: %s", err)
+	}
+	flagPort := flag.Int("port", 8081, "Port to run the server on")
+	flag.Parse()
+	if flagPort != nil {
+		Config.Server.Port = strconv.Itoa(*flagPort)
+		log.Printf("Using port from commandline: %s", Config.Server.Port)
 	}
 
 }

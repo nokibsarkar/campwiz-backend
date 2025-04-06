@@ -5,19 +5,22 @@ package routes
 import (
 	"log"
 	"nokib/campwiz/models"
+	idgenerator "nokib/campwiz/services/idGenerator"
 
 	"github.com/gin-gonic/gin"
 )
+
+var serverInstanceId = idgenerator.GenerateID("ReadOnlyServer")
 
 func ReadOnlyMode(c *gin.Context) {
 	c.JSON(500, models.ResponseError{
 		Detail: "Internal Server Error: Sorry, the server is in read-only mode. Please try again later.",
 	})
 }
-
 func NewRoutes(nonAPIParent *gin.RouterGroup) *gin.RouterGroup {
 	log.Println("Creating Routes for ReadOnly Mode")
 	r := nonAPIParent.Group("/api/v2")
+	r.Use(ServerInfoHeaderMiddleware)
 	authenticatorService := NewAuthenticationService()
 	NewUserAuthenticationRoutes(r)
 	r.Use(authenticatorService.Authenticate2)

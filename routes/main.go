@@ -4,12 +4,16 @@ package routes
 
 import (
 	"nokib/campwiz/consts"
+	idgenerator "nokib/campwiz/services/idGenerator"
 
 	"github.com/gin-gonic/gin"
 )
 
+var serverInstanceId = idgenerator.GenerateID("ReadOnlyServer")
+
 func NewRoutes(nonAPIParent *gin.RouterGroup) *gin.RouterGroup {
 	r := nonAPIParent.Group("/api/v2")
+	r.Use(ServerInfoHeaderMiddleware)
 	authenticatorService := NewAuthenticationService()
 	NewUserAuthenticationRoutes(r)
 	r.Use(authenticatorService.Authenticate2)

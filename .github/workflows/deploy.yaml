@@ -38,7 +38,7 @@ jobs:
           rsync -Pav --no-perms --omit-dir-times -e "ssh -i id_rsa" read-only/campwiz-read-only  "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.SSH_REMOTE_PATH }}/read-only"
       - name: Restart Campwiz
         run: |
-          ssh -i id_rsa "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" "cd ${{ secrets.SSH_REMOTE_PATH }} && pm2 restart campwiz-backend && pm2 restart campwiz-read-only"
+          ssh -i id_rsa "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" "cd ${{ secrets.SSH_REMOTE_PATH }} && pm2 restart ecosystem.config.js && pm2 restart read-only/campwiz-backend-read-only.config.js"
       - name: Delete SSH Key
         run: |
           rm id_rsa

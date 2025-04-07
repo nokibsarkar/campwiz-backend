@@ -41,7 +41,7 @@ type EvaluationFilter struct {
 	RoundID       IDType                 `form:"roundId"`
 	CampaignID    IDType                 `form:"campaignId"`
 	ParticipantID IDType                 `form:"userId"`
-	Evaluated     *bool                  `form:"status"`
+	Evaluated     *bool                  `form:"evaluated"`
 	SubmissionID  types.SubmissionIDType `form:"submissionId"`
 	JuryRoleID    IDType                 `form:"juryId"`
 	// whether to include the submissions that were evaluated
@@ -50,6 +50,8 @@ type EvaluationFilter struct {
 	IncludeSkipped *bool `form:"includeSkipped"`
 	// Whether to embed the submission object
 	IncludeSubmission bool `form:"includeSubmission"`
+	// Whether to include the non-evaluated submissions
+	IncludeNonEvaluated *bool `form:"includeNonEvaluated,default=true"`
 	CommonFilter
 }
 type GetEvaluationQueryFilter struct {

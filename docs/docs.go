@@ -229,8 +229,19 @@ const docTemplate = `{
                     },
                     {
                         "type": "boolean",
+                        "name": "evaluated",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
                         "description": "whether to include the submissions that were evaluated",
                         "name": "includeEvaluated",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Whether to include the non-evaluated submissions",
+                        "name": "includeNonEvaluated",
                         "in": "query"
                     },
                     {
@@ -268,11 +279,6 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "name": "roundId",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "name": "status",
                         "in": "query"
                     },
                     {

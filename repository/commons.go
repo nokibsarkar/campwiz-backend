@@ -55,7 +55,7 @@ func (c *CommonsRepository) GetImagesFromCommonsCategories(category string) ([]m
 		"gcmtitle":  {category},
 		"gcmtype":   {"file"},
 		"iiprop":    {"timestamp|user|url|size|mediatype|dimensions|extmetadata|canonicaltitle"},
-		"limit":     {"max"},
+		"gcmlimit":  {"max"},
 		// "iiurlwidth":          {"640"},
 		// "iiurlheight":         {"480"},
 		"iiextmetadatafilter": {"License|ImageDescription|Credit|Artist|LicenseShortName|UsageTerms|AttributionRequired|Copyrighted"},
@@ -144,7 +144,7 @@ func (c *CommonsRepository) GetImagesThubsFromCommonsCategories(category string)
 			URL:         info.URL,
 			ThumbURL:    &info.ThumbURL,
 			ThumbHeight: &info.ThumbHeight,
-			ThumbWidth:  &info.Width,
+			ThumbWidth:  &info.ThumbWidth,
 		}
 		result = append(result, img)
 	}

@@ -1178,9 +1178,16 @@ paths:
       - in: query
         name: campaignId
         type: string
+      - in: query
+        name: evaluated
+        type: boolean
       - description: whether to include the submissions that were evaluated
         in: query
         name: includeEvaluated
+        type: boolean
+      - description: Whether to include the non-evaluated submissions
+        in: query
+        name: includeNonEvaluated
         type: boolean
       - description: whether to include the submissions that were skipped
         in: query
@@ -1205,9 +1212,6 @@ paths:
       - in: query
         name: roundId
         type: string
-      - in: query
-        name: status
-        type: boolean
       - in: query
         name: submissionId
         type: string

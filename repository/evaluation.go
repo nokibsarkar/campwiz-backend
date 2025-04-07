@@ -45,11 +45,22 @@ func (r *EvaluationRepository) ListAllEvaluations(tx *gorm.DB, filter *models.Ev
 		if filter.Type != "" {
 			condition.Type = filter.Type
 		}
-		if filter.Evaluated != nil {
-			if *filter.Evaluated {
-				stmt = stmt.Where("evaluated_at IS NOT NULL")
-			} else {
+		bothInclusion := filter.IncludeEvaluated != nil && filter.IncludeNonEvaluated != nil && *filter.IncludeEvaluated == *filter.IncludeNonEvaluated
+		if bothInclusion || (filter.IncludeEvaluated != nil || filter.IncludeNonEvaluated != nil) {
+			// Add filtering based on inclusion of evaluated submissions
+
+			if filter.IncludeNonEvaluated != nil && *filter.IncludeNonEvaluated {
 				stmt = stmt.Where("evaluated_at IS NULL")
+			}
+			if filter.IncludeEvaluated != nil && *filter.IncludeEvaluated {
+				stmt = stmt.Where("evaluated_at IS NOT NULL")
+			}
+		}
+		if filter.IncludeSkipped != nil {
+			if *filter.IncludeSkipped {
+				stmt = stmt.Where("skip_expiration_at IS NOT NULL")
+			} else {
+				stmt = stmt.Where("skip_expiration_at IS NULL")
 			}
 		}
 		if filter.SubmissionID != "" {

@@ -151,8 +151,9 @@ func (b *TaskRunner) importImages(conn *gorm.DB, task *models.Task) (successCoun
 						Bitrate:  0,
 					},
 					ImageSubmission: models.ImageSubmission{
-						Width:  image.Width,
-						Height: image.Height,
+						Width:      image.Width,
+						Height:     image.Height,
+						Resolution: image.Resolution,
 					},
 				},
 			}

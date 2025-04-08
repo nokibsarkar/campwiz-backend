@@ -37,6 +37,10 @@ func (p *Paginator[PageType]) Query(params url.Values) (chan *PageType, error) {
 			if err != nil {
 				log.Fatal(err)
 			}
+			if resp.Error != nil {
+				log.Println(resp.Error.Info)
+				break
+			}
 			log.Println("Response of pages: ", len(resp.Query.Pages))
 			for _, page := range resp.Query.Pages {
 				streamChanel <- &page

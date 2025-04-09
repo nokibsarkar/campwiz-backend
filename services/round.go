@@ -243,10 +243,10 @@ func (b *RoundService) ImportFromPreviousRound(currentUserId models.IDType, targ
 		tx.Rollback()
 		return nil, errors.New("source and target rounds are not from the same project")
 	}
-	if targetRound.Campaign.Status != models.RoundStatusActive {
-		tx.Rollback()
-		return nil, errors.New("campaign is not active")
-	}
+	// if targetRound.Campaign.Status != models.RoundStatusActive {
+	// 	tx.Rollback()
+	// 	return nil, errors.New("campaign is not active")
+	// }
 
 	taskReq := &models.Task{
 		TaskID:               idgenerator.GenerateID("t"),

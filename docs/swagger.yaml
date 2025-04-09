@@ -1178,9 +1178,6 @@ paths:
       - in: query
         name: campaignId
         type: string
-      - in: query
-        name: evaluated
-        type: boolean
       - description: whether to include the submissions that were evaluated
         in: query
         name: includeEvaluated

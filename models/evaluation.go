@@ -41,7 +41,6 @@ type EvaluationFilter struct {
 	RoundID       IDType                 `form:"roundId"`
 	CampaignID    IDType                 `form:"campaignId"`
 	ParticipantID IDType                 `form:"userId"`
-	Evaluated     *bool                  `form:"evaluated"`
 	SubmissionID  types.SubmissionIDType `form:"submissionId"`
 	JuryRoleID    IDType                 `form:"juryId"`
 	// whether to include the submissions that were evaluated

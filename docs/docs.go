@@ -229,11 +229,6 @@ const docTemplate = `{
                     },
                     {
                         "type": "boolean",
-                        "name": "evaluated",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
                         "description": "whether to include the submissions that were evaluated",
                         "name": "includeEvaluated",
                         "in": "query"

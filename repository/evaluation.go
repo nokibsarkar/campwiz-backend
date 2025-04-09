@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"log"
 	"nokib/campwiz/models"
 	"nokib/campwiz/models/types"
 
@@ -45,15 +46,12 @@ func (r *EvaluationRepository) ListAllEvaluations(tx *gorm.DB, filter *models.Ev
 		if filter.Type != "" {
 			condition.Type = filter.Type
 		}
-		bothInclusion := filter.IncludeEvaluated != nil && filter.IncludeNonEvaluated != nil && *filter.IncludeEvaluated == *filter.IncludeNonEvaluated
-		if bothInclusion || (filter.IncludeEvaluated != nil || filter.IncludeNonEvaluated != nil) {
-			// Add filtering based on inclusion of evaluated submissions
-
-			if filter.IncludeNonEvaluated != nil && *filter.IncludeNonEvaluated {
-				stmt = stmt.Where("evaluated_at IS NULL")
-			}
-			if filter.IncludeEvaluated != nil && *filter.IncludeEvaluated {
-				stmt = stmt.Where("evaluated_at IS NOT NULL")
+		if filter.IncludeEvaluated != nil {
+			log.Println("IncludeEvaluated: ", *filter.IncludeEvaluated)
+			if *filter.IncludeEvaluated {
+				stmt = stmt.Where("score IS NOT NULL")
+			} else {
+				stmt = stmt.Where("score IS NULL")
 			}
 		}
 		if filter.IncludeSkipped != nil {

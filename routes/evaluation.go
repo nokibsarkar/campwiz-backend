@@ -27,6 +27,7 @@ func ListEvaluations(c *gin.Context, sess *cache.Session) {
 		c.JSON(400, models.ResponseError{Detail: "Invalid request : " + err.Error()})
 		return
 	}
+	log.Printf("Requested evaluations : %+v", filter)
 	evaluation_service := services.NewEvaluationService()
 	evaluations, totalAssigned, totalEvaluated, err := evaluation_service.GetNextEvaluations(sess.UserID, filter)
 	if err != nil {

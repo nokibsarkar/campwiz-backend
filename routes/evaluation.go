@@ -27,7 +27,6 @@ func ListEvaluations(c *gin.Context, sess *cache.Session) {
 		c.JSON(400, models.ResponseError{Detail: "Invalid request : " + err.Error()})
 		return
 	}
-	log.Printf("Requested evaluations : %+v", filter)
 	evaluation_service := services.NewEvaluationService()
 	evaluations, totalAssigned, totalEvaluated, err := evaluation_service.GetNextEvaluations(sess.UserID, filter)
 	if err != nil {
@@ -38,9 +37,11 @@ func ListEvaluations(c *gin.Context, sess *cache.Session) {
 	nextToken := ""
 	if len(evaluations) > 0 {
 		previousToken = evaluations[0].EvaluationID.String()
+		if filter.ContinueToken != "" {
+			previousToken = filter.ContinueToken
+		}
 		nextToken = evaluations[len(evaluations)-1].EvaluationID.String()
 	}
-
 	c.JSON(200, models.EvaluationListResponseWithCurrentStats{
 		ResponseList:         models.ResponseList[*models.Evaluation]{Data: evaluations, ContinueToken: nextToken, PreviousToken: previousToken},
 		TotalEvaluatedCount:  totalEvaluated,
@@ -189,4 +190,31 @@ func SubmitNewBulkPublicEvaluation(c *gin.Context, sess *cache.Session) {
 		result.ContinueToken = evaluations[len(evaluations)-1].EvaluationID.String()
 	}
 	c.JSON(200, result)
+}
+
+// GetEvaluation godoc
+// @Summary Get an evaluation
+// @Description get an evaluation
+// @Produce  json
+// @Success 200 {object} models.ResponseSingle[models.Evaluation]
+// @Router /evaluation/{evaluationId} [get]
+// @Param evaluationId path string true "Evaluation ID"
+// @Tags Evaluation
+// @Security ApiKeyAuth
+// @Error 400 {object} models.ResponseError
+// @Error 404 {object} models.ResponseError
+// @Error 403 {object} models.ResponseError
+func GetEvaluation(c *gin.Context, sess *cache.Session) {
+	evaluationId := c.Param("evaluationId")
+	if evaluationId == "" {
+		c.JSON(400, models.ResponseError{Detail: "Invalid request : Evaluation ID is required"})
+		return
+	}
+	evaluation_service := services.NewEvaluationService()
+	evaluation, err := evaluation_service.GetEvaluationById(sess.UserID, models.IDType(evaluationId))
+	if err != nil {
+		c.JSON(400, models.ResponseError{Detail: "Error getting evaluation : " + err.Error()})
+		return
+	}
+	c.JSON(200, models.ResponseSingle[models.Evaluation]{Data: *evaluation})
 }

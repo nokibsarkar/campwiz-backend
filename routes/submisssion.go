@@ -90,9 +90,7 @@ func GetSubmission(c *gin.Context) {
 func DeleteSubmission(c *gin.Context) {
 	// ...
 }
-func GetEvaluation(c *gin.Context) {
-	// ...
-}
+
 func CreateSubmission(c *gin.Context) {
 	// ...
 }

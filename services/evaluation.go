@@ -588,7 +588,40 @@ func (e *EvaluationService) PublicEvaluate(currentUserID models.IDType, submissi
 	tx.Commit()
 	return evaluation, nil
 }
-func (e *EvaluationService) GetEvaluationById() {
+func (e *EvaluationService) GetEvaluationById(userId models.IDType, evaluationId models.IDType) (*models.Evaluation, error) {
+	ev_repo := repository.NewEvaluationRepository()
+	user_repo := repository.NewUserRepository()
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		return nil, err
+	}
+	defer close()
+	tx := conn.Begin()
+	evaluation, err := ev_repo.FindEvaluationByID(tx.Preload("Submission").Preload("Submission.Round"), evaluationId)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	if evaluation == nil {
+		tx.Rollback()
+		return nil, errors.New("evaluation not found")
+	}
+	submission := evaluation.Submission
+	currentUser, err := user_repo.FindByID(tx, userId)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	if currentUser == nil {
+		tx.Rollback()
+		return nil, errors.New("user not found")
+	}
+	if submission.SubmittedByID == currentUser.UserID {
+		tx.Rollback()
+		return nil, errors.New("user can't evaluate his/her own submission")
+	}
+	tx.Commit()
+	return evaluation, nil
 }
 
 // First get the roleID and round ID of the current user

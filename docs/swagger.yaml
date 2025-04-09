@@ -1262,6 +1262,26 @@ paths:
       tags:
       - Evaluation
   /evaluation/{evaluationId}:
+    get:
+      description: get an evaluation
+      parameters:
+      - description: Evaluation ID
+        in: path
+        name: evaluationId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ResponseSingle-models_Evaluation'
+      security:
+      - ApiKeyAuth: []
+      summary: Get an evaluation
+      tags:
+      - Evaluation
     post:
       description: Update an evaluation
       parameters:

@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"log"
 	"nokib/campwiz/models"
 	"nokib/campwiz/models/types"
 
@@ -47,7 +46,6 @@ func (r *EvaluationRepository) ListAllEvaluations(tx *gorm.DB, filter *models.Ev
 			condition.Type = filter.Type
 		}
 		if filter.IncludeEvaluated != nil {
-			log.Println("IncludeEvaluated: ", *filter.IncludeEvaluated)
 			if *filter.IncludeEvaluated {
 				stmt = stmt.Where("score IS NOT NULL")
 			} else {

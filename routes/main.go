@@ -97,9 +97,10 @@ func NewEvaluationRoutes(r *gin.RouterGroup) {
 	route := r.Group("/evaluation")
 	route.GET("/", WithSession(ListEvaluations))
 	route.POST("/", WithSession(BulkEvaluate))
-	route.POST("/:evaluationId", WithPermission(consts.PermissionCreateCampaign, UpdateEvaluation))
-	route.POST("/public/:roundId/:submissionId", WithPermission(consts.PermissionCreateCampaign, SubmitNewPublicEvaluation))
-	route.POST("/public/:roundId", WithPermission(consts.PermissionCreateCampaign, SubmitNewBulkPublicEvaluation))
+	route.GET("/:evaluationId", WithSession(GetEvaluation))
+	route.POST("/:evaluationId", WithSession(UpdateEvaluation))
+	route.POST("/public/:roundId/:submissionId", WithSession(SubmitNewPublicEvaluation))
+	route.POST("/public/:roundId", WithSession(SubmitNewBulkPublicEvaluation))
 }
 
 func NewProjectRoutes(parent *gin.RouterGroup) *gin.RouterGroup {

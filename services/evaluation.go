@@ -626,8 +626,6 @@ func (e *EvaluationService) GetNextEvaluations(currenUserID models.IDType, filte
 	}
 	juryRoleID := juryRole.RoleID
 	filter.JuryRoleID = juryRoleID
-	falsey := false
-	filter.IncludeEvaluated = &falsey
 	evaluations, err = ev_repo.ListAllEvaluations(conn, filter)
 	return
 }

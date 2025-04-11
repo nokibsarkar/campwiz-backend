@@ -168,6 +168,49 @@ const docTemplate = `{
                 }
             }
         },
+        "/campaign/{campaignId}/status": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Update a campaign status",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Campaign"
+                ],
+                "summary": "Update a campaign status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The campaign ID",
+                        "name": "campaignId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "The campaign update status request",
+                        "name": "campaignUpdateStatusRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.CampaignUpdateStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResponseSingle-models_Campaign"
+                        }
+                    }
+                }
+            }
+        },
         "/campaign/{id}": {
             "post": {
                 "description": "Update a campaign",
@@ -1526,6 +1569,9 @@ const docTemplate = `{
                 "startDate"
             ],
             "properties": {
+                "archivedAt": {
+                    "$ref": "#/definitions/gorm.DeletedAt"
+                },
                 "campaignId": {
                     "description": "A unique identifier for the campaign, it should be custom defined",
                     "type": "string"
@@ -1591,6 +1637,9 @@ const docTemplate = `{
                 "startDate"
             ],
             "properties": {
+                "archivedAt": {
+                    "$ref": "#/definitions/gorm.DeletedAt"
+                },
                 "campaignId": {
                     "description": "A unique identifier for the campaign, it should be custom defined",
                     "type": "string"
@@ -1650,6 +1699,18 @@ const docTemplate = `{
                 },
                 "status": {
                     "$ref": "#/definitions/models.RoundStatus"
+                }
+            }
+        },
+        "models.CampaignUpdateStatusRequest": {
+            "type": "object",
+            "required": [
+                "isArchived"
+            ],
+            "properties": {
+                "isArchived": {
+                    "description": "The status of the campaign",
+                    "type": "boolean"
                 }
             }
         },
@@ -2428,6 +2489,12 @@ const docTemplate = `{
                 "successCount": {
                     "type": "integer"
                 },
+                "taskData": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.TaskData"
+                    }
+                },
                 "taskId": {
                     "type": "string"
                 },
@@ -2438,6 +2505,28 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "userId": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.TaskData": {
+            "type": "object",
+            "properties": {
+                "dataId": {
+                    "type": "string"
+                },
+                "isOutput": {
+                    "description": "Whether this data is an input or output of the task\nFor example, if the task is to import data from commons, then the input would be the\ncommons data and the output would be the rejection reason",
+                    "type": "boolean"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "taskId": {
+                    "description": "The task ID that this data belongs to",
+                    "type": "string"
+                },
+                "value": {
                     "type": "string"
                 }
             }
@@ -2620,6 +2709,9 @@ const docTemplate = `{
                 "comment": {
                     "type": "string"
                 },
+                "description": {
+                    "type": "string"
+                },
                 "evaluationId": {
                     "type": "string"
                 },
@@ -2627,6 +2719,9 @@ const docTemplate = `{
                     "$ref": "#/definitions/models.ScoreType"
                 },
                 "submissionId": {
+                    "type": "string"
+                },
+                "thumbnail": {
                     "type": "string"
                 }
             }
@@ -2805,6 +2900,12 @@ const docTemplate = `{
                 },
                 "successCount": {
                     "type": "integer"
+                },
+                "taskData": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.TaskData"
+                    }
                 },
                 "taskId": {
                     "type": "string"

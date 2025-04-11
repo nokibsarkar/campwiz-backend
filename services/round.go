@@ -343,7 +343,7 @@ func (b *RoundService) DistributeTaskAmongExistingJuries(images []models.MediaRe
 	}
 }
 
-func (r *RoundService) UpdateRoundDetails(roundID models.IDType, req *RoundRequest, qry *models.SingleCampaaignFilter) (*models.Round, error) {
+func (r *RoundService) UpdateRoundDetails(roundID models.IDType, req *RoundRequest, qry *models.SingleCampaignFilter) (*models.Round, error) {
 	round_repo := repository.NewRoundRepository()
 	role_service := NewRoleService()
 	conn, close, err := repository.GetDB()
@@ -646,19 +646,6 @@ func (e *RoundService) UpdateStatus(currenUserID models.IDType, roundID models.I
 	case models.RoundStatusCancelled:
 		tx.Rollback()
 		return nil, errors.New("round cannot be set to any other status from cancelled")
-	}
-	if status == models.RoundStatusActive || status == models.RoundStatusPaused || status == models.RoundStatusCompleted {
-		qm := query.Use(tx)
-		campaignStatus := models.RoundStatusActive
-		if status == models.RoundStatusPaused {
-			campaignStatus = models.RoundStatusPaused
-		}
-		Campaign := qm.Campaign
-		_, err = Campaign.Where(Campaign.CampaignID.Eq(round.CampaignID.String())).Update(Campaign.Status, campaignStatus)
-		if err != nil {
-			tx.Rollback()
-			return nil, err
-		}
 	}
 	round, err = round_repo.Update(tx, &models.Round{
 		RoundID: roundID,

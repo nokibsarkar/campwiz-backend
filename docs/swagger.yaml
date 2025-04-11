@@ -157,6 +157,8 @@ definitions:
     type: object
   models.Campaign:
     properties:
+      archivedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
       campaignId:
         description: A unique identifier for the campaign, it should be custom defined
         type: string
@@ -202,6 +204,8 @@ definitions:
     type: object
   models.CampaignExtended:
     properties:
+      archivedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
       campaignId:
         description: A unique identifier for the campaign, it should be custom defined
         type: string
@@ -248,6 +252,14 @@ definitions:
     - language
     - name
     - startDate
+    type: object
+  models.CampaignUpdateStatusRequest:
+    properties:
+      isArchived:
+        description: The status of the campaign
+        type: boolean
+    required:
+    - isArchived
     type: object
   models.Evaluation:
     properties:
@@ -773,6 +785,10 @@ definitions:
         $ref: '#/definitions/models.TaskStatus'
       successCount:
         type: integer
+      taskData:
+        items:
+          $ref: '#/definitions/models.TaskData'
+        type: array
       taskId:
         type: string
       type:
@@ -780,6 +796,24 @@ definitions:
       updatedAt:
         type: string
       userId:
+        type: string
+    type: object
+  models.TaskData:
+    properties:
+      dataId:
+        type: string
+      isOutput:
+        description: |-
+          Whether this data is an input or output of the task
+          For example, if the task is to import data from commons, then the input would be the
+          commons data and the output would be the rejection reason
+        type: boolean
+      key:
+        type: string
+      taskId:
+        description: The task ID that this data belongs to
+        type: string
+      value:
         type: string
     type: object
   models.TaskStatus:
@@ -905,11 +939,15 @@ definitions:
     properties:
       comment:
         type: string
+      description:
+        type: string
       evaluationId:
         type: string
       score:
         $ref: '#/definitions/models.ScoreType'
       submissionId:
+        type: string
+      thumbnail:
         type: string
     type: object
   services.ImportFromCommonsPayload:
@@ -1029,6 +1067,10 @@ definitions:
         $ref: '#/definitions/models.TaskStatus'
       successCount:
         type: integer
+      taskData:
+        items:
+          $ref: '#/definitions/models.TaskData'
+        type: array
       taskId:
         type: string
       type:
@@ -1144,6 +1186,33 @@ paths:
           schema:
             $ref: '#/definitions/models.ResponseSingle-models_CampaignExtended'
       summary: Get a single campaign
+      tags:
+      - Campaign
+  /campaign/{campaignId}/status:
+    post:
+      description: Update a campaign status
+      parameters:
+      - description: The campaign ID
+        in: path
+        name: campaignId
+        required: true
+        type: string
+      - description: The campaign update status request
+        in: body
+        name: campaignUpdateStatusRequest
+        required: true
+        schema:
+          $ref: '#/definitions/models.CampaignUpdateStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ResponseSingle-models_Campaign'
+      security:
+      - ApiKeyAuth: []
+      summary: Update a campaign status
       tags:
       - Campaign
   /campaign/{id}:

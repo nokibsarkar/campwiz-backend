@@ -89,7 +89,7 @@ func NewCampaignRoutes(parent *gin.RouterGroup) {
 	r.POST("/:campaignId", WithSession(UpdateCampaign))
 	r.GET("/:campaignId/submissions", GetCampaignSubmissions)
 	r.GET("/:campaignId/next", GetNextSubmission)
-	r.POST("/:campaignId/status", ApproveCampaign)
+	r.POST("/:campaignId/status", WithSession(UpdateCampaignStatus))
 	r.POST("/:campaignId/fountain", ImportEvaluationFromFountain)
 	r.GET("/:campaignId", WithSession(GetSingleCampaign))
 }

@@ -74,3 +74,19 @@ func (c *CampaignRepository) UpdateLatestRound(tx *gorm.DB, campaignID models.ID
 	}
 	return result.Error
 }
+func (c *CampaignRepository) ArchiveCampaign(conn *gorm.DB, campaignID models.IDType) error {
+	result := conn.Delete(&models.Campaign{}, campaignID)
+	return result.Error
+}
+func (c *CampaignRepository) UnArchiveCampaign(conn *gorm.DB, campaignID models.IDType) error {
+	q := query.Use(conn.Unscoped())
+	Campaign := q.Campaign
+	campaign, err := Campaign.Where(Campaign.CampaignID.Eq(campaignID.String())).Update(Campaign.ArchivedAt, nil)
+	if err != nil {
+		return err
+	}
+	if campaign.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}

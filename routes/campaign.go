@@ -249,8 +249,37 @@ func ImportEvaluationFromFountain(c *gin.Context) {
 		"message": "Hello, World!",
 	})
 }
-func UpdateCampaignStatus(c *gin.Context) {
-	c.JSON(200, gin.H{
-		"message": "Hello, World!",
-	})
+
+// UpdateCampaignStatus godoc
+// @Summary Update a campaign status
+// @Description Update a campaign status
+// @Produce  json
+// @Success 200 {object} models.ResponseSingle[models.Campaign]
+// @Router /campaign/{campaignId}/status [post]
+// @Tags Campaign
+// @Param campaignId path string true "The campaign ID"
+// @Param campaignUpdateStatusRequest body models.CampaignUpdateStatusRequest true "The campaign update status request"
+// @Security ApiKeyAuth
+// @Error 400 {object} models.ResponseError
+// @Error 403 {object} models.ResponseError
+// @Error 404 {object} models.ResponseError
+func UpdateCampaignStatus(c *gin.Context, sess *cache.Session) {
+	campaignId := c.Param("campaignId")
+	if campaignId == "" {
+		c.JSON(400, models.ResponseError{Detail: "Invalid request : Campaign ID is required"})
+		return
+	}
+	updateRequest := &models.CampaignUpdateStatusRequest{}
+	err := c.ShouldBindBodyWithJSON(updateRequest)
+	if err != nil {
+		c.JSON(400, models.ResponseError{Detail: "Invalid request : " + err.Error()})
+		return
+	}
+	campaign_service := services.NewCampaignService()
+	campaign, err := campaign_service.UpdateCampaignStatus(models.IDType(campaignId), updateRequest.IsArchived)
+	if err != nil {
+		c.JSON(400, models.ResponseError{Detail: "Failed to update campaign : " + err.Error()})
+		return
+	}
+	c.JSON(200, models.ResponseSingle[*models.Campaign]{Data: campaign})
 }

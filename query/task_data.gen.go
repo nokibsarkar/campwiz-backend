@@ -32,7 +32,7 @@ func newTaskData(db *gorm.DB, opts ...gen.DOOption) taskData {
 	_taskData.Key = field.NewString(tableName, "key")
 	_taskData.Value = field.NewString(tableName, "value")
 	_taskData.IsOutput = field.NewBool(tableName, "is_output")
-	_taskData.Task = taskDataHasOneTask{
+	_taskData.Task = taskDataBelongsToTask{
 		db: db.Session(&gorm.Session{}),
 
 		RelationField: field.NewRelation("Task", "models.Task"),
@@ -78,7 +78,7 @@ type taskData struct {
 	Key      field.String
 	Value    field.String
 	IsOutput field.Bool
-	Task     taskDataHasOneTask
+	Task     taskDataBelongsToTask
 
 	fieldMap map[string]field.Expr
 }
@@ -135,7 +135,7 @@ func (t taskData) replaceDB(db *gorm.DB) taskData {
 	return t
 }
 
-type taskDataHasOneTask struct {
+type taskDataBelongsToTask struct {
 	db *gorm.DB
 
 	field.RelationField
@@ -154,7 +154,7 @@ type taskDataHasOneTask struct {
 	}
 }
 
-func (a taskDataHasOneTask) Where(conds ...field.Expr) *taskDataHasOneTask {
+func (a taskDataBelongsToTask) Where(conds ...field.Expr) *taskDataBelongsToTask {
 	if len(conds) == 0 {
 		return &a
 	}
@@ -167,27 +167,27 @@ func (a taskDataHasOneTask) Where(conds ...field.Expr) *taskDataHasOneTask {
 	return &a
 }
 
-func (a taskDataHasOneTask) WithContext(ctx context.Context) *taskDataHasOneTask {
+func (a taskDataBelongsToTask) WithContext(ctx context.Context) *taskDataBelongsToTask {
 	a.db = a.db.WithContext(ctx)
 	return &a
 }
 
-func (a taskDataHasOneTask) Session(session *gorm.Session) *taskDataHasOneTask {
+func (a taskDataBelongsToTask) Session(session *gorm.Session) *taskDataBelongsToTask {
 	a.db = a.db.Session(session)
 	return &a
 }
 
-func (a taskDataHasOneTask) Model(m *models.TaskData) *taskDataHasOneTaskTx {
-	return &taskDataHasOneTaskTx{a.db.Model(m).Association(a.Name())}
+func (a taskDataBelongsToTask) Model(m *models.TaskData) *taskDataBelongsToTaskTx {
+	return &taskDataBelongsToTaskTx{a.db.Model(m).Association(a.Name())}
 }
 
-type taskDataHasOneTaskTx struct{ tx *gorm.Association }
+type taskDataBelongsToTaskTx struct{ tx *gorm.Association }
 
-func (a taskDataHasOneTaskTx) Find() (result *models.Task, err error) {
+func (a taskDataBelongsToTaskTx) Find() (result *models.Task, err error) {
 	return result, a.tx.Find(&result)
 }
 
-func (a taskDataHasOneTaskTx) Append(values ...*models.Task) (err error) {
+func (a taskDataBelongsToTaskTx) Append(values ...*models.Task) (err error) {
 	targetValues := make([]interface{}, len(values))
 	for i, v := range values {
 		targetValues[i] = v
@@ -195,7 +195,7 @@ func (a taskDataHasOneTaskTx) Append(values ...*models.Task) (err error) {
 	return a.tx.Append(targetValues...)
 }
 
-func (a taskDataHasOneTaskTx) Replace(values ...*models.Task) (err error) {
+func (a taskDataBelongsToTaskTx) Replace(values ...*models.Task) (err error) {
 	targetValues := make([]interface{}, len(values))
 	for i, v := range values {
 		targetValues[i] = v
@@ -203,7 +203,7 @@ func (a taskDataHasOneTaskTx) Replace(values ...*models.Task) (err error) {
 	return a.tx.Replace(targetValues...)
 }
 
-func (a taskDataHasOneTaskTx) Delete(values ...*models.Task) (err error) {
+func (a taskDataBelongsToTaskTx) Delete(values ...*models.Task) (err error) {
 	targetValues := make([]interface{}, len(values))
 	for i, v := range values {
 		targetValues[i] = v
@@ -211,11 +211,11 @@ func (a taskDataHasOneTaskTx) Delete(values ...*models.Task) (err error) {
 	return a.tx.Delete(targetValues...)
 }
 
-func (a taskDataHasOneTaskTx) Clear() error {
+func (a taskDataBelongsToTaskTx) Clear() error {
 	return a.tx.Clear()
 }
 
-func (a taskDataHasOneTaskTx) Count() int64 {
+func (a taskDataBelongsToTaskTx) Count() int64 {
 	return a.tx.Count()
 }
 

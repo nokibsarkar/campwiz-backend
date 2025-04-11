@@ -220,3 +220,28 @@ func (service *CampaignService) UpdateCampaign(ID models.IDType, campaignRequest
 	tx.Commit()
 	return campaign, nil
 }
+func (service *CampaignService) UpdateCampaignStatus(ID models.IDType, IsArchived bool) (*models.Campaign, error) {
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		log.Println("Error: ", err)
+		return nil, err
+	}
+	defer close()
+	campaign_repo := repository.NewCampaignRepository()
+
+	if IsArchived {
+		err = campaign_repo.ArchiveCampaign(conn, ID)
+	} else {
+		err = campaign_repo.UnArchiveCampaign(conn, ID)
+	}
+	if err != nil {
+		log.Println("Error: ", err)
+		return nil, err
+	}
+	campaign, err := campaign_repo.FindByID(conn.Unscoped(), ID)
+	if err != nil {
+		log.Println("Error: ", err)
+		return nil, err
+	}
+	return campaign, nil
+}

@@ -54,9 +54,13 @@ type CampaignFilter struct {
 	IsClosed *bool `form:"isClosed"`
 	CommonFilter
 }
-type SingleCampaaignFilter struct {
+type SingleCampaignFilter struct {
 	IncludeRounds          bool `form:"includeRounds"`
 	IncludeRoundRoles      bool `form:"includeRoundRoles"`
 	IncludeRoundRolesUsers bool `form:"includeRoundRolesUsers"`
 	IncludeProject         bool `form:"includeProject"`
+}
+type CampaignUpdateStatusRequest struct {
+	// The status of the campaign
+	IsArchived bool `json:"isArchived"`
 }

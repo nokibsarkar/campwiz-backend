@@ -164,7 +164,7 @@ func UpdateRoundDetails(c *gin.Context, sess *cache.Session) {
 	if roundId == "" {
 		c.JSON(400, models.ResponseError{Detail: "Invalid request : Round ID is required"})
 	}
-	q := &models.SingleCampaaignFilter{
+	q := &models.SingleCampaignFilter{
 		IncludeRoundRoles:      true,
 		IncludeRoundRolesUsers: true,
 	}

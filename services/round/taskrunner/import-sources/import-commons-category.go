@@ -43,7 +43,7 @@ func NewCommonsCategoryListSource(categories []string, round *models.Round) *Com
 		ct = append(ct, kt)
 	}
 	return &CommonsCategoryListSource{
-		Categories:           categories,
+		Categories:           ct,
 		currentCategoryIndex: 0,
 		lastPageID:           0,
 		commons_repo:         repository.NewCommonsRepository(),

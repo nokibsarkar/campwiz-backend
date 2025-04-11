@@ -159,6 +159,7 @@ func (service *CampaignService) GetCampaignByID(id models.IDType, query *SingleC
 	}
 	defer close()
 	if query != nil {
+		conn = conn.Unscoped()
 		if query.IncludeRounds {
 			conn = conn.Preload("Rounds")
 			if query.IncludeRoundRoles {

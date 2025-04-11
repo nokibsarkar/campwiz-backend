@@ -1,7 +1,6 @@
 package importsources
 
 import (
-	"log"
 	"maps"
 	"nokib/campwiz/models"
 	"nokib/campwiz/repository"
@@ -11,6 +10,7 @@ type CommonsCategoryListSource struct {
 	Categories           []string
 	currentCategoryIndex int
 	lastPageID           uint64
+	round                *models.Round
 	commons_repo         *repository.CommonsRepository
 }
 
@@ -23,8 +23,8 @@ type CommonsCategoryListSource struct {
 func (c *CommonsCategoryListSource) ImportImageResults(failedImageReason *map[string]string) ([]models.MediaResult, *map[string]string) {
 	if c.currentCategoryIndex < len(c.Categories) {
 		category := c.Categories[c.currentCategoryIndex]
-		log.Printf("Category IMport: Importing images from category %s", category)
-		successMedia, currentfailedImages, lastPageID := c.commons_repo.GetImagesFromCommonsCategories2(category, c.lastPageID)
+		campaign := c.round.Campaign
+		successMedia, currentfailedImages, lastPageID := c.commons_repo.GetImagesFromCommonsCategories2(category, c.lastPageID, c.round, campaign.StartDate, campaign.EndDate)
 		if lastPageID == 0 {
 			c.currentCategoryIndex++
 		}
@@ -34,11 +34,12 @@ func (c *CommonsCategoryListSource) ImportImageResults(failedImageReason *map[st
 	}
 	return nil, failedImageReason
 }
-func NewCommonsCategoryListSource(categories []string) *CommonsCategoryListSource {
+func NewCommonsCategoryListSource(categories []string, round *models.Round) *CommonsCategoryListSource {
 	return &CommonsCategoryListSource{
 		Categories:           categories,
 		currentCategoryIndex: 0,
 		lastPageID:           0,
 		commons_repo:         repository.NewCommonsRepository(),
+		round:                round,
 	}
 }

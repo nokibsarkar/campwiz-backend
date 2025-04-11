@@ -11,6 +11,32 @@ import (
 	"gorm.io/gen"
 )
 
+const YEAR_MULTIPLIER = 10000000000
+const MONTH_MULTIPLIER = YEAR_MULTIPLIER / 100
+const DAY_MULTIPLIER = MONTH_MULTIPLIER / 100
+const HOUR_MULTIPLIER = DAY_MULTIPLIER / 100
+const MINUTE_MULTIPLIER = HOUR_MULTIPLIER / 100
+
+func Int2Date(timestamp uint64) time.Time {
+	remaining := timestamp
+	year, remaining := remaining/YEAR_MULTIPLIER, remaining%YEAR_MULTIPLIER
+	month, remaining := remaining/MONTH_MULTIPLIER, remaining%MONTH_MULTIPLIER
+	day, remaining := remaining/DAY_MULTIPLIER, remaining%DAY_MULTIPLIER
+	hour, remaining := remaining/HOUR_MULTIPLIER, remaining%HOUR_MULTIPLIER
+	minute, second := remaining/MINUTE_MULTIPLIER, remaining%MINUTE_MULTIPLIER
+	t := time.Date(int(year), time.Month(month), int(day), int(hour), int(minute), int(second), 0, time.UTC)
+	return t
+}
+func Date2Int(date time.Time) uint64 {
+	year := date.Year()
+	month := int(date.Month())
+	day := date.Day()
+	hour := date.Hour()
+	minute := date.Minute()
+	second := date.Second()
+	return uint64(year*YEAR_MULTIPLIER + month*MONTH_MULTIPLIER + day*DAY_MULTIPLIER + hour*HOUR_MULTIPLIER + minute*MINUTE_MULTIPLIER + second)
+}
+
 type SubmissionListFilter struct {
 	CampaignID    IDType `form:"campaignId"`
 	RoundID       IDType `form:"roundId"`
@@ -121,10 +147,10 @@ type SubmissionFetcher interface {
 	/*
 		SLOW OK
 	*/
-	//SELECT page_id, page_title, user_name, img_timestamp as fr_timestamp, img_height as fr_height, img_width as fr_width, img_size as fr_size, img_media_type as ft_media_type FROM categorylinks JOIN page JOIN image JOIN actor JOIN `user` ON user_id=actor_user and cl_from=page_id and img_name=page_title and actor_id=img_actor where cl_to=@categoryName and cl_from > @startPageID and @minimumTimestamp <= img_timestamp and img_timestamp < @maximumTimestamp ORDER BY `page_id` ASC LIMIT @limit;
-	FetchSubmissionsFromCommonsDBByCategoryOld(categoryName string, startPageID uint64, minimumTimestamp uint64, maximumTimestamp uint64, limit int) ([]CommonsSubmissionEntry, error)
-	// SELECT  page_id, page_title, user_name, fr_timestamp, fr_height, fr_width, fr_size, ft_media_type FROM categorylinks JOIN page JOIN file JOIN filerevision JOIN actor JOIN `user` JOIN filetypes ON ft_id = file_type AND fr_id=file_latest AND user_id=actor_user and cl_from=page_id and file_name=page_title and actor_id=fr_actor where cl_from > @startPageID and @minimumTimestamp <= fr_timestamp and fr_timestamp < @maximumTimestamp and cl_to=@categoryName and fr_deleted = false and file_deleted=false ORDER BY `page_id` ASC LIMIT @limit;
-	FetchSubmissionsFromCommonsDBByCategory(categoryName string, startPageID uint64, minimumTimestamp uint64, maximumTimestamp uint64, limit int) ([]CommonsSubmissionEntry, error)
+	//SELECT page_id, page_title, user_name, img_timestamp as fr_timestamp, img_height as fr_height, img_width as fr_width, img_size as fr_size, img_media_type as ft_media_type FROM categorylinks JOIN page JOIN image JOIN actor JOIN `user` ON user_id=actor_user and cl_from=page_id and img_name=page_title and actor_id=img_actor where img_media_type IN (@allowedMediaTypes) and cl_to=@categoryName and cl_from > @startPageID and @minimumTimestamp <= img_timestamp and img_timestamp < @maximumTimestamp ORDER BY `page_id` ASC LIMIT @limit;
+	FetchSubmissionsFromCommonsDBByCategoryOld(categoryName string, startPageID uint64, minimumTimestamp uint64, maximumTimestamp uint64, limit int, allowedMediaTypes []string) ([]CommonsSubmissionEntry, error)
+	// SELECT  page_id, page_title, user_name, fr_timestamp, fr_height, fr_width, fr_size, ft_media_type FROM categorylinks JOIN page JOIN file JOIN filerevision JOIN actor JOIN `user` JOIN filetypes ON ft_id = file_type AND fr_id=file_latest AND user_id=actor_user and cl_from=page_id and file_name=page_title and actor_id=fr_actor where ft_media_type IN (@allowedMediaTypes) and cl_from > @startPageID and @minimumTimestamp <= fr_timestamp and fr_timestamp < @maximumTimestamp and cl_to=@categoryName and fr_deleted = false and file_deleted=false ORDER BY `page_id` ASC LIMIT @limit;
+	FetchSubmissionsFromCommonsDBByCategory(categoryName string, startPageID uint64, minimumTimestamp uint64, maximumTimestamp uint64, limit int, allowedMediaTypes []string) ([]CommonsSubmissionEntry, error)
 }
 
 func (c *CommonsSubmissionEntry) GetURL() string {
@@ -167,17 +193,8 @@ func (c *CommonsSubmissionEntry) GetThumbURL() (string, uint64, uint64) {
 	return thumbURL, thumbWidth, thumbHeight
 }
 func (c *CommonsSubmissionEntry) GetSubmittedAt() time.Time {
-	const YEAR_MULTIPLIER = 10000000000
-	const MONTH_MULTIPLIER = YEAR_MULTIPLIER / 100
-	const DAY_MULTIPLIER = MONTH_MULTIPLIER / 100
-	const HOUR_MULTIPLIER = DAY_MULTIPLIER / 100
-	const MINUTE_MULTIPLIER = HOUR_MULTIPLIER / 100
-	remaining := c.FrTimestamp
-	year, remaining := remaining/YEAR_MULTIPLIER, remaining%YEAR_MULTIPLIER
-	month, remaining := remaining/MONTH_MULTIPLIER, remaining%MONTH_MULTIPLIER
-	day, remaining := remaining/DAY_MULTIPLIER, remaining%DAY_MULTIPLIER
-	hour, remaining := remaining/HOUR_MULTIPLIER, remaining%HOUR_MULTIPLIER
-	minute, second := remaining/MINUTE_MULTIPLIER, remaining%MINUTE_MULTIPLIER
-	submittedAt := time.Date(int(year), time.Month(month), int(day), int(hour), int(minute), int(second), 0, time.UTC)
-	return submittedAt
+	if c.FrTimestamp == 0 {
+		return time.Time{}
+	}
+	return Int2Date(c.FrTimestamp)
 }

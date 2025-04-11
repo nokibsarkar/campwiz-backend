@@ -3,9 +3,11 @@ package main
 import (
 	"log"
 	"nokib/campwiz/consts"
+	"nokib/campwiz/models"
 	"nokib/campwiz/repository"
 	"nokib/campwiz/repository/cache"
 	"nokib/campwiz/routes"
+	"time"
 
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -18,6 +20,7 @@ import (
 // preRun is a function that will be called before the main function
 func preRun() {
 	gin.SetMode(consts.Config.Server.Mode)
+	log.Println(models.Date2Int(time.Now()))
 }
 func postRun() {
 }

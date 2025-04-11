@@ -79,6 +79,7 @@ func (b *TaskRunner) importImages(conn *gorm.DB, task *models.Task) (successCoun
 			})
 		}()
 	}
+	log.Printf("Importing images for round %v\n", round.Campaign)
 	FailedImages := &map[string]string{}
 	technicalJudge := rnd.NewTechnicalJudgeService(round, round.Campaign)
 	if technicalJudge == nil {

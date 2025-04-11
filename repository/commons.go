@@ -9,6 +9,7 @@ import (
 	"nokib/campwiz/consts"
 	"nokib/campwiz/models"
 	"strings"
+	"time"
 
 	"github.com/st3fan/html2text"
 )
@@ -109,17 +110,24 @@ func (c *CommonsRepository) GetImagesFromCommonsCategories(category string) ([]m
 	}
 	return result, map[string]string{}
 }
-func (c *CommonsRepository) GetImagesFromCommonsCategories2(category string, lastPageID uint64) (result []models.MediaResult, currentfailedImages map[string]string, lastPageIDOut uint64) {
+func (c *CommonsRepository) GetImagesFromCommonsCategories2(category string, lastPageID uint64, round *models.Round, startDate time.Time, endDate time.Time) (result []models.MediaResult, currentfailedImages map[string]string, lastPageIDOut uint64) {
 	q, close := GetCommonsReplicaWithGen()
 	defer close()
 	log.Printf("1 Getting images from commons category: %s", category)
 	result = []models.MediaResult{}
 	currentfailedImages = map[string]string{}
 	const batchSize = 20000
+	startDateInt := models.Date2Int(startDate)
+	endDateInt := models.Date2Int(endDate)
+	allowedtypes := []string{}
+	for _, mediatype := range round.AllowedMediaTypes {
+		allowedtypes = append(allowedtypes, string(mediatype))
+	}
+
 	lastCount := batchSize
 	for lastCount == batchSize {
 		log.Println("Getting images from commons category: ", category)
-		ssubmissionChunk, err := q.CommonsSubmissionEntry.FetchSubmissionsFromCommonsDBByCategoryOld(category, lastPageID, 20250101000000, 20251231235959, batchSize)
+		ssubmissionChunk, err := q.CommonsSubmissionEntry.FetchSubmissionsFromCommonsDBByCategoryOld(category, lastPageID, startDateInt, endDateInt, batchSize, allowedtypes)
 		if err != nil {
 			log.Println("Error: ", err)
 			return

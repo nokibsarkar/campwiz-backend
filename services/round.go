@@ -166,7 +166,7 @@ func (b *RoundService) ImportFromCommons(roundId models.IDType, categories []str
 	}
 	defer close()
 	tx := conn.Begin()
-	round, err := round_repo.FindByID(tx, roundId)
+	round, err := round_repo.FindByID(tx.Preload("Campaign"), roundId)
 	if err != nil {
 		tx.Rollback()
 		return nil, err
@@ -194,7 +194,7 @@ func (b *RoundService) ImportFromCommons(roundId models.IDType, categories []str
 	}
 	tx.Commit()
 	log.Println("Task created with ID: ", task.TaskID)
-	commonsCategorySource := importsources.NewCommonsCategoryListSource(categories)
+	commonsCategorySource := importsources.NewCommonsCategoryListSource(categories, round)
 	batch_processor := importservice.NewImportTaskRunner(task.TaskID, commonsCategorySource)
 	go batch_processor.Run()
 	return task, nil

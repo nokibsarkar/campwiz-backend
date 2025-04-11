@@ -106,13 +106,10 @@ func GetDBWithGen() (q *query.Query, close func()) {
 }
 func GetCommonsReplicaWithGen() (q *query.Query, close func()) {
 	dsn := consts.Config.Database.Commons.DSN
-
-	log.Printf("Connecting to commons replica %s", dsn)
 	// logMode := logger.Warn
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(getLogMode(consts.Config.Database.Cache.Debug || consts.Config.Server.Mode == "debug")),
 	})
-	log.Printf("Connecting to commons replica %s", dsn)
 	if err != nil {
 		panic("failed to connect database")
 	}

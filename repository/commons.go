@@ -116,7 +116,7 @@ func (c *CommonsRepository) GetImagesFromCommonsCategories2(category string, las
 	log.Printf("1 Getting images from commons category: %s", category)
 	result = []models.MediaResult{}
 	currentfailedImages = map[string]string{}
-	const batchSize = 20000
+	const batchSize = 10000
 	startDateInt := models.Date2Int(startDate)
 	endDateInt := models.Date2Int(endDate)
 	allowedtypes := []string{}

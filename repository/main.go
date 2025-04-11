@@ -142,7 +142,7 @@ func InitDB(testing bool) {
 	// db.Exec("ALTER DATABASE campwiz CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci;")
 	// db.AutoMigrate(&models.Project{})
 	// db.AutoMigrate(&models.User{})
-	// db.AutoMigrate(&models.Campaign{})
+	db.AutoMigrate(&models.Campaign{})
 	// db.AutoMigrate(&models.Round{})
 	// db.AutoMigrate(&models.Task{})
 	// db.AutoMigrate(&models.Role{})

@@ -1,9 +1,7 @@
 package routes
 
 import (
-	"nokib/campwiz/consts"
 	"nokib/campwiz/models"
-	"nokib/campwiz/repository"
 	"nokib/campwiz/repository/cache"
 	"nokib/campwiz/services"
 	"time"
@@ -20,76 +18,7 @@ import (
 // @param CampaignFilter query models.CampaignFilter false "Filter the campaigns"
 // @Tags Campaign
 // @Error 400 {object} models.ResponseError
-func ListAllCampaigns(c *gin.Context) {
-	qry := &models.CampaignFilter{}
-	err := c.ShouldBindQuery(qry)
-	if err != nil {
-		c.JSON(400, models.ResponseError{Detail: "Invalid request : " + err.Error()})
-		return
-	}
-	campaignService := services.NewCampaignService()
-	if qry.IsHidden != nil && *qry.IsHidden {
-		sess := GetSession(c)
-		if sess == nil {
-			c.JSON(400, models.ResponseError{Detail: "Invalid request : User Must be logged in to get hidden campaigns"})
-			return
-		}
-		if !sess.Permission.HasPermission(consts.PermissionOtherProjectAccess) {
-			// user is not an admin
-			if qry.ProjectID == "" {
-				c.JSON(400, models.ResponseError{Detail: "Invalid request : Project ID is required when isHidden is true and user is not an admin"})
-				return
-			}
-		}
-		if qry.ProjectID != "" {
-			// project id is provided
-			// check if the user is allowed to access this project
-			currentUser := GetCurrentUser(c)
-			if currentUser == nil {
-				c.JSON(400, models.ResponseError{Detail: "Invalid request : User not found"})
-				return
-			}
-			if currentUser.LeadingProjectID == nil {
-				c.JSON(400, models.ResponseError{Detail: "Invalid request : User is not leading any project"})
-				return
-			}
-			if *currentUser.LeadingProjectID != qry.ProjectID {
-				// the user is not an admin and the project ID does not match
-				// cross project access is allowed only for jury and coordinators
-				conn, close, err := repository.GetDB()
-				if err != nil {
-					c.JSON(400, models.ResponseError{Detail: "Database Error: " + err.Error()})
-					return
-				}
-				defer close()
-				userRepo := repository.NewUserRepository()
-				roleFilter := &models.RoleFilter{ProjectID: qry.ProjectID, UserID: &currentUser.UserID}
-				roles, err := userRepo.FetchRoles(conn, roleFilter)
-				if err != nil {
-					c.JSON(400, models.ResponseError{Detail: "Invalid request : " + err.Error()})
-					return
-				}
-				hasRoles := false
-				for _, role := range roles {
-					if role.Type == models.RoleTypeCoordinator || role.Type == models.RoleTypeJury {
-						if role.DeletedAt == nil {
-							hasRoles = true
-							break
-						}
-					}
-				}
-				if !hasRoles {
-					c.JSON(400, models.ResponseError{Detail: "Invalid request : User does not have permission to access this project"})
-					return
-				}
-			}
-		}
-	}
-	campaignList := campaignService.GetAllCampaigns(qry)
-	c.JSON(200, models.ResponseList[models.Campaign]{Data: campaignList})
-}
-
-func ListAllCampaignsV2(c *gin.Context, sess *cache.Session) {
+func ListAllCampaigns(c *gin.Context, sess *cache.Session) {
 	qry := &models.CampaignFilter{}
 	err := c.ShouldBindQuery(qry)
 	if err != nil {
@@ -316,6 +245,11 @@ func ApproveCampaign(c *gin.Context) {
 	})
 }
 func ImportEvaluationFromFountain(c *gin.Context) {
+	c.JSON(200, gin.H{
+		"message": "Hello, World!",
+	})
+}
+func UpdateCampaignStatus(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"message": "Hello, World!",
 	})

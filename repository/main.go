@@ -3,6 +3,7 @@ package repository
 import (
 	"log"
 	"nokib/campwiz/consts"
+	"nokib/campwiz/models"
 	"nokib/campwiz/query"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -124,28 +125,28 @@ func GetCommonsReplicaWithGen() (q *query.Query, close func()) {
 }
 
 func InitDB(testing bool) {
-	// conn, close, err := GetDB()
-	// if err != nil {
-	// 	panic("failed to connect database" + err.Error())
-	// }
+	conn, close, err := GetDB()
+	if err != nil {
+		panic("failed to connect database" + err.Error())
+	}
 	// if testing {
 	// 	conn, _, close = GetTestDB()
 	// 	conn.Exec("DROP DATABASE IF EXISTS campwiz_test;")
 	// 	conn.Exec("CREATE DATABASE campwiz_test;")
 	// 	conn.Exec("USE campwiz_test;")
 	// }
-	// defer close()
+	defer close()
 
-	// db := conn.Begin()
+	db := conn.Begin()
 	// // set character set to utf8mb4
 	// db.Exec("ALTER DATABASE campwiz CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci;")
 	// db.AutoMigrate(&models.Project{})
 	// db.AutoMigrate(&models.User{})
-	// db.AutoMigrate(&models.Campaign{})
+	db.AutoMigrate(&models.Campaign{})
 	// db.AutoMigrate(&models.Round{})
 	// db.AutoMigrate(&models.Task{})
 	// db.AutoMigrate(&models.Role{})
 	// db.AutoMigrate(&models.Submission{})
 	// db.AutoMigrate(&models.Evaluation{})
-	// db.Commit()
+	db.Commit()
 }

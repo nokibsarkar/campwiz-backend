@@ -87,27 +87,32 @@ func GetTestDB() (db *gorm.DB, mock sqlmock.Sqlmock, close func()) {
 func GetDBWithGen() (q *query.Query, close func()) {
 	dsn := consts.Config.Database.Main.DSN
 	// logMode := logger.Warn
+	close = func() {}
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(getLogMode(consts.Config.Database.Cache.Debug || consts.Config.Server.Mode == "debug")),
 	})
 	if err != nil {
-		panic("failed to connect database")
+		return nil, close
 	}
 	q = query.Use(db)
 	return q, func() {
 		raw_db, err := db.DB()
 		if err != nil {
-			panic("failed to connect database")
+			log.Printf("failed to connect database %s", err.Error())
+			return
 		}
 		raw_db.Close()
 	}
 }
 func GetCommonsReplicaWithGen() (q *query.Query, close func()) {
 	dsn := consts.Config.Database.Commons.DSN
+
+	log.Printf("Connecting to commons replica %s", dsn)
 	// logMode := logger.Warn
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(getLogMode(consts.Config.Database.Cache.Debug || consts.Config.Server.Mode == "debug")),
 	})
+	log.Printf("Connecting to commons replica %s", dsn)
 	if err != nil {
 		panic("failed to connect database")
 	}

@@ -120,6 +120,8 @@ type SubmissionFetcher interface {
 	/*
 		SLOW OK
 	*/
+	//SELECT page_id, page_title, user_name, img_timestamp as fr_timestamp, img_height as fr_height, img_width as fr_width, img_size as fr_size, img_media_type as ft_media_type FROM categorylinks JOIN page JOIN image JOIN actor JOIN `user` ON user_id=actor_user and cl_from=page_id and img_name=page_title and actor_id=img_actor where cl_to=@categoryName and cl_from > @startPageID and @minimumTimestamp <= img_timestamp and img_timestamp < @maximumTimestamp ORDER BY `page_id` ASC LIMIT @limit;
+	FetchSubmissionsFromCommonsDBByCategoryOld(categoryName string, startPageID uint64, minimumTimestamp uint64, maximumTimestamp uint64, limit int) ([]CommonsSubmissionEntry, error)
 	// SELECT  page_id, page_title, user_name, fr_timestamp, fr_height, fr_width, fr_size, ft_media_type FROM categorylinks JOIN page JOIN file JOIN filerevision JOIN actor JOIN `user` JOIN filetypes ON ft_id = file_type AND fr_id=file_latest AND user_id=actor_user and cl_from=page_id and file_name=page_title and actor_id=fr_actor where cl_from > @startPageID and @minimumTimestamp <= fr_timestamp and fr_timestamp < @maximumTimestamp and cl_to=@categoryName and fr_deleted = false and file_deleted=false ORDER BY `page_id` ASC LIMIT @limit;
 	FetchSubmissionsFromCommonsDBByCategory(categoryName string, startPageID uint64, minimumTimestamp uint64, maximumTimestamp uint64, limit int) ([]CommonsSubmissionEntry, error)
 }

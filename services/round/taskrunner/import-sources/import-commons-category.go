@@ -1,6 +1,7 @@
 package importsources
 
 import (
+	"log"
 	"maps"
 	"nokib/campwiz/models"
 	"nokib/campwiz/repository"
@@ -22,6 +23,7 @@ type CommonsCategoryListSource struct {
 func (c *CommonsCategoryListSource) ImportImageResults(failedImageReason *map[string]string) ([]models.MediaResult, *map[string]string) {
 	if c.currentCategoryIndex < len(c.Categories) {
 		category := c.Categories[c.currentCategoryIndex]
+		log.Printf("Category IMport: Importing images from category %s", category)
 		successMedia, currentfailedImages, lastPageID := c.commons_repo.GetImagesFromCommonsCategories2(category, c.lastPageID)
 		if lastPageID == 0 {
 			c.currentCategoryIndex++

@@ -112,13 +112,14 @@ func (c *CommonsRepository) GetImagesFromCommonsCategories(category string) ([]m
 func (c *CommonsRepository) GetImagesFromCommonsCategories2(category string, lastPageID uint64) (result []models.MediaResult, currentfailedImages map[string]string, lastPageIDOut uint64) {
 	q, close := GetCommonsReplicaWithGen()
 	defer close()
+	log.Printf("1 Getting images from commons category: %s", category)
 	result = []models.MediaResult{}
 	currentfailedImages = map[string]string{}
 	const batchSize = 20000
 	lastCount := batchSize
 	for lastCount == batchSize {
 		log.Println("Getting images from commons category: ", category)
-		ssubmissionChunk, err := q.CommonsSubmissionEntry.FetchSubmissionsFromCommonsDBByCategory(category, lastPageID, 20250101000000, 20251231235959, batchSize)
+		ssubmissionChunk, err := q.CommonsSubmissionEntry.FetchSubmissionsFromCommonsDBByCategoryOld(category, lastPageID, 20250101000000, 20251231235959, batchSize)
 		if err != nil {
 			log.Println("Error: ", err)
 			return
@@ -129,6 +130,8 @@ func (c *CommonsRepository) GetImagesFromCommonsCategories2(category string, las
 			if submission.PageID > lastPageID {
 				lastPageID = submission.PageID
 				lastPageIDOut = lastPageID
+			} else {
+				log.Println("Skipping submission: ", submission.PageID)
 			}
 			result = append(result, models.MediaResult{
 				PageID:           submission.PageID,
@@ -150,6 +153,7 @@ func (c *CommonsRepository) GetImagesFromCommonsCategories2(category string, las
 		lastPageIDOut = 0
 		return
 	}
+	lastPageIDOut = lastPageID
 	// Get images from commons category
 	// Create batch from commons category
 	return

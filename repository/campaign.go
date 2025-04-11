@@ -85,8 +85,8 @@ func (c *CampaignRepository) UnArchiveCampaign(conn *gorm.DB, campaignID models.
 	if err != nil {
 		return err
 	}
-	if campaign.RowsAffected == 0 {
-		return gorm.ErrRecordNotFound
+	if campaign.Error != nil {
+		return campaign.Error
 	}
 	return nil
 }

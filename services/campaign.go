@@ -220,15 +220,38 @@ func (service *CampaignService) UpdateCampaign(ID models.IDType, campaignRequest
 	tx.Commit()
 	return campaign, nil
 }
-func (service *CampaignService) UpdateCampaignStatus(ID models.IDType, IsArchived bool) (*models.Campaign, error) {
+func (service *CampaignService) UpdateCampaignStatus(usrId models.IDType, ID models.IDType, IsArchived bool) (*models.Campaign, error) {
 	conn, close, err := repository.GetDB()
 	if err != nil {
 		log.Println("Error: ", err)
 		return nil, err
 	}
 	defer close()
+	user_repo := repository.NewUserRepository()
 	campaign_repo := repository.NewCampaignRepository()
-
+	campaign, err := campaign_repo.FindByID(conn, ID)
+	if err != nil {
+		log.Println("Error: ", err)
+		return nil, err
+	}
+	currentUser, err := user_repo.FindByID(conn, usrId)
+	if err != nil {
+		log.Println("Error: ", err)
+		return nil, err
+	}
+	if !currentUser.Permission.HasPermission(consts.PermissionOtherProjectAccess) &&
+		currentUser.LeadingProjectID == nil {
+		log.Println("Error: ", err)
+		return nil, fmt.Errorf("user does not have permission to archive cross-project campaigns")
+	}
+	if currentUser.LeadingProjectID != nil && *currentUser.LeadingProjectID != campaign.ProjectID {
+		log.Println("Error: ", err)
+		return nil, fmt.Errorf("user is not leading this project")
+	}
+	if !currentUser.Permission.HasPermission(consts.PermissionUpdateCampaignStatus) {
+		log.Println("Error: ", err)
+		return nil, fmt.Errorf("user does not have permission to update campaign status")
+	}
 	if IsArchived {
 		err = campaign_repo.ArchiveCampaign(conn, ID)
 	} else {
@@ -238,7 +261,7 @@ func (service *CampaignService) UpdateCampaignStatus(ID models.IDType, IsArchive
 		log.Println("Error: ", err)
 		return nil, err
 	}
-	campaign, err := campaign_repo.FindByID(conn.Unscoped(), ID)
+	campaign, err = campaign_repo.FindByID(conn.Unscoped(), ID)
 	if err != nil {
 		log.Println("Error: ", err)
 		return nil, err

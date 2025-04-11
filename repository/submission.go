@@ -169,3 +169,14 @@ func (r *SubmissionRepository) TriggerSubmissionStatistics(tx *gorm.DB, submissi
 	return err
 
 }
+func (r *SubmissionRepository) GetPageIDWithoutDescriptionByRoundID(tx *gorm.DB, roundID models.IDType, lastPageID uint64, limit int) ([]uint64, error) {
+	pageIds := []uint64{}
+	q := query.Use(tx)
+	Submission := q.Submission
+	err := Submission.Select(Submission.PageID).Where(Submission.RoundID.Eq(roundID.String())).Where(Submission.Description.Eq("")).
+		Where(Submission.PageID.Gt(lastPageID)).Order(Submission.PageID.Asc()).Limit(limit).Scan(&pageIds)
+	if err != nil {
+		return nil, err
+	}
+	return pageIds, err
+}

@@ -250,6 +250,65 @@ func (c *CommonsRepository) GetImagesThumbsFromIPageIDs(pageids []uint64) []mode
 }
 
 // returns images from commons categories
+func (c *CommonsRepository) GetImagesDescriptionFromIPageIDs(pageids []uint64) []models.MediaResult {
+	// Get images from commons category
+	// Create batch from commons category
+	start := 0
+	total := len(pageids)
+	batchSize := 50
+
+	result := []models.MediaResult{}
+	for start < total {
+		end := min(start+batchSize, total)
+		batch := []string{}
+		for _, pageid := range pageids[start:end] {
+			batch = append(batch, fmt.Sprintf("%d", pageid))
+		}
+		paginator := NewPaginator[models.ImageInfoPage](c)
+		params := url.Values{
+			"action":              {"query"},
+			"format":              {"json"},
+			"prop":                {"imageinfo"},
+			"pageids":             {strings.Join(batch, "|")},
+			"iiprop":              {"extmetadata"},
+			"iilimit":             {"1"},
+			"limit":               {"2000"},
+			"iiextmetadatafilter": {"ImageDescription"},
+		}
+		log.Println("Getting images from commons pageids: ", strings.Join(batch, "|"))
+		images, err := paginator.Query(params)
+		if err != nil {
+			log.Println("Error: ", err)
+			return nil
+		}
+		for image := range images {
+			// Append images to result
+			if image == nil {
+				break
+			}
+			if len(image.Info) == 0 {
+				log.Println("No image info found. Skipping")
+				continue
+			}
+			info := image.Info[0]
+			extmetadata := info.ExtMetadata
+			if extmetadata == nil {
+				log.Println("No extmetadata found. Skipping")
+				continue
+			}
+			img := models.MediaResult{
+				PageID:      uint64(image.PageID),
+				Description: extmetadata.GetImageDescription(),
+			}
+			result = append(result, img)
+		}
+		start = end
+		log.Println("Found images: ", len(result))
+	}
+	return result
+}
+
+// returns images from commons categories
 func (c *CommonsRepository) GeUsersFromUsernames(usernames []models.WikimediaUsernameType) ([]models.WikimediaUser, error) {
 	// Get images from commons category
 	// Create batch from commons category

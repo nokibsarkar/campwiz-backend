@@ -33,6 +33,7 @@ func (c *CommonsCategoryListSource) ImportImageResults(failedImageReason *map[st
 		maps.Copy(*failedImageReason, currentfailedImages)
 		return successMedia, failedImageReason
 	}
+
 	return nil, failedImageReason
 }
 func NewCommonsCategoryListSource(categories []string, round *models.Round) *CommonsCategoryListSource {

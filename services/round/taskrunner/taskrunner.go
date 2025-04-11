@@ -198,6 +198,41 @@ func (b *TaskRunner) importImages(conn *gorm.DB, task *models.Task) (successCoun
 		}
 		perBatch.Commit()
 	}
+	submission_repo := repository.NewSubmissionRepository()
+	lastPageID := uint64(0)
+	batchSize := 1000
+	lastCount := batchSize
+	for lastCount == batchSize {
+		log.Println("Fetching page ids without description")
+		nonDescriptionPageIds, err := submission_repo.GetPageIDWithoutDescriptionByRoundID(conn, round.RoundID, lastPageID, batchSize)
+		if err != nil {
+			log.Println("Error fetching page ids: ", err)
+			task.Status = models.TaskStatusFailed
+			return
+		}
+		lastCount = len(nonDescriptionPageIds)
+		if len(nonDescriptionPageIds) > 0 {
+			log.Println("Updating descriptions for images")
+			commons_repo := repository.NewCommonsRepository()
+			m := commons_repo.GetImagesDescriptionFromIPageIDs(nonDescriptionPageIds)
+			for _, image := range m {
+				res := conn.Model(&models.Submission{}).Where(&models.Submission{PageID: image.PageID}).Updates(models.Submission{
+					MediaSubmission: models.MediaSubmission{
+						Description: image.Description,
+						License:     strings.ToUpper(image.License),
+						CreditHTML:  image.CreditHTML,
+					},
+				})
+				if res.Error != nil {
+					log.Println("Error updating image: ", res.Error)
+					task.Status = models.TaskStatusFailed
+					return
+				}
+				lastPageID = image.PageID
+			}
+			log.Println("Updating descriptions for images done")
+		}
+	}
 
 	// commonsRepo := repository.NewCommonsRepository()
 	// submissionRepo := repository.NewSubmissionRepository()

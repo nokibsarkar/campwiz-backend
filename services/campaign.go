@@ -232,7 +232,7 @@ func (service *CampaignService) UpdateCampaignStatus(usrId models.IDType, ID mod
 	user_repo := repository.NewUserRepository()
 	campaign_repo := repository.NewCampaignRepository()
 	round_repo := repository.NewRoundRepository()
-	campaign, err := campaign_repo.FindByID(tx.Preload("LatestRound"), ID)
+	campaign, err := campaign_repo.FindByID(tx.Unscoped().Preload("LatestRound"), ID)
 	if err != nil {
 		log.Println("Error: ", err)
 		tx.Rollback()

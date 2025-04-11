@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"fmt"
 	"nokib/campwiz/models/types"
+	"strings"
 	"time"
 
 	"gorm.io/datatypes"
@@ -136,15 +137,34 @@ func (c *CommonsSubmissionEntry) GetURL() string {
 	URL := fmt.Sprintf("https://upload.wikimedia.org/wikipedia/commons/%s/%s/%s", folder1, folder2, c.PageTitle)
 	return URL
 }
-func (c *CommonsSubmissionEntry) GetThumbURL() string {
+func (c *CommonsSubmissionEntry) GetThumbURL() (string, uint64, uint64) {
 	if c.PageTitle == "" {
-		return ""
+		return "", 0, 0
 	}
-	md5Hash := md5.Sum([]byte(c.PageTitle))
-	md5HashHex := fmt.Sprintf("%x", md5Hash)
-	folder1, folder2 := md5HashHex[:1], md5HashHex[:2]
-	URL := fmt.Sprintf("https://upload.wikimedia.org/wikipedia/commons/thumb/%s/%s/%s", folder1, folder2, c.PageTitle)
-	return URL
+	fileURL := c.GetURL()
+	targetWidth := uint64(200)
+	// Calculate the aspect ratio
+	// aspectRatio := float32(c.FrWidth) / float32(c.FrHeight)
+	aspectRatio := float32(c.FrWidth) / float32(c.FrHeight)
+	fileNameWithoutPrefix := fileURL[strings.LastIndex(fileURL, "/")+1:]
+	// extract the file extension
+	// extension := strings.ToLower(fileNameWithoutPrefix[strings.LastIndex(fileNameWithoutPrefix, "."):])
+	// thumbSuffix := fileNameWithoutPrefix
+	// switch extension {
+	// case ".jpg", ".jpeg", ".png", ".webp":
+	// 	// For image files, we can set extension as is
+	// 	thumbSuffix = fileNameWithoutPrefix
+	// default:
+	// 	// For SVG and GIF files, we can use a PNG thumbnail
+	// 	thumbSuffix = fileNameWithoutPrefix + ".png"
+	// }
+	// Calculate the width and height of the thumbnail
+	thumbWidth := targetWidth
+	// aspectRatio is the ratio of width to height
+	// thumbHeight = thumbWidth / aspectRatio
+	thumbHeight := uint64(float32(targetWidth) / aspectRatio)
+	thumbURL := fmt.Sprintf("https://commons.wikimedia.org/w/thumb.php?f=%s&width=%d&height=%d", fileNameWithoutPrefix, thumbWidth, thumbHeight)
+	return thumbURL, thumbWidth, thumbHeight
 }
 func (c *CommonsSubmissionEntry) GetSubmittedAt() time.Time {
 	const YEAR_MULTIPLIER = 10000000000

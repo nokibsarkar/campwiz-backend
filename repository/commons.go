@@ -133,6 +133,7 @@ func (c *CommonsRepository) GetImagesFromCommonsCategories2(category string, las
 			} else {
 				log.Println("Skipping submission: ", submission.PageID)
 			}
+			thumbURL, thumbWidth, thumbHeight := submission.GetThumbURL()
 			result = append(result, models.MediaResult{
 				PageID:           submission.PageID,
 				Name:             submission.PageTitle,
@@ -144,6 +145,9 @@ func (c *CommonsRepository) GetImagesFromCommonsCategories2(category string, las
 				Size:             submission.FrSize,
 				MediaType:        submission.FtMediaType,
 				Resolution:       submission.FrWidth * submission.FrHeight,
+				ThumbURL:         &thumbURL,
+				ThumbWidth:       &thumbWidth,
+				ThumbHeight:      &thumbHeight,
 			})
 		}
 		log.Println("Last Page ID: ", lastPageID)

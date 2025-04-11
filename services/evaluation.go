@@ -25,6 +25,8 @@ type EvaluationRequest struct {
 	Score        *models.ScoreType `json:"score"`
 	EvaluationID models.IDType     `json:"evaluationId,omitempty"`
 	SubmissionID models.IDType     `json:"submissionId,omitempty"`
+	Description  *string           `json:"description,omitempty"`
+	Thumbnail    *string           `json:"thumbnail,omitempty"`
 }
 
 func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluationRequests []EvaluationRequest) (result *models.EvaluationListResponseWithCurrentStats, err error) {

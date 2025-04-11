@@ -16,6 +16,7 @@ func (r *EvaluationRepository) CreateEvaluation(tx *gorm.DB, evaluation *models.
 	result := tx.Create(evaluation)
 	return result.Error
 }
+
 func (r *EvaluationRepository) FindEvaluationByID(tx *gorm.DB, evaluationID models.IDType) (*models.Evaluation, error) {
 	evaluation := &models.Evaluation{}
 	result := tx.First(evaluation, &models.Evaluation{EvaluationID: evaluationID})

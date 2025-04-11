@@ -16,8 +16,8 @@ import (
 const COMMONS_API = "http://commons.wikimedia.org/w/api.php"
 
 var COMMONS_AUDIO_THUMB = "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png"
-var COMMONS_THUMB_WIDTH uint64 = 512
-var COMMONS_THUMB_HEIGHT uint64 = 512
+var COMMONS_THUMB_WIDTH uint64 = 400
+var COMMONS_THUMB_HEIGHT uint64 = 400
 
 // This Repository would be used to communicate with wikimedia commons
 type CommonsRepository struct {
@@ -54,11 +54,11 @@ func (c *CommonsRepository) GetImagesFromCommonsCategories(category string) ([]m
 		"generator": {"categorymembers"},
 		"gcmtitle":  {category},
 		"gcmtype":   {"file"},
-		"iiprop":    {"timestamp|user|url|size|mediatype|dimensions|extmetadata|canonicaltitle"},
+		"iiprop":    {"timestamp|user|url|size|mediatype|dimensions|canonicaltitle"},
 		"gcmlimit":  {"max"},
 		// "iiurlwidth":          {"640"},
 		// "iiurlheight":         {"480"},
-		"iiextmetadatafilter": {"License|ImageDescription|Credit|Artist|LicenseShortName|UsageTerms|AttributionRequired|Copyrighted"},
+		// "iiextmetadatafilter": {"License|ImageDescription|Credit|Artist|LicenseShortName|UsageTerms|AttributionRequired|Copyrighted"},
 	}
 	images, err := paginator.Query(params)
 	if err != nil {
@@ -76,6 +76,7 @@ func (c *CommonsRepository) GetImagesFromCommonsCategories(category string) ([]m
 			continue
 		}
 		info := image.Info[0]
+		// log.Println("Image info: ", info.Title)
 		img := models.MediaResult{
 			PageID:           uint64(image.PageID),
 			Name:             image.Title,
@@ -98,58 +99,82 @@ func (c *CommonsRepository) GetImagesFromCommonsCategories(category string) ([]m
 			img.ThumbURL = &COMMONS_AUDIO_THUMB
 			img.ThumbWidth = &COMMONS_THUMB_WIDTH
 			img.ThumbHeight = &COMMONS_THUMB_HEIGHT
+		} else {
+			thumbURL, thumbWidth, thumbHeight := c.GetImageThumbFromURL(info.URL, float32(info.Width)/float32(info.Height), COMMONS_THUMB_WIDTH)
+			img.ThumbURL = &thumbURL
+			img.ThumbWidth = &thumbWidth
+			img.ThumbHeight = &thumbHeight
 		}
 		result = append(result, img)
 	}
 	return result, map[string]string{}
 }
-
-// returns images from commons categories
-func (c *CommonsRepository) GetImagesThubsFromCommonsCategories(category string) ([]models.MediaResult, map[string]string) {
+func (c *CommonsRepository) GetImagesFromCommonsCategories2(category string, lastPageID uint64) (result []models.MediaResult, currentfailedImages map[string]string, lastPageIDOut uint64) {
+	q, close := GetCommonsReplicaWithGen()
+	defer close()
+	result = []models.MediaResult{}
+	currentfailedImages = map[string]string{}
+	const batchSize = 20000
+	lastCount := batchSize
+	for lastCount == batchSize {
+		log.Println("Getting images from commons category: ", category)
+		ssubmissionChunk, err := q.CommonsSubmissionEntry.FetchSubmissionsFromCommonsDBByCategory(category, lastPageID, 20250101000000, 20251231235959, batchSize)
+		if err != nil {
+			log.Println("Error: ", err)
+			return
+		}
+		log.Println("Submissions: ", len(ssubmissionChunk))
+		lastCount = len(ssubmissionChunk)
+		for _, submission := range ssubmissionChunk {
+			if submission.PageID > lastPageID {
+				lastPageID = submission.PageID
+				lastPageIDOut = lastPageID
+			}
+			result = append(result, models.MediaResult{
+				PageID:           submission.PageID,
+				Name:             submission.PageTitle,
+				URL:              submission.GetURL(),
+				UploaderUsername: models.WikimediaUsernameType(submission.UserName),
+				SubmittedAt:      submission.GetSubmittedAt(),
+				Height:           submission.FrHeight,
+				Width:            submission.FrWidth,
+				Size:             submission.FrSize,
+				MediaType:        submission.FtMediaType,
+				Resolution:       submission.FrWidth * submission.FrHeight,
+			})
+		}
+		log.Println("Last Page ID: ", lastPageID)
+	}
+	if len(result) == 0 {
+		log.Println("No images found in commons category: ", category)
+		lastPageIDOut = 0
+		return
+	}
 	// Get images from commons category
 	// Create batch from commons category
-	log.Println("Getting images from commons category: ", category)
-	paginator := NewPaginator[models.ImageInfoPage](c)
-	params := url.Values{
-		"action":      {"query"},
-		"format":      {"json"},
-		"prop":        {"imageinfo"},
-		"generator":   {"categorymembers"},
-		"gcmtitle":    {category},
-		"gcmtype":     {"file"},
-		"iiprop":      {"url"},
-		"limit":       {"50"},
-		"iiurlwidth":  {"640"},
-		"iiurlheight": {"480"},
-	}
-	images, err := paginator.Query(params)
-	if err != nil {
-		log.Println("Error: ", err)
-		return nil, nil
-	}
-	result := []models.MediaResult{}
-	for image := range images {
-		// Append images to result
-		if image == nil {
-			break
-		}
-		if len(image.Info) == 0 {
-			log.Println("No image info found. Skipping")
-			continue
-		}
-		info := image.Info[0]
-		img := models.MediaResult{
-			PageID:      uint64(image.PageID),
-			Name:        image.Title,
-			URL:         info.URL,
-			ThumbURL:    &info.ThumbURL,
-			ThumbHeight: &info.ThumbHeight,
-			ThumbWidth:  &info.ThumbWidth,
-		}
-		result = append(result, img)
-	}
-	log.Println("Found images: ", len(result))
-	return result, map[string]string{}
+	return
+}
+func (c *CommonsRepository) GetImageThumbFromURL(fileURL string, aspectRatio float32, targetWidth uint64) (string, uint64, uint64) {
+	// file name is the last part of the URL
+	fileNameWithoutPrefix := fileURL[strings.LastIndex(fileURL, "/")+1:]
+	// extract the file extension
+	// extension := strings.ToLower(fileNameWithoutPrefix[strings.LastIndex(fileNameWithoutPrefix, "."):])
+	// thumbSuffix := fileNameWithoutPrefix
+	// switch extension {
+	// case ".jpg", ".jpeg", ".png", ".webp":
+	// 	// For image files, we can set extension as is
+	// 	thumbSuffix = fileNameWithoutPrefix
+	// default:
+	// 	// For SVG and GIF files, we can use a PNG thumbnail
+	// 	thumbSuffix = fileNameWithoutPrefix + ".png"
+	// }
+	// Calculate the width and height of the thumbnail
+	thumbWidth := targetWidth
+	// aspectRatio is the ratio of width to height
+	// thumbHeight = thumbWidth / aspectRatio
+	thumbHeight := uint64(float32(targetWidth) / aspectRatio)
+	thumbURL := fmt.Sprintf("https://commons.wikimedia.org/w/thumb.php?f=%s&width=%d&height=%d", fileNameWithoutPrefix, thumbWidth, thumbHeight)
+	return thumbURL, thumbWidth, thumbHeight
 }
 
 // returns images from commons categories
@@ -244,10 +269,9 @@ func (c *CommonsRepository) GeUsersFromUsernames(usernames []models.WikimediaUse
 			if user == nil {
 				break
 			}
-			if user.Registered.IsZero() {
-				log.Println("No registration date found. Skipping")
-				continue
-			}
+			// if user.Registered.IsZero() {
+			// 	log.Printf("No registration date found for %s. Skipping", user.Name)
+			// }
 			result = append(result, *user)
 		}
 	}

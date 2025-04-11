@@ -116,6 +116,8 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries(tx *gorm.DB, round 
 func (strategy *RoundRobinDistributionStrategy) createMissingEvaluations(tx *gorm.DB, evtype models.EvaluationType, round *models.Round, req []models.Submission) (int, error) {
 	evaluations := []models.Evaluation{}
 	log.Println("Creating missing evaluations", len(req))
+	updatedPrepared := tx.Session(&gorm.Session{PrepareStmt: false})
+	cnt := 0
 	for _, submission := range req {
 		rest := round.Quorum - submission.AssignmentCount
 		for _ = range rest {
@@ -130,20 +132,42 @@ func (strategy *RoundRobinDistributionStrategy) createMissingEvaluations(tx *gor
 			}
 			evaluations = append(evaluations, evaluation)
 		}
-		if res := tx.Updates(&models.Submission{
+		if res := updatedPrepared.Limit(1).Updates(&models.Submission{
 			SubmissionID:    submission.SubmissionID,
 			AssignmentCount: submission.AssignmentCount + rest,
 		}); res.Error != nil {
 			return 0, res.Error
 		}
+		cnt++
+		// if cnt%163800 == 0 {
+		// 	log.Println("Prepared statement count: ", cnt)
+		// 	if res := updatedPrepared.SavePoint(fmt.Sprintf("sv1%d", cnt)); res.Error != nil {
+		// 		// updatedPrepared.Rollback()
+		// 		return 0, res.Error
+		// 	}
+		// 	cnt = 0
+		// 	updatedPrepared = tx.Session(&gorm.Session{PrepareStmt: false})
+		// }
 	}
+	// if res := updatedPrepared.Commit(); res.Error != nil {
+	// 	// updatedPrepared.Rollback()
+	// 	return 0, res.Error
+	// }
 	if len(evaluations) == 0 {
 		return 0, nil
 	}
-	res := tx.Create(&evaluations)
-	if res.Error != nil {
-		return 0, res.Error
+	batchSze := 5000
+	batch := len(evaluations)/batchSze + 1
+	for i := range batch {
+		start := i * batchSze
+		end := min(start+batchSze, len(evaluations))
+		ev := evaluations[start:end]
+		res := tx.Create(&ev)
+		if res.Error != nil {
+			return 0, res.Error
+		}
 	}
+
 	return len(evaluations), nil
 }
 
@@ -162,6 +186,7 @@ func (strategy *RoundRobinDistributionStrategy) importToCache(tx *gorm.DB, taskC
 	if len(evs) == 0 {
 		return 0, nil
 	}
+
 	for _, evaluation := range evs {
 		totalEvaluations++
 		j := evaluation.JudgeID
@@ -176,7 +201,17 @@ func (strategy *RoundRobinDistributionStrategy) importToCache(tx *gorm.DB, taskC
 			Score:        evaluation.Score,
 		})
 	}
-	taskCacheDB.Create(evaluations)
+	batchSize := 1000
+	batch := len(evaluations)/batchSize + 1
+	for i := range batch {
+		start := i * batchSize
+		end := min(start+batchSize, len(evaluations))
+		ev := evaluations[start:end]
+		res := taskCacheDB.Create(&ev)
+		if res.Error != nil {
+			return 0, res.Error
+		}
+	}
 	log.Println("Total evaluations: ", totalEvaluations)
 	return totalEvaluations, nil
 }
@@ -237,6 +272,7 @@ func (strategy *RoundRobinDistributionStrategy) exportFromCache2MainDB(cache *go
 		if len(assignments) == 0 {
 			return successCount, failedCount, err
 		}
+		log.Printf("Assignments %d\n", len(assignments))
 		for _, assignment := range assignments {
 			res := tx.Updates(&models.Evaluation{
 				EvaluationID:       assignment.EvaluationID,

@@ -16,24 +16,26 @@ import (
 )
 
 var (
-	Q                    = new(Query)
-	Campaign             *campaign
-	Evaluation           *evaluation
-	JuryStatistics       *juryStatistics
-	Project              *project
-	Role                 *role
-	Round                *round
-	RoundStatistics      *roundStatistics
-	Submission           *submission
-	SubmissionResult     *submissionResult
-	SubmissionStatistics *submissionStatistics
-	Task                 *task
-	User                 *user
+	Q                      = new(Query)
+	Campaign               *campaign
+	CommonsSubmissionEntry *commonsSubmissionEntry
+	Evaluation             *evaluation
+	JuryStatistics         *juryStatistics
+	Project                *project
+	Role                   *role
+	Round                  *round
+	RoundStatistics        *roundStatistics
+	Submission             *submission
+	SubmissionResult       *submissionResult
+	SubmissionStatistics   *submissionStatistics
+	Task                   *task
+	User                   *user
 )
 
 func SetDefault(db *gorm.DB, opts ...gen.DOOption) {
 	*Q = *Use(db, opts...)
 	Campaign = &Q.Campaign
+	CommonsSubmissionEntry = &Q.CommonsSubmissionEntry
 	Evaluation = &Q.Evaluation
 	JuryStatistics = &Q.JuryStatistics
 	Project = &Q.Project
@@ -49,56 +51,59 @@ func SetDefault(db *gorm.DB, opts ...gen.DOOption) {
 
 func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 	return &Query{
-		db:                   db,
-		Campaign:             newCampaign(db, opts...),
-		Evaluation:           newEvaluation(db, opts...),
-		JuryStatistics:       newJuryStatistics(db, opts...),
-		Project:              newProject(db, opts...),
-		Role:                 newRole(db, opts...),
-		Round:                newRound(db, opts...),
-		RoundStatistics:      newRoundStatistics(db, opts...),
-		Submission:           newSubmission(db, opts...),
-		SubmissionResult:     newSubmissionResult(db, opts...),
-		SubmissionStatistics: newSubmissionStatistics(db, opts...),
-		Task:                 newTask(db, opts...),
-		User:                 newUser(db, opts...),
+		db:                     db,
+		Campaign:               newCampaign(db, opts...),
+		CommonsSubmissionEntry: newCommonsSubmissionEntry(db, opts...),
+		Evaluation:             newEvaluation(db, opts...),
+		JuryStatistics:         newJuryStatistics(db, opts...),
+		Project:                newProject(db, opts...),
+		Role:                   newRole(db, opts...),
+		Round:                  newRound(db, opts...),
+		RoundStatistics:        newRoundStatistics(db, opts...),
+		Submission:             newSubmission(db, opts...),
+		SubmissionResult:       newSubmissionResult(db, opts...),
+		SubmissionStatistics:   newSubmissionStatistics(db, opts...),
+		Task:                   newTask(db, opts...),
+		User:                   newUser(db, opts...),
 	}
 }
 
 type Query struct {
 	db *gorm.DB
 
-	Campaign             campaign
-	Evaluation           evaluation
-	JuryStatistics       juryStatistics
-	Project              project
-	Role                 role
-	Round                round
-	RoundStatistics      roundStatistics
-	Submission           submission
-	SubmissionResult     submissionResult
-	SubmissionStatistics submissionStatistics
-	Task                 task
-	User                 user
+	Campaign               campaign
+	CommonsSubmissionEntry commonsSubmissionEntry
+	Evaluation             evaluation
+	JuryStatistics         juryStatistics
+	Project                project
+	Role                   role
+	Round                  round
+	RoundStatistics        roundStatistics
+	Submission             submission
+	SubmissionResult       submissionResult
+	SubmissionStatistics   submissionStatistics
+	Task                   task
+	User                   user
 }
 
 func (q *Query) Available() bool { return q.db != nil }
 
 func (q *Query) clone(db *gorm.DB) *Query {
 	return &Query{
-		db:                   db,
-		Campaign:             q.Campaign.clone(db),
-		Evaluation:           q.Evaluation.clone(db),
-		JuryStatistics:       q.JuryStatistics.clone(db),
-		Project:              q.Project.clone(db),
-		Role:                 q.Role.clone(db),
-		Round:                q.Round.clone(db),
-		RoundStatistics:      q.RoundStatistics.clone(db),
-		Submission:           q.Submission.clone(db),
-		SubmissionResult:     q.SubmissionResult.clone(db),
-		SubmissionStatistics: q.SubmissionStatistics.clone(db),
-		Task:                 q.Task.clone(db),
-		User:                 q.User.clone(db),
+		db:                     db,
+		Campaign:               q.Campaign.clone(db),
+		CommonsSubmissionEntry: q.CommonsSubmissionEntry.clone(db),
+		Evaluation:             q.Evaluation.clone(db),
+		JuryStatistics:         q.JuryStatistics.clone(db),
+		Project:                q.Project.clone(db),
+		Role:                   q.Role.clone(db),
+		Round:                  q.Round.clone(db),
+		RoundStatistics:        q.RoundStatistics.clone(db),
+		Submission:             q.Submission.clone(db),
+		SubmissionResult:       q.SubmissionResult.clone(db),
+		SubmissionStatistics:   q.SubmissionStatistics.clone(db),
+		Task:                   q.Task.clone(db),
+		User:                   q.User.clone(db),
 	}
 }
 
@@ -112,51 +117,54 @@ func (q *Query) WriteDB() *Query {
 
 func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 	return &Query{
-		db:                   db,
-		Campaign:             q.Campaign.replaceDB(db),
-		Evaluation:           q.Evaluation.replaceDB(db),
-		JuryStatistics:       q.JuryStatistics.replaceDB(db),
-		Project:              q.Project.replaceDB(db),
-		Role:                 q.Role.replaceDB(db),
-		Round:                q.Round.replaceDB(db),
-		RoundStatistics:      q.RoundStatistics.replaceDB(db),
-		Submission:           q.Submission.replaceDB(db),
-		SubmissionResult:     q.SubmissionResult.replaceDB(db),
-		SubmissionStatistics: q.SubmissionStatistics.replaceDB(db),
-		Task:                 q.Task.replaceDB(db),
-		User:                 q.User.replaceDB(db),
+		db:                     db,
+		Campaign:               q.Campaign.replaceDB(db),
+		CommonsSubmissionEntry: q.CommonsSubmissionEntry.replaceDB(db),
+		Evaluation:             q.Evaluation.replaceDB(db),
+		JuryStatistics:         q.JuryStatistics.replaceDB(db),
+		Project:                q.Project.replaceDB(db),
+		Role:                   q.Role.replaceDB(db),
+		Round:                  q.Round.replaceDB(db),
+		RoundStatistics:        q.RoundStatistics.replaceDB(db),
+		Submission:             q.Submission.replaceDB(db),
+		SubmissionResult:       q.SubmissionResult.replaceDB(db),
+		SubmissionStatistics:   q.SubmissionStatistics.replaceDB(db),
+		Task:                   q.Task.replaceDB(db),
+		User:                   q.User.replaceDB(db),
 	}
 }
 
 type queryCtx struct {
-	Campaign             ICampaignDo
-	Evaluation           IEvaluationDo
-	JuryStatistics       IJuryStatisticsDo
-	Project              IProjectDo
-	Role                 IRoleDo
-	Round                IRoundDo
-	RoundStatistics      IRoundStatisticsDo
-	Submission           ISubmissionDo
-	SubmissionResult     ISubmissionResultDo
-	SubmissionStatistics ISubmissionStatisticsDo
-	Task                 ITaskDo
-	User                 IUserDo
+	Campaign               ICampaignDo
+	CommonsSubmissionEntry ICommonsSubmissionEntryDo
+	Evaluation             IEvaluationDo
+	JuryStatistics         IJuryStatisticsDo
+	Project                IProjectDo
+	Role                   IRoleDo
+	Round                  IRoundDo
+	RoundStatistics        IRoundStatisticsDo
+	Submission             ISubmissionDo
+	SubmissionResult       ISubmissionResultDo
+	SubmissionStatistics   ISubmissionStatisticsDo
+	Task                   ITaskDo
+	User                   IUserDo
 }
 
 func (q *Query) WithContext(ctx context.Context) *queryCtx {
 	return &queryCtx{
-		Campaign:             q.Campaign.WithContext(ctx),
-		Evaluation:           q.Evaluation.WithContext(ctx),
-		JuryStatistics:       q.JuryStatistics.WithContext(ctx),
-		Project:              q.Project.WithContext(ctx),
-		Role:                 q.Role.WithContext(ctx),
-		Round:                q.Round.WithContext(ctx),
-		RoundStatistics:      q.RoundStatistics.WithContext(ctx),
-		Submission:           q.Submission.WithContext(ctx),
-		SubmissionResult:     q.SubmissionResult.WithContext(ctx),
-		SubmissionStatistics: q.SubmissionStatistics.WithContext(ctx),
-		Task:                 q.Task.WithContext(ctx),
-		User:                 q.User.WithContext(ctx),
+		Campaign:               q.Campaign.WithContext(ctx),
+		CommonsSubmissionEntry: q.CommonsSubmissionEntry.WithContext(ctx),
+		Evaluation:             q.Evaluation.WithContext(ctx),
+		JuryStatistics:         q.JuryStatistics.WithContext(ctx),
+		Project:                q.Project.WithContext(ctx),
+		Role:                   q.Role.WithContext(ctx),
+		Round:                  q.Round.WithContext(ctx),
+		RoundStatistics:        q.RoundStatistics.WithContext(ctx),
+		Submission:             q.Submission.WithContext(ctx),
+		SubmissionResult:       q.SubmissionResult.WithContext(ctx),
+		SubmissionStatistics:   q.SubmissionStatistics.WithContext(ctx),
+		Task:                   q.Task.WithContext(ctx),
+		User:                   q.User.WithContext(ctx),
 	}
 }
 

@@ -4,6 +4,7 @@ import (
 	"maps"
 	"nokib/campwiz/models"
 	"nokib/campwiz/repository"
+	"strings"
 )
 
 type CommonsCategoryListSource struct {
@@ -35,6 +36,12 @@ func (c *CommonsCategoryListSource) ImportImageResults(failedImageReason *map[st
 	return nil, failedImageReason
 }
 func NewCommonsCategoryListSource(categories []string, round *models.Round) *CommonsCategoryListSource {
+	ct := []string{}
+	for _, category := range categories {
+		kt := strings.Replace(category, " ", "_", -1)
+		kt = strings.Replace(kt, "Category:", "", -1)
+		ct = append(ct, kt)
+	}
 	return &CommonsCategoryListSource{
 		Categories:           categories,
 		currentCategoryIndex: 0,

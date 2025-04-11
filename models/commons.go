@@ -71,3 +71,10 @@ type ImageInfoPage struct {
 	Page
 	ImageInfo
 }
+
+// func (m *MediaResult) GetURL() string {
+// 	if m.URL != "" {
+// 		return m.URL
+// 	}
+// 	return m.ThumbURL
+// }

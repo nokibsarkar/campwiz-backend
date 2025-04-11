@@ -34,10 +34,14 @@ type TaskCacheDatabaseConfiguration struct {
 	DSN   string `mapstructure:"DSN"`
 	Debug bool   `mapstructure:"Debug"`
 }
+type CommonsReplicaDatabaseConfiguration struct {
+	DSN string `mapstructure:"DSN"`
+}
 type DatabaseConfiguration struct {
-	Main  MainDatabaseConfiguration      `mapstructure:"Main"`
-	Cache CacheDatabaseConfiguration     `mapstructure:"Cache"`
-	Task  TaskCacheDatabaseConfiguration `mapstructure:"Task"`
+	Main    MainDatabaseConfiguration           `mapstructure:"Main"`
+	Cache   CacheDatabaseConfiguration          `mapstructure:"Cache"`
+	Task    TaskCacheDatabaseConfiguration      `mapstructure:"Task"`
+	Commons CommonsReplicaDatabaseConfiguration `mapstructure:"Commons"`
 }
 type ServerConfiguration struct {
 	Port    string `mapstructure:"Port"`

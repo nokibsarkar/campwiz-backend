@@ -1,7 +1,6 @@
 package round
 
 import (
-	"log"
 	"nokib/campwiz/models"
 	"time"
 )
@@ -36,7 +35,6 @@ func NewTechnicalJudgeService(round *models.Round, campaign *models.Campaign) *T
 //   - Minimum Size
 //   - Whether Image allowed or not
 func (j *TechnicalJudgeService) RejectReason(img models.MediaResult) string {
-	log.Printf("Checking image %s", img.SubmittedAt)
 	if !j.MinimumUploadDate.IsZero() && img.SubmittedAt.Before(j.MinimumUploadDate) {
 		// log.Printf("Image %s is not allowed because it was uploaded before %s", img.Name, j.MinimumUploadDate)
 		return "before-minimum-upload-date"

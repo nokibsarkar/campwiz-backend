@@ -20,5 +20,6 @@ func main() {
 	g.ApplyInterface(func(models.JuryStatisticsUpdater) {}, models.JuryStatistics{})
 	g.ApplyInterface(func(models.RoundStatisticsFetcher) {}, models.RoundStatistics{})
 	g.ApplyInterface(func(models.Evaluator) {}, models.Evaluation{})
+	g.ApplyInterface(func(models.SubmissionFetcher) {}, models.CommonsSubmissionEntry{})
 	g.Execute()
 }

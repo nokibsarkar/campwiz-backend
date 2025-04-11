@@ -164,7 +164,7 @@ func (b *TaskRunner) importImages(conn *gorm.DB, task *models.Task) (successCoun
 			}
 			submissions = append(submissions, submission)
 			submissionCount++
-			if submissionCount%100 == 0 {
+			if submissionCount%1000 == 0 {
 				log.Println("Saving batch of submissions")
 
 				res := perBatch.Clauses(clause.Insert{Modifier: "IGNORE"}).Create(submissions)
@@ -198,30 +198,30 @@ func (b *TaskRunner) importImages(conn *gorm.DB, task *models.Task) (successCoun
 		perBatch.Commit()
 	}
 
-	commonsRepo := repository.NewCommonsRepository()
-	submissionRepo := repository.NewSubmissionRepository()
-	pageids, err := submissionRepo.GetPageIDsForWithout(conn, *task.AssociatedRoundID)
-	if err != nil {
-		log.Println("Error fetching page ids: ", err)
-		task.Status = models.TaskStatusFailed
-		return
-	}
-	images := commonsRepo.GetImagesThumbsFromIPageIDs(pageids)
+	// commonsRepo := repository.NewCommonsRepository()
+	// submissionRepo := repository.NewSubmissionRepository()
+	// pageids, err := submissionRepo.GetPageIDsForWithout(conn, *task.AssociatedRoundID)
+	// if err != nil {
+	// 	log.Println("Error fetching page ids: ", err)
+	// 	task.Status = models.TaskStatusFailed
+	// 	return
+	// }
+	// images := commonsRepo.GetImagesThumbsFromIPageIDs(pageids)
 
-	tx := conn.Begin()
-	if len(images) > 0 {
-		for _, image := range images {
-			res := tx.Model(&models.Submission{}).Where(&models.Submission{PageID: image.PageID}).Updates(image)
+	// tx := conn.Begin()
+	// if len(images) > 0 {
+	// 	for _, image := range images {
+	// 		res := tx.Model(&models.Submission{}).Where(&models.Submission{PageID: image.PageID}).Updates(image)
 
-			if res.Error != nil {
-				log.Println("Error updating image: ", res.Error)
-				tx.Rollback()
-				task.Status = models.TaskStatusFailed
-				return
-			}
-		}
-	}
-	tx.Commit()
+	// 		if res.Error != nil {
+	// 			log.Println("Error updating image: ", res.Error)
+	// 			tx.Rollback()
+	// 			task.Status = models.TaskStatusFailed
+	// 			return
+	// 		}
+	// 	}
+	// }
+	// tx.Commit()
 
 	{
 		task.Status = models.TaskStatusSuccess

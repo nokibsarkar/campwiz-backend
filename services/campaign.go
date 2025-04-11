@@ -228,15 +228,19 @@ func (service *CampaignService) UpdateCampaignStatus(usrId models.IDType, ID mod
 		return nil, err
 	}
 	defer close()
+	tx := conn.Begin()
 	user_repo := repository.NewUserRepository()
 	campaign_repo := repository.NewCampaignRepository()
-	campaign, err := campaign_repo.FindByID(conn, ID)
+	round_repo := repository.NewRoundRepository()
+	campaign, err := campaign_repo.FindByID(tx.Preload("LatestRound"), ID)
 	if err != nil {
 		log.Println("Error: ", err)
+		tx.Rollback()
 		return nil, err
 	}
-	currentUser, err := user_repo.FindByID(conn, usrId)
+	currentUser, err := user_repo.FindByID(tx, usrId)
 	if err != nil {
+		tx.Rollback()
 		log.Println("Error: ", err)
 		return nil, err
 	}
@@ -254,13 +258,29 @@ func (service *CampaignService) UpdateCampaignStatus(usrId models.IDType, ID mod
 		return nil, fmt.Errorf("user does not have permission to update campaign status")
 	}
 	if IsArchived {
-		err = campaign_repo.ArchiveCampaign(conn, ID)
+		err = campaign_repo.ArchiveCampaign(tx, ID)
+		latestRound := campaign.LatestRound
+		if latestRound != nil {
+			latestRound.Status = models.RoundStatusPaused
+			_, err = round_repo.Update(conn, latestRound)
+			if err != nil {
+				tx.Rollback()
+				log.Println("Error: ", err)
+				return nil, err
+			}
+		}
 	} else {
-		err = campaign_repo.UnArchiveCampaign(conn, ID)
+		err = campaign_repo.UnArchiveCampaign(tx, ID)
 	}
 	if err != nil {
+		tx.Rollback()
 		log.Println("Error: ", err)
 		return nil, err
+	}
+	res := tx.Commit()
+	if res.Error != nil {
+		log.Println("Error: ", res.Error)
+		return nil, res.Error
 	}
 	campaign, err = campaign_repo.FindByID(conn.Unscoped(), ID)
 	if err != nil {

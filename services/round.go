@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"math/rand/v2"
 	"nokib/campwiz/consts"
 	"nokib/campwiz/models"
 	"nokib/campwiz/query"
@@ -14,7 +13,6 @@ import (
 	importservice "nokib/campwiz/services/round/taskrunner"
 	distributionstrategy "nokib/campwiz/services/round/taskrunner/distribution-strategy"
 	importsources "nokib/campwiz/services/round/taskrunner/import-sources"
-	"slices"
 
 	"gorm.io/datatypes"
 )
@@ -76,10 +74,10 @@ func (s *RoundService) CreateRound(request *RoundRequest) (*models.Round, error)
 		return nil, errors.New("campaign not found")
 	}
 	log.Println("Campaign found with ID: ", campaign.CampaignID)
-	// if campaign.Status != models.RoundStatusActive {
-	// 	tx.Rollback()
-	// 	return nil, errors.New("campaign is not active")
-	// }
+	if campaign.ArchivedAt != nil {
+		tx.Rollback()
+		return nil, errors.New("campaign is not active")
+	}
 	previousRound := campaign.LatestRound
 	if previousRound != nil {
 		log.Println("Previous round found with ID: ", previousRound.RoundID)
@@ -174,6 +172,11 @@ func (b *RoundService) ImportFromCommons(roundId models.IDType, categories []str
 		tx.Rollback()
 		return nil, fmt.Errorf("round not found")
 	}
+	campaign := round.Campaign
+	if campaign == nil || campaign.ArchivedAt != nil {
+		tx.Rollback()
+		return nil, fmt.Errorf("campaign not found or archived")
+	}
 	taskReq := &models.Task{
 		TaskID:               idgenerator.GenerateID("t"),
 		Type:                 models.TaskTypeImportFromCommons,
@@ -243,10 +246,10 @@ func (b *RoundService) ImportFromPreviousRound(currentUserId models.IDType, targ
 		tx.Rollback()
 		return nil, errors.New("source and target rounds are not from the same project")
 	}
-	// if targetRound.Campaign.Status != models.RoundStatusActive {
-	// 	tx.Rollback()
-	// 	return nil, errors.New("campaign is not active")
-	// }
+	if targetRound.Campaign.ArchivedAt != nil {
+		tx.Rollback()
+		return nil, errors.New("campaign is not active")
+	}
 
 	taskReq := &models.Task{
 		TaskID:               idgenerator.GenerateID("t"),
@@ -281,66 +284,6 @@ func (b *RoundService) GetById(roundId models.IDType) (*models.Round, error) {
 	}
 	defer close()
 	return round_repo.FindByID(conn, roundId)
-}
-func (b *RoundService) DistributeTaskAmongExistingJuries(images []models.MediaResult) {
-	juries := []*Jury{}
-	for i := 1; i <= 100; i++ {
-		juries = append(juries, &Jury{ID: uint64(i), totalAssigned: rand.IntN(100)})
-	}
-	evaluations := []Evaluation{}
-	imageCount, juryCount, evaluationCountRequired := len(images), len(juries), 10
-	// datasetIndex := 0
-	toleranceCount := 100
-	if toleranceCount == 0 {
-		log.Println("Tolerance count cannot be zero. Setting it to 1")
-		toleranceCount = 1
-	}
-	sortedJuryByAssigned := ByAssigned(juries)
-	slices.SortStableFunc(sortedJuryByAssigned, func(a, b *Jury) int {
-		if a.totalAssigned < b.totalAssigned {
-			return -1
-		}
-		if a.totalAssigned > b.totalAssigned {
-			return 1
-		}
-		return 0
-	})
-	for i := 0; i < imageCount; i++ {
-		// check if the last considered jury has been assigned the maximum number of images
-		if evaluationCountRequired < juryCount && i%toleranceCount == 0 {
-			firstUnassignedJuryIndex := evaluationCountRequired
-			swapped := false
-			for pivot := firstUnassignedJuryIndex; pivot > 0; pivot-- {
-				for k := pivot; k < juryCount; k++ {
-					if sortedJuryByAssigned[k-1].totalAssigned < sortedJuryByAssigned[k].totalAssigned {
-						break
-					}
-					// swap the juries
-					sortedJuryByAssigned[k-1], sortedJuryByAssigned[k] = sortedJuryByAssigned[k], sortedJuryByAssigned[k-1]
-					swapped = true
-				}
-				if !swapped {
-					break
-				}
-			}
-		}
-		for j := 0; j < evaluationCountRequired; j++ {
-			evaluations = append(evaluations, Evaluation{
-				JuryID:            sortedJuryByAssigned[j].ID,
-				ImageID:           images[i].PageID,
-				Name:              images[i].Name,
-				DistributionRound: j + 1,
-			})
-			sortedJuryByAssigned[j].totalAssigned++
-		}
-	}
-	groupByJuryID := make(map[uint64][]Evaluation)
-	for _, evaluation := range evaluations {
-		groupByJuryID[evaluation.JuryID] = append(groupByJuryID[evaluation.JuryID], evaluation)
-	}
-	for j := range juryCount {
-		log.Printf("Jury %d has %d images\n", sortedJuryByAssigned[j].ID, len(groupByJuryID[sortedJuryByAssigned[j].ID]))
-	}
 }
 
 func (r *RoundService) UpdateRoundDetails(roundID models.IDType, req *RoundRequest, qry *models.SingleCampaignFilter) (*models.Round, error) {

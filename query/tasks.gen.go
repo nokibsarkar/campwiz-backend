@@ -41,15 +41,48 @@ func newTask(db *gorm.DB, opts ...gen.DOOption) task {
 	_task.FailedIds = field.NewField(tableName, "failed_ids")
 	_task.RemainingCount = field.NewInt(tableName, "remaining_count")
 	_task.CreatedByID = field.NewString(tableName, "created_by_id")
+	_task.TaskData = taskHasManyTaskData{
+		db: db.Session(&gorm.Session{}),
+
+		RelationField: field.NewRelation("TaskData", "models.TaskData"),
+		Task: struct {
+			field.RelationField
+			Submittor struct {
+				field.RelationField
+				LeadingProject struct {
+					field.RelationField
+				}
+			}
+			TaskData struct {
+				field.RelationField
+			}
+		}{
+			RelationField: field.NewRelation("TaskData.Task", "models.Task"),
+			Submittor: struct {
+				field.RelationField
+				LeadingProject struct {
+					field.RelationField
+				}
+			}{
+				RelationField: field.NewRelation("TaskData.Task.Submittor", "models.User"),
+				LeadingProject: struct {
+					field.RelationField
+				}{
+					RelationField: field.NewRelation("TaskData.Task.Submittor.LeadingProject", "models.Project"),
+				},
+			},
+			TaskData: struct {
+				field.RelationField
+			}{
+				RelationField: field.NewRelation("TaskData.Task.TaskData", "models.TaskData"),
+			},
+		},
+	}
+
 	_task.Submittor = taskBelongsToSubmittor{
 		db: db.Session(&gorm.Session{}),
 
 		RelationField: field.NewRelation("Submittor", "models.User"),
-		LeadingProject: struct {
-			field.RelationField
-		}{
-			RelationField: field.NewRelation("Submittor.LeadingProject", "models.Project"),
-		},
 	}
 
 	_task.fillFieldMap()
@@ -75,7 +108,9 @@ type task struct {
 	FailedIds            field.Field
 	RemainingCount       field.Int
 	CreatedByID          field.String
-	Submittor            taskBelongsToSubmittor
+	TaskData             taskHasManyTaskData
+
+	Submittor taskBelongsToSubmittor
 
 	fieldMap map[string]field.Expr
 }
@@ -122,7 +157,7 @@ func (t *task) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (t *task) fillFieldMap() {
-	t.fieldMap = make(map[string]field.Expr, 15)
+	t.fieldMap = make(map[string]field.Expr, 16)
 	t.fieldMap["task_id"] = t.TaskID
 	t.fieldMap["type"] = t.Type
 	t.fieldMap["status"] = t.Status
@@ -150,14 +185,94 @@ func (t task) replaceDB(db *gorm.DB) task {
 	return t
 }
 
-type taskBelongsToSubmittor struct {
+type taskHasManyTaskData struct {
 	db *gorm.DB
 
 	field.RelationField
 
-	LeadingProject struct {
+	Task struct {
 		field.RelationField
+		Submittor struct {
+			field.RelationField
+			LeadingProject struct {
+				field.RelationField
+			}
+		}
+		TaskData struct {
+			field.RelationField
+		}
 	}
+}
+
+func (a taskHasManyTaskData) Where(conds ...field.Expr) *taskHasManyTaskData {
+	if len(conds) == 0 {
+		return &a
+	}
+
+	exprs := make([]clause.Expression, 0, len(conds))
+	for _, cond := range conds {
+		exprs = append(exprs, cond.BeCond().(clause.Expression))
+	}
+	a.db = a.db.Clauses(clause.Where{Exprs: exprs})
+	return &a
+}
+
+func (a taskHasManyTaskData) WithContext(ctx context.Context) *taskHasManyTaskData {
+	a.db = a.db.WithContext(ctx)
+	return &a
+}
+
+func (a taskHasManyTaskData) Session(session *gorm.Session) *taskHasManyTaskData {
+	a.db = a.db.Session(session)
+	return &a
+}
+
+func (a taskHasManyTaskData) Model(m *models.Task) *taskHasManyTaskDataTx {
+	return &taskHasManyTaskDataTx{a.db.Model(m).Association(a.Name())}
+}
+
+type taskHasManyTaskDataTx struct{ tx *gorm.Association }
+
+func (a taskHasManyTaskDataTx) Find() (result []*models.TaskData, err error) {
+	return result, a.tx.Find(&result)
+}
+
+func (a taskHasManyTaskDataTx) Append(values ...*models.TaskData) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Append(targetValues...)
+}
+
+func (a taskHasManyTaskDataTx) Replace(values ...*models.TaskData) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Replace(targetValues...)
+}
+
+func (a taskHasManyTaskDataTx) Delete(values ...*models.TaskData) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Delete(targetValues...)
+}
+
+func (a taskHasManyTaskDataTx) Clear() error {
+	return a.tx.Clear()
+}
+
+func (a taskHasManyTaskDataTx) Count() int64 {
+	return a.tx.Count()
+}
+
+type taskBelongsToSubmittor struct {
+	db *gorm.DB
+
+	field.RelationField
 }
 
 func (a taskBelongsToSubmittor) Where(conds ...field.Expr) *taskBelongsToSubmittor {

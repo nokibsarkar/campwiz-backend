@@ -37,4 +37,18 @@ type Task struct {
 	RemainingCount       int                                    `json:"remainingCount"`
 	CreatedByID          IDType                                 `json:"createdById" gorm:"index;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	Submittor            User                                   `json:"-" gorm:"foreignKey:CreatedByID;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	TaskData             []TaskData                             `json:"taskData,omitempty"`
+}
+type TaskData struct {
+	DataID IDType `json:"dataId" gorm:"primaryKey"`
+	// The task ID that this data belongs to
+	TaskID IDType  `json:"taskId"`
+	Key    *string `json:"key,omitempty" gorm:"index;null"`
+	Value  string  `json:"value"`
+	// Whether this data is an input or output of the task
+	// For example, if the task is to import data from commons, then the input would be the
+	// commons data and the output would be the rejection reason
+	IsOutput bool `json:"isOutput"`
+	// The time the data was created, it would be set automatically
+	Task *Task `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }

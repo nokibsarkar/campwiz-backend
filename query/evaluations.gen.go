@@ -222,12 +222,31 @@ func newEvaluation(db *gorm.DB, opts ...gen.DOOption) evaluation {
 			Submittor struct {
 				field.RelationField
 			}
+			TaskData struct {
+				field.RelationField
+				Task struct {
+					field.RelationField
+				}
+			}
 		}{
 			RelationField: field.NewRelation("Submission.DistributionTask", "models.Task"),
 			Submittor: struct {
 				field.RelationField
 			}{
 				RelationField: field.NewRelation("Submission.DistributionTask.Submittor", "models.User"),
+			},
+			TaskData: struct {
+				field.RelationField
+				Task struct {
+					field.RelationField
+				}
+			}{
+				RelationField: field.NewRelation("Submission.DistributionTask.TaskData", "models.TaskData"),
+				Task: struct {
+					field.RelationField
+				}{
+					RelationField: field.NewRelation("Submission.DistributionTask.TaskData.Task", "models.Task"),
+				},
 			},
 		},
 		ImportTask: struct {
@@ -414,6 +433,12 @@ type evaluationBelongsToSubmission struct {
 		field.RelationField
 		Submittor struct {
 			field.RelationField
+		}
+		TaskData struct {
+			field.RelationField
+			Task struct {
+				field.RelationField
+			}
 		}
 	}
 	ImportTask struct {

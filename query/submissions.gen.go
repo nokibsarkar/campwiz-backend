@@ -196,6 +196,19 @@ func newSubmission(db *gorm.DB, opts ...gen.DOOption) submission {
 		}{
 			RelationField: field.NewRelation("DistributionTask.Submittor", "models.User"),
 		},
+		TaskData: struct {
+			field.RelationField
+			Task struct {
+				field.RelationField
+			}
+		}{
+			RelationField: field.NewRelation("DistributionTask.TaskData", "models.TaskData"),
+			Task: struct {
+				field.RelationField
+			}{
+				RelationField: field.NewRelation("DistributionTask.TaskData.Task", "models.Task"),
+			},
+		},
 	}
 
 	_submission.ImportTask = submissionBelongsToImportTask{
@@ -695,6 +708,12 @@ type submissionBelongsToDistributionTask struct {
 
 	Submittor struct {
 		field.RelationField
+	}
+	TaskData struct {
+		field.RelationField
+		Task struct {
+			field.RelationField
+		}
 	}
 }
 

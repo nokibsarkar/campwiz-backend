@@ -41,6 +41,7 @@ func newCampaign(db *gorm.DB, opts ...gen.DOOption) campaign {
 	_campaign.ProjectID = field.NewString(tableName, "project_id")
 	_campaign.Status = field.NewString(tableName, "status")
 	_campaign.LatestRoundID = field.NewString(tableName, "latest_round_id")
+	_campaign.ArchivedAt = field.NewField(tableName, "archived_at")
 	_campaign.Roles = campaignHasManyRoles{
 		db: db.Session(&gorm.Session{}),
 
@@ -215,6 +216,7 @@ type campaign struct {
 	ProjectID     field.String
 	Status        field.String
 	LatestRoundID field.String
+	ArchivedAt    field.Field
 	Roles         campaignHasManyRoles
 
 	Rounds campaignHasManyRounds
@@ -254,6 +256,7 @@ func (c *campaign) updateTableName(table string) *campaign {
 	c.ProjectID = field.NewString(table, "project_id")
 	c.Status = field.NewString(table, "status")
 	c.LatestRoundID = field.NewString(table, "latest_round_id")
+	c.ArchivedAt = field.NewField(table, "archived_at")
 
 	c.fillFieldMap()
 
@@ -270,7 +273,7 @@ func (c *campaign) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (c *campaign) fillFieldMap() {
-	c.fieldMap = make(map[string]field.Expr, 19)
+	c.fieldMap = make(map[string]field.Expr, 20)
 	c.fieldMap["campaign_id"] = c.CampaignID
 	c.fieldMap["created_at"] = c.CreatedAt
 	c.fieldMap["created_by_id"] = c.CreatedByID
@@ -285,6 +288,7 @@ func (c *campaign) fillFieldMap() {
 	c.fieldMap["project_id"] = c.ProjectID
 	c.fieldMap["status"] = c.Status
 	c.fieldMap["latest_round_id"] = c.LatestRoundID
+	c.fieldMap["archived_at"] = c.ArchivedAt
 
 }
 

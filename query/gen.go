@@ -29,6 +29,7 @@ var (
 	SubmissionResult       *submissionResult
 	SubmissionStatistics   *submissionStatistics
 	Task                   *task
+	TaskData               *taskData
 	User                   *user
 )
 
@@ -46,6 +47,7 @@ func SetDefault(db *gorm.DB, opts ...gen.DOOption) {
 	SubmissionResult = &Q.SubmissionResult
 	SubmissionStatistics = &Q.SubmissionStatistics
 	Task = &Q.Task
+	TaskData = &Q.TaskData
 	User = &Q.User
 }
 
@@ -64,6 +66,7 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 		SubmissionResult:       newSubmissionResult(db, opts...),
 		SubmissionStatistics:   newSubmissionStatistics(db, opts...),
 		Task:                   newTask(db, opts...),
+		TaskData:               newTaskData(db, opts...),
 		User:                   newUser(db, opts...),
 	}
 }
@@ -83,6 +86,7 @@ type Query struct {
 	SubmissionResult       submissionResult
 	SubmissionStatistics   submissionStatistics
 	Task                   task
+	TaskData               taskData
 	User                   user
 }
 
@@ -103,6 +107,7 @@ func (q *Query) clone(db *gorm.DB) *Query {
 		SubmissionResult:       q.SubmissionResult.clone(db),
 		SubmissionStatistics:   q.SubmissionStatistics.clone(db),
 		Task:                   q.Task.clone(db),
+		TaskData:               q.TaskData.clone(db),
 		User:                   q.User.clone(db),
 	}
 }
@@ -130,6 +135,7 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 		SubmissionResult:       q.SubmissionResult.replaceDB(db),
 		SubmissionStatistics:   q.SubmissionStatistics.replaceDB(db),
 		Task:                   q.Task.replaceDB(db),
+		TaskData:               q.TaskData.replaceDB(db),
 		User:                   q.User.replaceDB(db),
 	}
 }
@@ -147,6 +153,7 @@ type queryCtx struct {
 	SubmissionResult       ISubmissionResultDo
 	SubmissionStatistics   ISubmissionStatisticsDo
 	Task                   ITaskDo
+	TaskData               ITaskDataDo
 	User                   IUserDo
 }
 
@@ -164,6 +171,7 @@ func (q *Query) WithContext(ctx context.Context) *queryCtx {
 		SubmissionResult:       q.SubmissionResult.WithContext(ctx),
 		SubmissionStatistics:   q.SubmissionStatistics.WithContext(ctx),
 		Task:                   q.Task.WithContext(ctx),
+		TaskData:               q.TaskData.WithContext(ctx),
 		User:                   q.User.WithContext(ctx),
 	}
 }

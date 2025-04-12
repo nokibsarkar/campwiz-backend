@@ -5,6 +5,7 @@ import (
 	"log"
 	"nokib/campwiz/consts"
 	"nokib/campwiz/models"
+	"nokib/campwiz/query"
 	"nokib/campwiz/repository"
 	"nokib/campwiz/repository/cache"
 	idgenerator "nokib/campwiz/services/idGenerator"
@@ -131,9 +132,19 @@ func (service *CampaignService) GetAllCampaigns(query *models.CampaignFilter) []
 	return campaigns
 }
 func (service *CampaignService) ListPrivateCampaigns(sess *cache.Session, qry *models.CampaignFilter) []models.Campaign {
-	q, close := repository.GetDBWithGen()
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		log.Println("Error: ", err)
+		return []models.Campaign{}
+	}
 	defer close()
+	// if qry != nil && qry.IsClosed != nil {
+	// 	conn = conn.Unscoped()
+	// }
 	campaigns := []models.Campaign{}
+	q := query.Use(conn)
+
+	Campaign := q.Campaign
 	stmt := q.Campaign.Where(q.Campaign.IsPublic.Not()).Join(q.Role, q.Role.CampaignID.EqCol(q.Campaign.CampaignID)).
 		Where(q.Role.UserID.Eq(sess.UserID.String()))
 	if qry.ProjectID != "" {
@@ -143,6 +154,13 @@ func (service *CampaignService) ListPrivateCampaigns(sess *cache.Session, qry *m
 		stmt = stmt.Order(q.Campaign.CampaignID.Asc())
 	} else {
 		stmt = stmt.Order(q.Campaign.CampaignID.Desc())
+	}
+	if qry.IsClosed != nil {
+		if *qry.IsClosed {
+			stmt = stmt.Unscoped().Where(Campaign.ArchivedAt.IsNotNull())
+		} else {
+			stmt = stmt.Where(Campaign.ArchivedAt.IsNull())
+		}
 	}
 	stmt = stmt.Group(q.Campaign.CampaignID).Limit(qry.Limit)
 	stmt.Scan(&campaigns)

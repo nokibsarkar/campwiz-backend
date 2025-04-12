@@ -45,9 +45,9 @@ func (c *CampaignRepository) ListAllCampaigns(conn *gorm.DB, qry *models.Campaig
 		}
 		if qry.IsClosed != nil {
 			if *qry.IsClosed {
-				stmt = stmt.Where(Campaign.Status.Neq(models.RoundStatusActive.String()))
+				stmt = stmt.Unscoped().Where(Campaign.ArchivedAt.IsNotNull())
 			} else {
-				stmt = stmt.Where(Campaign.Status.Eq(models.RoundStatusActive.String()))
+				stmt = stmt.Where(Campaign.ArchivedAt.IsNull())
 			}
 		}
 		if qry.IsHidden != nil {

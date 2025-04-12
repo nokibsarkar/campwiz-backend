@@ -90,7 +90,7 @@ func GetDBWithGen() (q *query.Query, close func()) {
 	// logMode := logger.Warn
 	close = func() {}
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(getLogMode(consts.Config.Database.Cache.Debug || consts.Config.Server.Mode == "debug")),
+		Logger: logger.Default.LogMode(getLogMode(consts.Config.Database.Main.Debug || consts.Config.Server.Mode == "debug")),
 	})
 	if err != nil {
 		return nil, close

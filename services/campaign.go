@@ -281,6 +281,7 @@ func (service *CampaignService) UpdateCampaignStatus(usrId models.IDType, ID mod
 		return nil, fmt.Errorf("user does not have permission to update campaign status")
 	}
 	if IsArchived {
+
 		err = campaign_repo.ArchiveCampaign(tx, ID)
 		latestRound := campaign.LatestRound
 		if latestRound != nil {

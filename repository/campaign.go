@@ -86,7 +86,14 @@ func (c *CampaignRepository) UpdateLatestRound(tx *gorm.DB, campaignID models.ID
 	return result.Error
 }
 func (c *CampaignRepository) ArchiveCampaign(conn *gorm.DB, campaignID models.IDType) error {
-	result := conn.Delete(&models.Campaign{}, campaignID)
+	// make the campaign private
+	q := query.Use(conn)
+	Campaign := q.Campaign
+	_, err := Campaign.Where(Campaign.CampaignID.Eq(campaignID.String())).Update(Campaign.IsPublic, false)
+	if err != nil {
+		return err
+	}
+	result := conn.Delete(&models.Campaign{CampaignID: campaignID})
 	return result.Error
 }
 func (c *CampaignRepository) UnArchiveCampaign(conn *gorm.DB, campaignID models.IDType) error {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"nokib/campwiz/consts"
 	"nokib/campwiz/models"
@@ -19,6 +20,9 @@ import (
 
 // preRun is a function that will be called before the main function
 func preRun() {
+	fmt.Printf("Release: %s\n", consts.Release)
+	fmt.Printf("Build Time: %s\n", consts.BuildTime)
+	fmt.Printf("Version: %s\n", consts.Version)
 	gin.SetMode(consts.Config.Server.Mode)
 	log.Println(models.Date2Int(time.Now()))
 }

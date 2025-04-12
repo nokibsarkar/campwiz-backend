@@ -8,6 +8,11 @@ import (
 	"github.com/spf13/viper"
 )
 
+var Version string
+var BuildTime string
+var CommitHash string
+var Release string
+
 type SentryConfig struct {
 	DSN         string            `mapstructure:"DSN"`
 	Environment string            `mapstructure:"Environment"`

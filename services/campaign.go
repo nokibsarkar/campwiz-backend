@@ -139,6 +139,11 @@ func (service *CampaignService) ListPrivateCampaigns(sess *cache.Session, qry *m
 	if qry.ProjectID != "" {
 		stmt = stmt.Where(q.Campaign.ProjectID.Eq(qry.ProjectID.String()))
 	}
+	if qry.SortOrder == models.SortOrderAsc {
+		stmt = stmt.Order(q.Campaign.CampaignID.Asc())
+	} else {
+		stmt = stmt.Order(q.Campaign.CampaignID.Desc())
+	}
 	stmt = stmt.Group(q.Campaign.CampaignID).Limit(qry.Limit)
 	stmt.Scan(&campaigns)
 	return campaigns

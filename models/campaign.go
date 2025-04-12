@@ -39,6 +39,12 @@ type CampaignExtended struct {
 	Campaign
 	Coordinators []WikimediaUsernameType `json:"coordinators"`
 }
+type SortOrder string
+
+const (
+	SortOrderAsc  SortOrder = "asc"
+	SortOrderDesc SortOrder = "desc"
+)
 
 type CampaignFilter struct {
 	IDs []IDType `form:"ids,omitEmpty"`
@@ -49,7 +55,8 @@ type CampaignFilter struct {
 		This projectID is the project that campaigns belong to.then ProjectID is required
 		If the person is not an admin, then the project ID must match the project ID of the user
 	*/
-	ProjectID IDType `form:"projectId"`
+	ProjectID IDType    `form:"projectId"`
+	SortOrder SortOrder `form:"sortOrder"`
 	// Whether the campaign is closed (result have been finalized)
 	IsClosed *bool `form:"isClosed"`
 	CommonFilter

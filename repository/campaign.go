@@ -23,41 +23,52 @@ func (c *CampaignRepository) FindByID(conn *gorm.DB, id models.IDType) (*models.
 	campaign, err := q.Campaign.Where(q.Campaign.CampaignID.Eq(id.String())).First()
 	return campaign, err
 }
-func (c *CampaignRepository) ListAllCampaigns(conn *gorm.DB, query *models.CampaignFilter) ([]models.Campaign, error) {
+func (c *CampaignRepository) ListAllCampaigns(conn *gorm.DB, qry *models.CampaignFilter) ([]models.Campaign, error) {
 	var campaigns []models.Campaign
-	stmt := conn
-	if query != nil {
-		if query.Limit > 0 {
-			stmt = stmt.Limit(query.Limit)
+	q := query.Use(conn)
+	Campaign := q.Campaign
+	stmt := Campaign.Select(Campaign.ALL)
+	if qry != nil {
+		if qry.Limit > 0 {
+			stmt = stmt.Select(Campaign.CampaignID).Limit(qry.Limit)
 		}
-		if len(query.IDs) > 0 {
+		if len(qry.IDs) > 0 {
 			idCopies := []string{}
-			for _, id := range query.IDs {
+			for _, id := range qry.IDs {
 				if id != "" && strings.Contains(string(id), ",") {
 					idCopies = append(idCopies, strings.Split(string(id), ",")...)
 				} else {
 					idCopies = append(idCopies, string(id))
 				}
 			}
-			stmt = stmt.Where("id IN (?)", idCopies)
+			stmt = stmt.Where(Campaign.CampaignID.In(idCopies...))
 		}
-		if query.IsClosed != nil {
-			fq := &models.Campaign{CampaignWithWriteableFields: models.CampaignWithWriteableFields{Status: models.RoundStatusActive}}
-			if *query.IsClosed {
-				stmt = stmt.Not(fq)
+		if qry.IsClosed != nil {
+			if *qry.IsClosed {
+				stmt = stmt.Where(Campaign.Status.Neq(models.RoundStatusActive.String()))
 			} else {
-				stmt = stmt.Where(fq)
+				stmt = stmt.Where(Campaign.Status.Eq(models.RoundStatusActive.String()))
 			}
 		}
-		if query.IsHidden != nil {
-			stmt = stmt.Where("is_public = ?", !*query.IsHidden)
+		if qry.IsHidden != nil {
+			if *qry.IsHidden {
+				stmt = stmt.Where(Campaign.IsPublic.Not())
+			} else {
+				stmt = stmt.Where(Campaign.IsPublic)
+			}
+
 		}
-		if query.ProjectID != "" {
-			stmt = stmt.Where(&models.Campaign{CampaignWithWriteableFields: models.CampaignWithWriteableFields{ProjectID: query.ProjectID}})
+		if qry.ProjectID != "" {
+			stmt = stmt.Where(Campaign.ProjectID.Eq(qry.ProjectID.String()))
+		}
+		if qry.SortOrder == models.SortOrderAsc {
+			stmt = stmt.Order(q.Campaign.CampaignID.Asc())
+		} else {
+			stmt = stmt.Order(q.Campaign.CampaignID.Desc())
 		}
 	}
-	result := stmt.Find(&campaigns)
-	return campaigns, result.Error
+	err := stmt.Scan(&campaigns)
+	return campaigns, err
 }
 func (c *CampaignRepository) Update(conn *gorm.DB, campaign *models.Campaign) error {
 	result := conn.Updates(campaign)

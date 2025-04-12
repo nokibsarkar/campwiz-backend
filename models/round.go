@@ -45,6 +45,33 @@ const (
 	RoundStatusCompleted RoundStatus = "COMPLETED"
 )
 
+func (r RoundStatus) String() string {
+	switch r {
+	case RoundStatusPending:
+		return "PENDING"
+	case RoundStatusImporting:
+		return "IMPORTING"
+	case RoundStatusDistributing:
+		return "DISTRIBUTING"
+	case RoundStatusEvaluating:
+		return "EVALUATING"
+	case RoundStatusRejected:
+		return "REJECTED"
+	case RoundStatusCancelled:
+		return "CANCELLED"
+	case RoundStatusPaused:
+		return "PAUSED"
+	case RoundStatusScheduled:
+		return "SCHEDULED"
+	case RoundStatusActive:
+		return "ACTIVE"
+	case RoundStatusCompleted:
+		return "COMPLETED"
+	default:
+		return string(r)
+	}
+}
+
 // These are the restrictions that are applied to the audio and video that are submitted to the campaign
 type RoundAudioRestrictions struct {
 	AudioMinimumDurationMilliseconds int `json:"audioMinimumDurationMilliseconds" gorm:"default:0"`

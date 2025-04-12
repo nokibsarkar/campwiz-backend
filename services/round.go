@@ -115,13 +115,13 @@ func (s *RoundService) CreateRound(request *RoundRequest) (*models.Round, error)
 	}
 	q := query.Use(tx)
 	stmt := q.Campaign.Where(q.Campaign.CampaignID.Eq(campaign.CampaignID.String()))
-	if !request.IsPublicJury {
-		_, err = stmt.Update(q.Campaign.IsPublic, campaign.IsPublic)
-		if err != nil {
-			tx.Rollback()
-			return nil, err
-		}
+	// if !request.IsPublicJury {
+	_, err = stmt.Update(q.Campaign.IsPublic, round.IsPublicJury)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
 	}
+	// }
 	campaign.LatestRoundID = &round.RoundID
 	_, err = stmt.Update(q.Campaign.LatestRoundID, campaign.LatestRoundID)
 	if err != nil {

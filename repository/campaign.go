@@ -30,7 +30,7 @@ func (c *CampaignRepository) ListAllCampaigns(conn *gorm.DB, qry *models.Campaig
 	stmt := Campaign.Select(Campaign.ALL)
 	if qry != nil {
 		if qry.Limit > 0 {
-			stmt = stmt.Select(Campaign.CampaignID).Limit(qry.Limit)
+			stmt = stmt.Limit(qry.Limit)
 		}
 		if len(qry.IDs) > 0 {
 			idCopies := []string{}

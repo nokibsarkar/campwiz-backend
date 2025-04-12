@@ -13,6 +13,9 @@ var serverInstanceId = idgenerator.GenerateID("Server-")
 
 func NewRoutes(nonAPIParent *gin.RouterGroup) *gin.RouterGroup {
 	r := nonAPIParent.Group("/api/v2")
+	r.HEAD("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{"status": "ok"})
+	})
 	r.Use(ServerInfoHeaderMiddleware)
 	authenticatorService := NewAuthenticationService()
 	NewUserAuthenticationRoutes(r)

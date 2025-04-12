@@ -130,7 +130,7 @@ func (s *RoundService) CreateRound(request *RoundRequest) (*models.Round, error)
 	}
 	// create roles for the juries
 
-	currentRoles, _, err := role_service.FetchChangeRoles(tx, models.RoleTypeJury, campaign.ProjectID, nil, &campaign.CampaignID, &round.RoundID, request.Juries)
+	currentRoles, _, err := role_service.FetchChangeRoles(tx, models.RoleTypeJury, campaign.ProjectID, nil, &campaign.CampaignID, &round.RoundID, request.Juries, false)
 	if err != nil {
 		tx.Rollback()
 		return nil, err

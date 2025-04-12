@@ -168,7 +168,7 @@ func (c *CommonsSubmissionEntry) GetThumbURL() (string, uint64, uint64) {
 		return "", 0, 0
 	}
 	fileURL := c.GetURL()
-	targetWidth := uint64(200)
+	targetWidth := uint64(640)
 	// Calculate the aspect ratio
 	// aspectRatio := float32(c.FrWidth) / float32(c.FrHeight)
 	aspectRatio := float32(c.FrWidth) / float32(c.FrHeight)

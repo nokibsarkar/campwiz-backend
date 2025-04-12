@@ -83,6 +83,10 @@ func ListAllCampaigns(c *gin.Context, sess *cache.Session) {
 	} else {
 		campaignList = campaignService.GetAllCampaigns(qry)
 	}
+	if len(campaignList) == 0 {
+		c.JSON(200, models.ResponseList[models.Campaign]{Data: []models.Campaign{}})
+		return
+	}
 	c.JSON(200, models.ResponseList[models.Campaign]{Data: campaignList})
 }
 

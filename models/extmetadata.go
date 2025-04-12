@@ -1,5 +1,7 @@
 package models
 
+import "nokib/campwiz/consts"
+
 type ExtMetadataValue[Value any] struct {
 	Value  Value  `json:"value"`
 	Source string `json:"source"`
@@ -17,10 +19,10 @@ type ExtMetadata struct {
 }
 
 func (e *ExtMetadata) GetImageDescription() string {
-	return e.ImageDescription.Value
+	return consts.HtmlToPlainText(e.ImageDescription.Value)
 }
 func (e *ExtMetadata) GetCredit() string {
-	return e.Credit.Value
+	return consts.HtmlToPlainText(e.Credit.Value)
 }
 func (e *ExtMetadata) GetArtist() string {
 	return e.Artist.Value

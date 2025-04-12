@@ -55,6 +55,7 @@ func (r *RoleRepository) ListAllRoles(tx *gorm.DB, filter *models.RoleFilter) ([
 		if filter.Limit > 0 {
 			stmt = stmt.Limit(filter.Limit)
 		}
+		stmt = stmt.Where(&models.Role{DeletedAt: nil})
 
 	}
 	result := stmt.Find(&roles)

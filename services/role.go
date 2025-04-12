@@ -87,7 +87,7 @@ func (r *RoleService) CalculateRoleDifference(tx *gorm.DB, Type models.RoleType,
 	log.Println("Remove ", removedRoles)
 	return addedRoles, removedRoles, nil
 }
-func (service *RoleService) FetchChangeRoles(tx *gorm.DB, roleType models.RoleType, projectID models.IDType, targetProjectID *models.IDType, campaignId *models.IDType, roundID *models.IDType, updatedRoleUsernames []models.WikimediaUsernameType) (currentRoles []models.Role, removedRoles []models.IDType, err error) {
+func (service *RoleService) FetchChangeRoles(tx *gorm.DB, roleType models.RoleType, projectID models.IDType, targetProjectID *models.IDType, campaignId *models.IDType, roundID *models.IDType, updatedRoleUsernames []models.WikimediaUsernameType, unscoped bool) (currentRoles []models.Role, removedRoles []models.IDType, err error) {
 	filter := &models.RoleFilter{
 		ProjectID: projectID,
 		Type:      &roleType,
@@ -115,7 +115,11 @@ func (service *RoleService) FetchChangeRoles(tx *gorm.DB, roleType models.RoleTy
 	}
 	if len(removedRoles) > 0 {
 		for _, roleID := range removedRoles {
-			res := tx.Delete(&models.Role{RoleID: roleID})
+			tx1 := tx
+			if unscoped {
+				tx1 = tx.Unscoped()
+			}
+			res := tx1.Delete(&models.Role{RoleID: roleID})
 			if res.Error != nil {
 				return nil, nil, res.Error
 			}

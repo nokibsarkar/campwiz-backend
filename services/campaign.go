@@ -102,7 +102,7 @@ func (service *CampaignService) CreateCampaign(campaignRequest *CampaignCreateRe
 		tx.Rollback()
 		return nil, err
 	}
-	_, _, err = role_service.FetchChangeRoles(tx, models.RoleTypeCoordinator, campaign.ProjectID, nil, &campaign.CampaignID, nil, campaignRequest.Coordinators)
+	_, _, err = role_service.FetchChangeRoles(tx, models.RoleTypeCoordinator, campaign.ProjectID, nil, &campaign.CampaignID, nil, campaignRequest.Coordinators, true)
 	if err != nil {
 		tx.Rollback()
 		return nil, err
@@ -236,7 +236,7 @@ func (service *CampaignService) UpdateCampaign(ID models.IDType, campaignRequest
 	// 	tx.Rollback()
 	// 	return nil, err
 	// }
-	_, _, err = roleService.FetchChangeRoles(tx, models.RoleTypeCoordinator, campaign.ProjectID, nil, &campaign.CampaignID, nil, campaignRequest.Coordinators)
+	_, _, err = roleService.FetchChangeRoles(tx, models.RoleTypeCoordinator, campaign.ProjectID, nil, &campaign.CampaignID, nil, campaignRequest.Coordinators, true)
 	if err != nil {
 		tx.Rollback()
 		return nil, err
@@ -255,7 +255,7 @@ func (service *CampaignService) UpdateCampaignStatus(usrId models.IDType, ID mod
 	user_repo := repository.NewUserRepository()
 	campaign_repo := repository.NewCampaignRepository()
 	round_repo := repository.NewRoundRepository()
-	campaign, err := campaign_repo.FindByID(tx.Unscoped().Preload("LatestRound"), ID)
+	campaign, err := campaign_repo.FindByID(tx.Preload("LatestRound"), ID)
 	if err != nil {
 		log.Println("Error: ", err)
 		tx.Rollback()

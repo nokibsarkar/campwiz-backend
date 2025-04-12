@@ -34,26 +34,28 @@ func NewTechnicalJudgeService(round *models.Round, campaign *models.Campaign) *T
 //   - Minimum Resolution
 //   - Minimum Size
 //   - Whether Image allowed or not
-func (j *TechnicalJudgeService) RejectReason(img models.MediaResult) string {
-	if !j.MinimumUploadDate.IsZero() && img.SubmittedAt.Before(j.MinimumUploadDate) {
-		// log.Printf("Image %s is not allowed because it was uploaded before %s", img.Name, j.MinimumUploadDate)
-		return "before-minimum-upload-date"
-	}
-	if !j.MaximumUploadDate.IsZero() && img.SubmittedAt.After(j.MaximumUploadDate) {
-		// log.Printf("Image %s is not allowed because it was uploaded after %s", img.Name, j.MaximumUploadDate)
-		return "after-maximum-upload-date"
-	}
-	if img.Resolution < j.MinimumResolution {
-		// log.Printf("Image %s is not allowed because it has a resolution of %d which is less than %d", img.Name, img.Resolution, j.MinimumResolution)
-		return "below-minimum-resolution"
-	}
-	if img.Size < j.MinimumSize {
-		// log.Printf("Image %s is not allowed because it has a size of %d which is less than %d", img.Name, img.Size, j.MinimumSize)
-		return "below-minimum-size"
-	}
-	if j.AllowedTypes != nil && !j.AllowedTypes.Contains(models.MediaType(img.MediaType)) {
+func (j *TechnicalJudgeService) RejectReason(submission models.MediaResult) string {
+	if j.AllowedTypes != nil && !j.AllowedTypes.Contains(models.MediaType(submission.MediaType)) {
 		// log.Printf("Image %s is not allowed because it is of type %s", img.Name, img.MediaType)
 		return "not-allowed-type"
 	}
+	if !j.MinimumUploadDate.IsZero() && submission.SubmittedAt.Before(j.MinimumUploadDate) {
+		// log.Printf("Image %s is not allowed because it was uploaded before %s", img.Name, j.MinimumUploadDate)
+		return "before-minimum-upload-date"
+	}
+	if !j.MaximumUploadDate.IsZero() && submission.SubmittedAt.After(j.MaximumUploadDate) {
+		// log.Printf("Image %s is not allowed because it was uploaded after %s", img.Name, j.MaximumUploadDate)
+		return "after-maximum-upload-date"
+	}
+	mt := models.MediaType(submission.MediaType)
+	if (mt == models.MediaTypeImage || mt == models.MediaTypeVideo) && submission.Resolution < j.MinimumResolution {
+		// log.Printf("Image %s is not allowed because it has a resolution of %d which is less than %d", img.Name, img.Resolution, j.MinimumResolution)
+		return "below-minimum-resolution"
+	}
+	if submission.Size < j.MinimumSize {
+		// log.Printf("Image %s is not allowed because it has a size of %d which is less than %d", img.Name, img.Size, j.MinimumSize)
+		return "below-minimum-size"
+	}
+
 	return ""
 }

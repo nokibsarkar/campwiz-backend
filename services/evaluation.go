@@ -145,6 +145,18 @@ func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluation
 			tx.Rollback()
 			return nil, res.Error
 		}
+		if evaluationRequest.Description != nil {
+			up := tx.Updates(&models.Submission{
+				SubmissionID: submission.SubmissionID,
+				MediaSubmission: models.MediaSubmission{
+					Description: *evaluationRequest.Description,
+				},
+			})
+			if up.Error != nil {
+				tx.Rollback()
+				return nil, up.Error
+			}
+		}
 		submissionIds = append(submissionIds, submission.SubmissionID)
 
 	}

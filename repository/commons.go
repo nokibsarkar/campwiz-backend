@@ -116,7 +116,7 @@ func (c *CommonsRepository) GetImagesFromCommonsCategories2(category string, las
 	log.Printf("1 Getting images from commons category: %s", category)
 	result = []models.MediaResult{}
 	currentfailedImages = map[string]string{}
-	const batchSize = 10000
+	const batchSize = 15000
 	startDateInt := models.Date2Int(startDate)
 	endDateInt := models.Date2Int(endDate)
 	allowedtypes := []string{}
@@ -255,7 +255,7 @@ func (c *CommonsRepository) GetImagesDescriptionFromIPageIDs(pageids []uint64) [
 	// Create batch from commons category
 	start := 0
 	total := len(pageids)
-	batchSize := 50
+	batchSize := 500
 
 	result := []models.MediaResult{}
 	for start < total {
@@ -272,7 +272,7 @@ func (c *CommonsRepository) GetImagesDescriptionFromIPageIDs(pageids []uint64) [
 			"pageids":             {strings.Join(batch, "|")},
 			"iiprop":              {"extmetadata"},
 			"iilimit":             {"1"},
-			"limit":               {"2000"},
+			"limit":               {"max"},
 			"iiextmetadatafilter": {"ImageDescription"},
 		}
 		log.Println("Getting images from commons pageids: ", strings.Join(batch, "|"))

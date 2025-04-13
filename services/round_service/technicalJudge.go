@@ -1,4 +1,4 @@
-package round
+package round_service
 
 import (
 	"nokib/campwiz/models"

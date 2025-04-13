@@ -78,6 +78,19 @@ const docTemplate = `{
                         "description": "This projectID is the project that campaigns belong to.then ProjectID is required\n\t\tIf the person is not an admin, then the project ID must match the project ID of the user",
                         "name": "projectId",
                         "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "asc",
+                            "desc"
+                        ],
+                        "type": "string",
+                        "x-enum-varnames": [
+                            "SortOrderAsc",
+                            "SortOrderDesc"
+                        ],
+                        "name": "sortOrder",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1704,9 +1717,6 @@ const docTemplate = `{
         },
         "models.CampaignUpdateStatusRequest": {
             "type": "object",
-            "required": [
-                "isArchived"
-            ],
             "properties": {
                 "isArchived": {
                     "description": "The status of the campaign",
@@ -2318,6 +2328,17 @@ const docTemplate = `{
             ],
             "x-enum-varnames": [
                 "MAXIMUM_EVALUATION_SCORE"
+            ]
+        },
+        "models.SortOrder": {
+            "type": "string",
+            "enum": [
+                "asc",
+                "desc"
+            ],
+            "x-enum-varnames": [
+                "SortOrderAsc",
+                "SortOrderDesc"
             ]
         },
         "models.Submission": {

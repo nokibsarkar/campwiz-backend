@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -10,9 +11,10 @@ import (
 	"nokib/campwiz/repository"
 	"nokib/campwiz/repository/cache"
 	idgenerator "nokib/campwiz/services/idGenerator"
-	importservice "nokib/campwiz/services/round/taskrunner"
-	distributionstrategy "nokib/campwiz/services/round/taskrunner/distribution-strategy"
-	importsources "nokib/campwiz/services/round/taskrunner/import-sources"
+	"nokib/campwiz/services/round_service"
+	importservice "nokib/campwiz/services/round_service/taskrunner"
+	distributionstrategy "nokib/campwiz/services/round_service/taskrunner/distribution-strategy"
+	importsources "nokib/campwiz/services/round_service/taskrunner/import-sources"
 
 	"gorm.io/datatypes"
 )
@@ -197,9 +199,21 @@ func (b *RoundService) ImportFromCommons(roundId models.IDType, categories []str
 	}
 	tx.Commit()
 	log.Println("Task created with ID: ", task.TaskID)
-	commonsCategorySource := importsources.NewCommonsCategoryListSource(categories, round)
-	batch_processor := importservice.NewImportTaskRunner(task.TaskID, commonsCategorySource)
-	go batch_processor.Run()
+	grpcConn, err := round_service.NewGrpcClient("localhost:50051")
+	if err != nil {
+		return nil, err
+	}
+	defer grpcConn.Close()
+	importer := models.NewImporterClient(grpcConn)
+	importResponse, err := importer.ImportFromCommonsCategory(context.Background(), &models.ImportFromCommonsCategoryRequest{
+		CommonsCategory: categories,
+		RoundId:         round.RoundID.String(),
+		TaskId:          task.TaskID.String(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	log.Printf("Import response: %v", importResponse)
 	return task, nil
 }
 func (b *RoundService) ImportFromPreviousRound(currentUserId models.IDType, targetRoundId models.IDType, filter *ImportFromPreviousRoundPayload) (*models.Task, error) {

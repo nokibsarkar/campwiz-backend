@@ -32,7 +32,7 @@ jobs:
           cd services/round_service/task-manager/
           go build -v -o campwiz-task-manager .
           ls
-          cd .../../../
+          cd ../..
       - name: Setup Deployment Environment
         run: |
           mkdir -p ~/.ssh

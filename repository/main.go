@@ -139,15 +139,15 @@ func InitDB(testing bool) {
 
 	db := conn.Begin()
 	// set character set to utf8mb4
-	// db.Exec("ALTER DATABASE campwiz CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci;")
-	// db.AutoMigrate(&models.Project{})
-	// db.AutoMigrate(&models.User{})
+	db.Exec("ALTER DATABASE campwiz CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci;")
+	db.AutoMigrate(&models.Project{})
+	db.AutoMigrate(&models.User{})
 	db.AutoMigrate(&models.Campaign{})
 	db.AutoMigrate(&models.Round{})
-	// db.AutoMigrate(&models.Task{})
-	// db.AutoMigrate(&models.Role{})
+	db.AutoMigrate(&models.Task{})
+	db.AutoMigrate(&models.Role{})
 	db.AutoMigrate(&models.Submission{})
-	// db.AutoMigrate(&models.Evaluation{})
+	db.AutoMigrate(&models.Evaluation{})
 	db.AutoMigrate(&models.TaskData{})
 	db.Commit()
 }

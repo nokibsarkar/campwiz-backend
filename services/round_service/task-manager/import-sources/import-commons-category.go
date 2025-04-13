@@ -235,7 +235,7 @@ func (t *ImporterServer) importFromCommonsCategory(categories []string, taskId s
 	// 	}
 	// }
 	// tx.Commit()
-	go t.importDescriptions(round, task)
+	go t.importDescriptions(round)
 	{
 		task.Status = models.TaskStatusSuccess
 		round.LatestDistributionTaskID = nil // Reset the latest task id
@@ -245,7 +245,7 @@ func (t *ImporterServer) importFromCommonsCategory(categories []string, taskId s
 		task.Status = models.TaskStatusFailed
 	}
 }
-func (t *ImporterServer) importDescriptions(round *models.Round, task *models.Task) {
+func (t *ImporterServer) importDescriptions(round *models.Round) {
 	conn, close, err := repository.GetDB()
 	if err != nil {
 		log.Println("Error getting DB: ", err)
@@ -262,7 +262,6 @@ func (t *ImporterServer) importDescriptions(round *models.Round, task *models.Ta
 		nonDescriptionPageIds, err := submission_repo.GetPageIDWithoutDescriptionByRoundID(conn, round.RoundID, lastPageID, batchSize)
 		if err != nil {
 			log.Println("Error fetching page ids: ", err)
-			task.Status = models.TaskStatusFailed
 			return
 		}
 		lastCount = len(nonDescriptionPageIds)
@@ -279,7 +278,6 @@ func (t *ImporterServer) importDescriptions(round *models.Round, task *models.Ta
 				})
 				if res.Error != nil {
 					log.Println("Error updating image: ", res.Error)
-					task.Status = models.TaskStatusFailed
 					return
 				}
 				lastPageID = image.PageID

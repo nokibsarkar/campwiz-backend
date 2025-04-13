@@ -29,8 +29,7 @@ jobs:
       - name: Build TaskManager
         run: |
           ls
-          cd services/round_service/task-manager/
-          go build -v -o campwiz-task-manager .
+          go build -v -o campwiz-task-manager services/round_service/task-manager/taskmanager.go
           ls
           cd ../..
       - name: Setup Deployment Environment

@@ -28,7 +28,8 @@ jobs:
           ls read-only
       - name: Build TaskManager
         run: |
-          go build -v -tags taskmanager  -ldflags="-X 'nokib/campwiz/consts.Version=backend-${{ github.sha }}' -X 'nokib/campwiz/consts.Release=backend-${{ github.sha }}' -X 'nokib/campwiz/consts.BuildTime=$(date)' -X 'nokib/campwiz/consts.CommitHash=${{ github.sha }}'" -o campwiz-task-manager services/round_service/taskmanager/taskmanager.go
+          cd services/round_service/taskmanager/
+          go build -v -tags taskmanager  -ldflags="-X 'nokib/campwiz/consts.Version=backend-${{ github.sha }}' -X 'nokib/campwiz/consts.Release=backend-${{ github.sha }}' -X 'nokib/campwiz/consts.BuildTime=$(date)' -X 'nokib/campwiz/consts.CommitHash=${{ github.sha }}'" -o campwiz-task-manager .
           ls
       - name: Setup Deployment Environment
         run: |

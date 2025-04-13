@@ -20,10 +20,16 @@ jobs:
         run: go test -v -coverprofile=coverage.txt ./repository
       - name: Build The main server
         run: |
-          go build -v -ldflags="-X 'nokib/campwiz/consts.Version=backend-${{ github.sha }}' -X 'nokib/campwiz/consts.Release=backend-${{ github.sha }}' -X 'nokib/campwiz/consts.BuildTime=$(date)' -X 'nokib/campwiz/consts.CommitHash=${{ github.sha }}'" -o campwiz . 
+          go build -v -ldflags="-X 'nokib/campwiz/consts.Version=backend-${{ github.sha }}' -X 'nokib/campwiz/consts.Release=backend-${{ github.sha }}' -X 'nokib/campwiz/consts.BuildTime=$(date)' -X 'nokib/campwiz/consts.CommitHash=${{ github.sha }}'" -o campwiz .
+      - name: Build Read-only server
+        run: |
           mkdir -p read-only
           go build -v -tags readonly  -ldflags="-X 'nokib/campwiz/consts.Version=backend-${{ github.sha }}' -X 'nokib/campwiz/consts.Release=backend-${{ github.sha }}' -X 'nokib/campwiz/consts.BuildTime=$(date)' -X 'nokib/campwiz/consts.CommitHash=${{ github.sha }}'" -o read-only/campwiz-read-only . 
           ls read-only
+      - name: Build TaskManager
+        run: |
+          go build -v -tags taskmanager  -ldflags="-X 'nokib/campwiz/consts.Version=backend-${{ github.sha }}' -X 'nokib/campwiz/consts.Release=backend-${{ github.sha }}' -X 'nokib/campwiz/consts.BuildTime=$(date)' -X 'nokib/campwiz/consts.CommitHash=${{ github.sha }}'" -o campwiz-task-manager services/round_service/taskmanager/taskmanager.go
+          ls
       - name: Setup Deployment Environment
         run: |
           mkdir -p ~/.ssh
@@ -36,6 +42,9 @@ jobs:
       - name: Send Read-Only Build to Server
         run: |
           rsync -Pav --no-perms --omit-dir-times -e "ssh -i id_rsa" read-only/campwiz-read-only  "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.SSH_REMOTE_PATH }}/read-only"
+      - name: Send TaskManager Build to Server
+        run: |
+          rsync -Pav --no-perms --omit-dir-times -e "ssh -i id_rsa" campwiz-task-manager  "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.SSH_REMOTE_PATH }}"
       - name: Restart Campwiz
         run: |
           ssh -i id_rsa "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" "cd ${{ secrets.SSH_REMOTE_PATH }} && pm2 restart ecosystem.config.js && pm2 restart read-only/campwiz-backend-read-only.config.js"

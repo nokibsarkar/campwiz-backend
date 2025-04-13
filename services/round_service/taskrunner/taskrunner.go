@@ -7,7 +7,7 @@ import (
 	"nokib/campwiz/query"
 	"nokib/campwiz/repository"
 	idgenerator "nokib/campwiz/services/idGenerator"
-	rnd "nokib/campwiz/services/round"
+	rnd "nokib/campwiz/services/round_service"
 	"strings"
 
 	"gorm.io/datatypes"

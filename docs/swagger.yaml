@@ -258,8 +258,6 @@ definitions:
       isArchived:
         description: The status of the campaign
         type: boolean
-    required:
-    - isArchived
     type: object
   models.Evaluation:
     properties:
@@ -671,6 +669,14 @@ definitions:
     type: number
     x-enum-varnames:
     - MAXIMUM_EVALUATION_SCORE
+  models.SortOrder:
+    enum:
+    - asc
+    - desc
+    type: string
+    x-enum-varnames:
+    - SortOrderAsc
+    - SortOrderDesc
   models.Submission:
     properties:
       assignmentCount:
@@ -1128,6 +1134,15 @@ paths:
         in: query
         name: projectId
         type: string
+      - enum:
+        - asc
+        - desc
+        in: query
+        name: sortOrder
+        type: string
+        x-enum-varnames:
+        - SortOrderAsc
+        - SortOrderDesc
       produces:
       - application/json
       responses:

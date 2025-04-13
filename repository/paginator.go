@@ -1,7 +1,9 @@
 package repository
 
 import (
+	"bytes"
 	"encoding/json"
+	"io"
 	"log"
 	"net/url"
 	"nokib/campwiz/models"
@@ -33,9 +35,25 @@ func (p *Paginator[PageType]) Query(params url.Values) (chan *PageType, error) {
 			}
 			defer stream.Close()
 			resp := &PageQueryResponse[PageType]{}
-			err = json.NewDecoder(stream).Decode(resp)
+			streamCopy := bytes.NewBuffer(nil)
+			// Copy the stream to a buffer
+			_, err = io.Copy(streamCopy, stream)
 			if err != nil {
-				log.Fatal(err)
+				log.Println("Error copying stream: ", err)
+				break
+			}
+			// Reset the stream to the beginning
+			stream = io.NopCloser(streamCopy)
+			// Decode the response
+			// Create a new decoder with the copied stream
+			decoder := json.NewDecoder(stream)
+			err = decoder.Decode(resp)
+			if err != nil {
+				// print the actual body of the response
+				log.Println("Error decoding response: ", err)
+				log.Println("Response body: ", streamCopy.String())
+
+				break
 			}
 			if resp.Error != nil {
 				log.Println(resp.Error.Info)

@@ -5,6 +5,7 @@ import (
 	"nokib/campwiz/models/types"
 	"nokib/campwiz/query"
 
+	"gorm.io/gen/field"
 	"gorm.io/gorm"
 )
 
@@ -119,7 +120,7 @@ func (r *SubmissionRepository) FindNextUnevaluatedSubmissionForPublicJury(tx *go
 		stmt = stmt.Limit(filter.Limit)
 	}
 	submissions, error := (stmt.
-		Order(s.EvaluationCount.Asc()).
+		Order(s.EvaluationCount.Asc(), field.Func.Rand()).
 		Find())
 	return submissions, error
 }

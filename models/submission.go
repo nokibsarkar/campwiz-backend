@@ -85,7 +85,7 @@ type Submission struct {
 	// The User who submitted the article on behalf of the participant
 	SubmittedByID      IDType     `json:"submittedById" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	ParticipantID      IDType     `json:"participantId" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	RoundID            IDType     `json:"currentRoundId" gorm:"uniqueIndex:idx_submission_round_page_id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	RoundID            IDType     `json:"currentRoundId" gorm:"uniqueIndex:idx_submission_round_page_id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;index"`
 	SubmittedAt        time.Time  `json:"submittedAt" gorm:"type:datetime"`
 	Participant        User       `json:"-" gorm:"foreignKey:ParticipantID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	Submitter          User       `json:"-" gorm:"foreignKey:SubmittedByID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`

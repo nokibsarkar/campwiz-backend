@@ -91,6 +91,7 @@ func (t *ImporterServer) importFromCommonsCategory(categories []string, taskId s
 				RoundID: round.RoundID,
 				Status:  currentRoundStatus,
 			})
+			conn.Updates(task)
 		}()
 	}
 	log.Printf("Importing images for round %v\n", round.Campaign)

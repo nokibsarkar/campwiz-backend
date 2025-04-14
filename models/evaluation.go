@@ -21,7 +21,7 @@ type Evaluation struct {
 	ParticipantID IDType                 `json:"participantId"`
 	RoundID       IDType                 `json:"roundId" gorm:"index"`
 	Type          EvaluationType         `json:"type"`
-	Score         *ScoreType             `json:"score" gorm:"default:null;constraint:check:(score >= 0 AND score <= 100)"`
+	Score         *ScoreType             `json:"score" gorm:"default:null;constraint:check:(score >= 0 AND score <= 100);index"`
 	Comment       string                 `json:"comment" gorm:"default:null"`
 	Serial        uint                   `json:"serial"`
 	Submission    *Submission            `json:"submission" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`

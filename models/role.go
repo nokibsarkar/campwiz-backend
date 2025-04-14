@@ -23,7 +23,7 @@ type Role struct {
 	ProjectID       IDType                 `json:"projectId" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	TargetProjectID *IDType                `json:"targetProjectId" gorm:"null;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	CampaignID      *IDType                `json:"campaignId" gorm:"null;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	RoundID         *IDType                `json:"roundId" gorm:"constraint:OnUpdate:CASCADE"`
+	RoundID         *IDType                `json:"roundId" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	TotalAssigned   int                    `json:"totalAssigned"`
 	TotalEvaluated  int                    `json:"totalEvaluated"`
 	TotalScore      int                    `json:"totalScore"`

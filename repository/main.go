@@ -27,6 +27,7 @@ func GetDB() (db *gorm.DB, close func(), err error) {
 		Logger: logger.Default.LogMode(getLogMode(consts.Config.Database.Main.Debug || consts.Config.Server.Mode == "debug")),
 		// PrepareStmt:            true,
 		SkipDefaultTransaction: true,
+		// DisableForeignKeyConstraintWhenMigrating: true,
 	})
 
 	if err != nil {
@@ -125,29 +126,45 @@ func GetCommonsReplicaWithGen() (q *query.Query, close func()) {
 }
 
 func InitDB(testing bool) {
-	conn, close, err := GetDB()
+	conn, err := gorm.Open(mysql.Open(consts.Config.Database.Main.DSN), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Info),
+		// PrepareStmt:            true,
+		SkipDefaultTransaction:                   true,
+		DisableForeignKeyConstraintWhenMigrating: true,
+	})
 	if err != nil {
 		panic("failed to connect database" + err.Error())
 	}
-	// if testing {
-	// 	conn, _, close = GetTestDB()
-	// 	conn.Exec("DROP DATABASE IF EXISTS campwiz_test;")
-	// 	conn.Exec("CREATE DATABASE campwiz_test;")
-	// 	conn.Exec("USE campwiz_test;")
-	// }
-	defer close()
 
 	db := conn.Begin()
 	// set character set to utf8mb4
 	db.Exec("ALTER DATABASE campwiz CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci;")
-	db.AutoMigrate(&models.Project{})
-	db.AutoMigrate(&models.User{})
-	db.AutoMigrate(&models.Campaign{})
-	db.AutoMigrate(&models.Round{})
-	db.AutoMigrate(&models.Task{})
-	db.AutoMigrate(&models.Role{})
-	db.AutoMigrate(&models.Submission{})
-	db.AutoMigrate(&models.Evaluation{})
-	db.AutoMigrate(&models.TaskData{})
+	err = db.AutoMigrate(&models.Project{}, &models.User{}, &models.Campaign{}, &models.Round{},
+		&models.Task{}, &models.Role{}, &models.Submission{},
+		&models.Evaluation{}, &models.TaskData{})
+	if err != nil {
+		log.Printf("failed to migrate database %s", err.Error())
+		db.Rollback()
+		return
+	}
+	db.Commit()
+	conn, err = gorm.Open(mysql.Open(consts.Config.Database.Main.DSN), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Info),
+		// PrepareStmt:            true,
+		SkipDefaultTransaction:                   true,
+		DisableForeignKeyConstraintWhenMigrating: false,
+	})
+	if err != nil {
+		panic("failed to connect database" + err.Error())
+	}
+	db = conn.Begin()
+	err = db.AutoMigrate(&models.Project{}, &models.User{}, &models.Campaign{}, &models.Round{},
+		&models.Task{}, &models.Role{}, &models.Submission{},
+		&models.Evaluation{}, &models.TaskData{})
+	if err != nil {
+		log.Printf("failed to migrate database %s", err.Error())
+		db.Rollback()
+		return
+	}
 	db.Commit()
 }

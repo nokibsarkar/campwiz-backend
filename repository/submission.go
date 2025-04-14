@@ -5,7 +5,6 @@ import (
 	"nokib/campwiz/models/types"
 	"nokib/campwiz/query"
 
-	"gorm.io/gen/field"
 	"gorm.io/gorm"
 )
 
@@ -93,7 +92,12 @@ func (r *SubmissionRepository) ListAllSubmissionIDs(tx *gorm.DB, filter *models.
 	return submissionIDs, result.Error
 }
 func (r *SubmissionRepository) FindNextUnevaluatedSubmissionForPublicJury(tx *gorm.DB, filter *models.EvaluationFilter, round *models.Round) ([]*models.Submission, error) {
+	q := query.Use(tx)
+	Submission := q.Submission
+	stmt := Submission.Where(Submission.RoundID.Eq(round.RoundID.String()))
 	alreadyCoveredSubmissionIDs := []string{}
+	includeEvaluated := false
+	includeNonEvaluated := true
 	if filter.JuryRoleID != "" {
 		type submissionID struct {
 			SubmissionID types.SubmissionIDType
@@ -106,21 +110,32 @@ func (r *SubmissionRepository) FindNextUnevaluatedSubmissionForPublicJury(tx *go
 		for _, s := range results {
 			alreadyCoveredSubmissionIDs = append(alreadyCoveredSubmissionIDs, s.SubmissionID.String())
 		}
+
+		if filter.IncludeEvaluated != nil {
+			includeEvaluated = *filter.IncludeEvaluated
+		}
+		if filter.IncludeNonEvaluated != nil {
+			includeNonEvaluated = *filter.IncludeNonEvaluated
+		}
 	}
-	q := query.Use(tx)
-	s := q.Submission
-	stmt := s.
-		Where(s.RoundID.Eq(round.RoundID.String())).
-		Where(s.SubmissionID.NotIn(alreadyCoveredSubmissionIDs...)).
-		Where(s.EvaluationCount.Lt(round.Quorum))
+	if includeEvaluated != includeNonEvaluated {
+		if includeEvaluated {
+			stmt = stmt.Where(Submission.SubmissionID.In(alreadyCoveredSubmissionIDs...))
+		} else if includeNonEvaluated {
+			stmt = stmt.Where(Submission.SubmissionID.NotIn(alreadyCoveredSubmissionIDs...)).
+				Where(Submission.EvaluationCount.Lt(round.Quorum))
+		}
+	}
 	if filter.ContinueToken != "" {
-		stmt = stmt.Where(s.SubmissionID.Gt(filter.ContinueToken))
+		stmt = stmt.Where(Submission.SubmissionID.Gt(filter.ContinueToken))
+	} else if filter.PreviousToken != "" {
+		stmt = stmt.Where(Submission.SubmissionID.Lt(filter.PreviousToken))
 	}
 	if filter.Limit > 0 {
 		stmt = stmt.Limit(filter.Limit)
 	}
 	submissions, error := (stmt.
-		Order(s.EvaluationCount.Asc(), field.Func.Rand()).
+		Order(Submission.EvaluationCount.Asc()).
 		Find())
 	return submissions, error
 }

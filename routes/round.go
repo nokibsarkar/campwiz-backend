@@ -424,6 +424,7 @@ func NextPublicSubmission(c *gin.Context, sess *cache.Session) {
 	}
 	if len(ev) > 0 {
 		result.ContinueToken = string(ev[len(ev)-1].SubmissionID)
+		result.PreviousToken = string(ev[0].SubmissionID)
 	}
 	c.JSON(200, result)
 }

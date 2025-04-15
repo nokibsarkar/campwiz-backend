@@ -53,7 +53,4 @@ jobs:
       - name: Delete SSH Key
         run: |
           rm id_rsa
-      - name: Upload test code coverage to Codecov
-        uses: codecov/codecov-action@v5
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+      

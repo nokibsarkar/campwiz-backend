@@ -54,9 +54,9 @@ func (b *TaskRunner) importImages(conn *gorm.DB, task *models.Task) (successCoun
 		return
 	}
 	if round.LatestDistributionTaskID != nil && *round.LatestDistributionTaskID != task.TaskID {
-		// log.Println("Task is not the latest task for the round")
-		// task.Status = models.TaskStatusFailed
-		// return
+		log.Println("Task is not the latest task for the round")
+		task.Status = models.TaskStatusFailed
+		return
 	}
 	currentRoundStatus := round.Status
 	{

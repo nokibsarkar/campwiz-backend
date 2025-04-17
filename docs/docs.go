@@ -1727,10 +1727,10 @@ const docTemplate = `{
         "models.Evaluation": {
             "type": "object",
             "properties": {
-                "comment": {
+                "assignedAt": {
                     "type": "string"
                 },
-                "createdAt": {
+                "comment": {
                     "type": "string"
                 },
                 "distributionTaskId": {
@@ -1770,9 +1770,6 @@ const docTemplate = `{
                 },
                 "type": {
                     "$ref": "#/definitions/models.EvaluationType"
-                },
-                "updatedAt": {
-                    "type": "string"
                 }
             }
         },

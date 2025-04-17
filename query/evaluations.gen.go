@@ -40,8 +40,7 @@ func newEvaluation(db *gorm.DB, opts ...gen.DOOption) evaluation {
 	_evaluation.Score = field.NewFloat64(tableName, "score")
 	_evaluation.Comment = field.NewString(tableName, "comment")
 	_evaluation.Serial = field.NewUint(tableName, "serial")
-	_evaluation.CreatedAt = field.NewTime(tableName, "created_at")
-	_evaluation.UpdatedAt = field.NewTime(tableName, "updated_at")
+	_evaluation.AssignedAt = field.NewTime(tableName, "assigned_at")
 	_evaluation.EvaluatedAt = field.NewTime(tableName, "evaluated_at")
 	_evaluation.SkipExpirationAt = field.NewTime(tableName, "skip_expiration_at")
 	_evaluation.DistributionTaskID = field.NewString(tableName, "distribution_task_id")
@@ -286,8 +285,7 @@ type evaluation struct {
 	Score              field.Float64
 	Comment            field.String
 	Serial             field.Uint
-	CreatedAt          field.Time
-	UpdatedAt          field.Time
+	AssignedAt         field.Time
 	EvaluatedAt        field.Time
 	SkipExpirationAt   field.Time
 	DistributionTaskID field.String
@@ -321,8 +319,7 @@ func (e *evaluation) updateTableName(table string) *evaluation {
 	e.Score = field.NewFloat64(table, "score")
 	e.Comment = field.NewString(table, "comment")
 	e.Serial = field.NewUint(table, "serial")
-	e.CreatedAt = field.NewTime(table, "created_at")
-	e.UpdatedAt = field.NewTime(table, "updated_at")
+	e.AssignedAt = field.NewTime(table, "assigned_at")
 	e.EvaluatedAt = field.NewTime(table, "evaluated_at")
 	e.SkipExpirationAt = field.NewTime(table, "skip_expiration_at")
 	e.DistributionTaskID = field.NewString(table, "distribution_task_id")
@@ -342,7 +339,7 @@ func (e *evaluation) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (e *evaluation) fillFieldMap() {
-	e.fieldMap = make(map[string]field.Expr, 17)
+	e.fieldMap = make(map[string]field.Expr, 16)
 	e.fieldMap["evaluation_id"] = e.EvaluationID
 	e.fieldMap["submission_id"] = e.SubmissionID
 	e.fieldMap["judge_id"] = e.JudgeID
@@ -352,8 +349,7 @@ func (e *evaluation) fillFieldMap() {
 	e.fieldMap["score"] = e.Score
 	e.fieldMap["comment"] = e.Comment
 	e.fieldMap["serial"] = e.Serial
-	e.fieldMap["created_at"] = e.CreatedAt
-	e.fieldMap["updated_at"] = e.UpdatedAt
+	e.fieldMap["assigned_at"] = e.AssignedAt
 	e.fieldMap["evaluated_at"] = e.EvaluatedAt
 	e.fieldMap["skip_expiration_at"] = e.SkipExpirationAt
 	e.fieldMap["distribution_task_id"] = e.DistributionTaskID

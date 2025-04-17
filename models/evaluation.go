@@ -28,8 +28,7 @@ type Evaluation struct {
 	Participant   *User                  `json:"-" gorm:"foreignKey:ParticipantID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	// This would be null when any judge is deleted
 	Judge       *Role      `json:"-" gorm:"foreignKey:JudgeID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
-	CreatedAt   *time.Time `json:"createdAt" gorm:"autoCreateTime"`
-	UpdatedAt   *time.Time `json:"updatedAt" gorm:"autoUpdateTime"`
+	AssignedAt  *time.Time `json:"assignedAt" gorm:"autoCreateTime"`
 	EvaluatedAt *time.Time `json:"evaluatedAt" gorm:"type:datetime"`
 	// SkipExpirationAt is the time when the skip request will expire
 	SkipExpirationAt *time.Time `json:"skipExpirationAt" gorm:"type:datetime"`

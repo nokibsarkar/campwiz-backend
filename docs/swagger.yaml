@@ -261,9 +261,9 @@ definitions:
     type: object
   models.Evaluation:
     properties:
-      comment:
+      assignedAt:
         type: string
-      createdAt:
+      comment:
         type: string
       distributionTaskId:
         description: Round              *Round         `json:"-" gorm:"foreignKey:RoundID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
@@ -291,8 +291,6 @@ definitions:
         type: string
       type:
         $ref: '#/definitions/models.EvaluationType'
-      updatedAt:
-        type: string
     type: object
   models.EvaluationResult:
     properties:

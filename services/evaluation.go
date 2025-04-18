@@ -41,15 +41,14 @@ func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluation
 		return nil, err
 	}
 	defer close()
-	tx := conn.Begin()
-	currentUser, err := user_repo.FindByID(tx, currentUserID)
+	currentUser, err := user_repo.FindByID(conn, currentUserID)
 	if err != nil {
-		tx.Rollback()
+		// tx.Rollback()
 		return nil, err
 	}
 	if currentUser == nil {
-		tx.Rollback()
-		return nil, errors.New("user not found")
+		// tx.Rollback()
+		return nil, errors.New("current user not found")
 	}
 	evaluations := []*models.Evaluation{}
 	evaluationIDs := []models.IDType{}
@@ -60,22 +59,24 @@ func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluation
 	var juryRole *models.Role
 	for _, evaluationRequest := range evaluationRequests {
 		if evaluationRequest.Score == nil {
-			tx.Rollback()
+			// tx.Rollback()
 			return nil, fmt.Errorf("no score is given for evaluation %s", evaluationRequest.EvaluationID)
 		}
 		if *evaluationRequest.Score > models.MAXIMUM_EVALUATION_SCORE {
-			tx.Rollback()
+			// tx.Rollback()
 			return nil, fmt.Errorf("score is greater than %v", models.MAXIMUM_EVALUATION_SCORE)
 		}
 
 		evaluationRequestMap[evaluationRequest.EvaluationID] = evaluationRequest
 		evaluationIDs = append(evaluationIDs, evaluationRequest.EvaluationID)
 	}
-	res := tx.Preload("Submission").Where("evaluation_id IN ?", evaluationIDs).Find(&evaluations)
+	res := conn.Preload("Submission").Where("evaluation_id IN ?", evaluationIDs).Find(&evaluations)
 	if res.Error != nil {
-		tx.Rollback()
+		// tx.Rollback()
 		return nil, res.Error
 	}
+
+	tx := conn.Begin()
 	for _, evaluation := range evaluations {
 		evaluationRequest, ok := evaluationRequestMap[evaluation.EvaluationID]
 		if !ok {
@@ -88,7 +89,7 @@ func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluation
 			return nil, errors.New("user can't evaluate his/her own submission")
 		}
 		if currentRound == nil {
-			currentRound, err = round_repo.FindByID(tx.Preload("Campaign").Preload(("Roles")), submission.RoundID)
+			currentRound, err = round_repo.FindByID(conn.Preload("Campaign").Preload("Roles"), submission.RoundID)
 			if err != nil {
 				tx.Rollback()
 				return nil, err
@@ -133,6 +134,7 @@ func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluation
 		} else if evaluation.Type == models.EvaluationTypeScore {
 			log.Println("Score evaluation")
 		}
+
 		now := time.Now().UTC()
 		res = tx.Updates(&models.Evaluation{
 			EvaluationID: evaluationRequest.EvaluationID,
@@ -170,7 +172,9 @@ func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluation
 		tx.Rollback()
 		return nil, res.Error
 	}
-	tx.Commit()
+	if res := tx.Commit(); res.Error != nil {
+		return nil, res.Error
+	}
 	grpcClient, err := round_service.NewGrpcClient("localhost:50051")
 	if err == nil {
 		defer grpcClient.Close()

@@ -25,13 +25,15 @@ type CommonsCategoryListSource struct {
 
 func (t *ImporterServer) ImportFromCommonsCategory(ctx context.Context, req *models.ImportFromCommonsCategoryRequest) (*models.ImportResponse, error) {
 	log.Printf("ImportFromCommonsCategory %v", req)
-	go t.importFromCommonsCategory(req.CommonsCategory, req.TaskId, req.RoundId)
+
+	commonsCategoryLister := NewCommonsCategoryListSource(req.CommonsCategory)
+	go t.importFrom(commonsCategoryLister, req.TaskId, req.RoundId)
 	return &models.ImportResponse{
 		TaskId:  req.TaskId,
 		RoundId: req.RoundId,
 	}, nil
 }
-func (t *ImporterServer) importFromCommonsCategory(categories []string, taskId string, roundId string) {
+func (t *ImporterServer) importFrom(source IImportSource, taskId string, roundId string) {
 	/** Open Database Connection */
 	conn, close, err := repository.GetDB()
 	if err != nil {
@@ -64,8 +66,7 @@ func (t *ImporterServer) importFromCommonsCategory(categories []string, taskId s
 		// return
 	}
 
-	commonsCategoryLister := NewCommonsCategoryListSource(categories, round)
-	if commonsCategoryLister == nil {
+	if source == nil {
 		log.Println("Error creating commons category lister")
 		task.Status = models.TaskStatusFailed
 		return
@@ -87,11 +88,27 @@ func (t *ImporterServer) importFromCommonsCategory(categories []string, taskId s
 			return
 		}
 		defer func() {
-			conn.Updates(&models.Round{
+			res := conn.Updates(&models.Round{
 				RoundID: round.RoundID,
 				Status:  currentRoundStatus,
 			})
-			conn.Updates(task)
+			if res.Error != nil {
+				log.Println("Error updating round status: ", res.Error)
+				task.Status = models.TaskStatusFailed
+				return
+			}
+			res = conn.Updates(&models.Task{
+				TaskID:         task.TaskID,
+				Status:         task.Status,
+				SuccessCount:   successCount,
+				FailedCount:    failedCount,
+				RemainingCount: 0,
+			})
+			if res.Error != nil {
+				log.Println("Error updating task status: ", res.Error)
+				task.Status = models.TaskStatusFailed
+				return
+			}
 		}()
 	}
 	log.Printf("Importing images for round %v\n", round.Campaign)
@@ -104,7 +121,7 @@ func (t *ImporterServer) importFromCommonsCategory(categories []string, taskId s
 	}
 	user_repo := repository.NewUserRepository()
 	for {
-		successBatch, failedBatch := commonsCategoryLister.ImportImageResults(FailedImages)
+		successBatch, failedBatch := source.ImportImageResults(round, FailedImages)
 		if failedBatch != nil {
 			task.FailedCount = len(*failedBatch)
 			*task.FailedIds = datatypes.NewJSONType(*failedBatch)
@@ -294,11 +311,11 @@ func (t *ImporterServer) importDescriptions(round *models.Round) {
 // If there are no images in the category it will return nil
 // If there are images in the category it will return the images
 // If there are failed images in the category it will return the reason as value of the map
-func (c *CommonsCategoryListSource) ImportImageResults(failedImageReason *map[string]string) ([]models.MediaResult, *map[string]string) {
+func (c *CommonsCategoryListSource) ImportImageResults(round *models.Round, failedImageReason *map[string]string) ([]models.MediaResult, *map[string]string) {
 	if c.currentCategoryIndex < len(c.Categories) {
 		category := c.Categories[c.currentCategoryIndex]
-		campaign := c.round.Campaign
-		successMedia, currentfailedImages, lastPageID := c.commons_repo.GetImagesFromCommonsCategories2(category, c.lastPageID, c.round, campaign.StartDate, campaign.EndDate)
+		campaign := round.Campaign
+		successMedia, currentfailedImages, lastPageID := c.commons_repo.GetImagesFromCommonsCategories2(category, c.lastPageID, round, campaign.StartDate, campaign.EndDate)
 		if lastPageID == 0 {
 			c.currentCategoryIndex++
 		}
@@ -310,7 +327,7 @@ func (c *CommonsCategoryListSource) ImportImageResults(failedImageReason *map[st
 	return nil, failedImageReason
 }
 
-func NewCommonsCategoryListSource(categories []string, round *models.Round) *CommonsCategoryListSource {
+func NewCommonsCategoryListSource(categories []string) *CommonsCategoryListSource {
 	ct := []string{}
 	for _, category := range categories {
 		kt := strings.Replace(category, " ", "_", -1)
@@ -322,6 +339,5 @@ func NewCommonsCategoryListSource(categories []string, round *models.Round) *Com
 		currentCategoryIndex: 0,
 		lastPageID:           0,
 		commons_repo:         repository.NewCommonsRepository(),
-		round:                round,
 	}
 }

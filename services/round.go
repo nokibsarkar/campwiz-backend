@@ -12,9 +12,6 @@ import (
 	"nokib/campwiz/repository/cache"
 	idgenerator "nokib/campwiz/services/idGenerator"
 	"nokib/campwiz/services/round_service"
-	importservice "nokib/campwiz/services/round_service/taskrunner"
-	distributionstrategy "nokib/campwiz/services/round_service/taskrunner/distribution-strategy"
-	importsources "nokib/campwiz/services/round_service/taskrunner/import-sources"
 
 	"gorm.io/datatypes"
 )
@@ -285,9 +282,17 @@ func (b *RoundService) ImportFromPreviousRound(currentUserId models.IDType, targ
 	}
 	tx.Commit()
 	log.Println("Task created with ID: ", task.TaskID)
-	previousRoundSource := importsources.NewRoundCategoryListSource(filter.Scores[0], sourceRound.RoundID)
-	batch_processor := importservice.NewImportTaskRunner(task.TaskID, previousRoundSource)
-	go batch_processor.Run()
+	grpcClient, err := round_service.NewGrpcClient("localhost:50051")
+	if err != nil {
+		return nil, err
+	}
+	defer grpcClient.Close()
+	importClient := models.NewImporterClient(grpcClient)
+	go importClient.ImportFromPreviousRound(context.Background(), &models.ImportFromPreviousRoundRequest{
+		RoundId:      sourceRound.RoundID.String(),
+		TaskId:       task.TaskID.String(),
+		MinimumScore: float32(filter.Scores[0]),
+	})
 	return task, nil
 }
 func (b *RoundService) GetById(roundId models.IDType) (*models.Round, error) {
@@ -458,10 +463,21 @@ func (r *RoundService) DistributeEvaluations(currentUserID models.IDType, roundI
 		return nil, err
 	}
 	tx.Commit()
-	log.Println("Task created with ID: ", task.TaskID)
-	strategy := distributionstrategy.NewRoundRobinDistributionStrategy(task.TaskID, distributionReq.AmongJuriesUsername)
-	runner := importservice.NewDistributionTaskRunner(task.TaskID, strategy)
-	go runner.Run()
+	grpcClient, err := round_service.NewGrpcClient("localhost:50051")
+	if err != nil {
+		return nil, err
+	}
+	defer grpcClient.Close()
+	distributorClient := models.NewDistributorClient(grpcClient)
+	juryUsername := make([]string, len(distributionReq.AmongJuriesUsername))
+	for i, username := range distributionReq.AmongJuriesUsername {
+		juryUsername[i] = username.String()
+	}
+	distributorClient.DistributeWithRoundRobin(context.Background(), &models.DistributeWithRoundRobinRequest{
+		RoundId:       round.RoundID.String(),
+		TaskId:        task.TaskID.String(),
+		JuryUsernames: juryUsername,
+	})
 	return task, nil
 }
 func (r *RoundService) GetResultSummary(roundID models.IDType) (results []models.EvaluationResult, err error) {

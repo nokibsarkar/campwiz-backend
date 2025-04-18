@@ -115,24 +115,24 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries() {
 			task.Status = models.TaskStatusFailed
 			log.Println("Error: ", err)
 		} else {
-			if _, err := round_repo.Update(tx, &models.Round{
+			if _, updateErr := round_repo.Update(tx, &models.Round{
 				RoundID: round.RoundID,
 				Status:  previousRoundStatus,
-			}); err != nil {
-				log.Println("Error: ", err)
+			}); updateErr != nil {
+				log.Println("Error: ", updateErr)
 				tx.Rollback()
 			} else {
 				tx.Commit()
 			}
 		}
 
-		if _, err := taskRepo.Update(conn, &models.Task{
+		if _, updateErr := taskRepo.Update(conn, &models.Task{
 			TaskID:       task.TaskID,
 			Status:       task.Status,
 			SuccessCount: task.SuccessCount,
 			FailedCount:  task.FailedCount,
-		}); err != nil {
-			log.Println("Error: ", err)
+		}); updateErr != nil {
+			log.Println("Error: ", updateErr)
 			return
 		}
 	}()

@@ -85,7 +85,7 @@ func (c *RoundPreviousRound) ImportImageResults(round *models.Round, failedImage
 	c.currentIndex = imageResults[len(imageResults)-1].SubmissionID.String()
 	return imageResults, failedImageReason
 }
-func NewRoundCategoryListSource(scores models.ScoreType, roundId models.IDType) *RoundPreviousRound {
+func NewRoundPreviousRound(scores models.ScoreType, roundId models.IDType) *RoundPreviousRound {
 	res := &RoundPreviousRound{
 		Score:        float64(scores),
 		RoundId:      roundId.String(),

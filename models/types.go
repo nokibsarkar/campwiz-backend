@@ -26,6 +26,9 @@ func (i *UserIDType) String() string {
 func (i *ScoreType) GormDataType() string {
 	return "Decimal(5,2)"
 }
+func (u *WikimediaUsernameType) String() string {
+	return string(*u)
+}
 
 // func (i *ScoreType) Scan(value int64) error {
 // 	log.Printf("Scanning score: %v\n", value)

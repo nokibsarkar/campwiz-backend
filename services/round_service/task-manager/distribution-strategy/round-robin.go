@@ -1,6 +1,7 @@
 package distributionstrategy
 
 import (
+	"context"
 	"log"
 	"nokib/campwiz/models"
 	"nokib/campwiz/query"
@@ -15,6 +16,7 @@ import (
 type RoundRobinDistributionStrategy struct {
 	TaskId           models.IDType
 	AssignableJuries []models.WikimediaUsernameType
+	RoundId          models.IDType
 }
 type DistributionResultV3 struct {
 	TotalWorkLoad             WorkLoadType                   `json:"totalWorkLoad"`
@@ -51,67 +53,161 @@ func (h *MinimumWorkloadHeap) Pop() any {
 	*h = old[0 : n-1]
 	return x
 }
-func NewRoundRobinDistributionStrategy(taskId models.IDType, assignableJuries []models.WikimediaUsernameType) *RoundRobinDistributionStrategy {
-	return &RoundRobinDistributionStrategy{
-		TaskId:           taskId,
-		AssignableJuries: assignableJuries,
+func (d *DistributorServer) DistributeWithRoundRobin(ctx context.Context, req *models.DistributeWithRoundRobinRequest) (*models.DistributeWithRoundRobinResponse, error) {
+	// Implement the round robin distribution logic here
+	taskId := req.TaskId
+	assignableJuries := []models.WikimediaUsernameType{}
+	for _, jury := range req.JuryUsernames {
+		assignableJuries = append(assignableJuries, models.WikimediaUsernameType(jury))
 	}
+	strategy := &RoundRobinDistributionStrategy{
+		TaskId:           models.IDType(taskId),
+		AssignableJuries: assignableJuries,
+		RoundId:          models.IDType(req.RoundId),
+	}
+	go strategy.AssignJuries()
+	return &models.DistributeWithRoundRobinResponse{
+		TaskId: req.TaskId,
+	}, nil
 }
-func (strategy *RoundRobinDistributionStrategy) AssignJuries(tx *gorm.DB, round *models.Round, juries []models.Role) (successCount int, failedCount int, err error) {
+
+func (strategy *RoundRobinDistributionStrategy) AssignJuries() {
+	taskRepo := repository.NewTaskRepository()
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	defer close()
+	task, err := taskRepo.FindByID(conn, strategy.TaskId)
+	if err != nil {
+		return
+	}
+	if task == nil {
+		log.Println("Task not found")
+		return
+	}
+	round_repo := repository.NewRoundRepository()
+	round, err := round_repo.FindByID(conn, strategy.RoundId)
+	if err != nil {
+		log.Println("Round not found")
+		return
+	}
+	if round == nil {
+		log.Println("Round not found")
+		return
+	}
+	if round.RoundID != *task.AssociatedRoundID {
+		log.Println("Round ID mismatch")
+		return
+	}
+
+	tx := conn.Begin()
+	previousRoundStatus := round.Status
+	round.Status = models.RoundStatusDistributing
+	if err := tx.Save(round).Error; err != nil {
+		log.Println("Error: ", err)
+		return
+	}
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+			task.Status = models.TaskStatusFailed
+			log.Println("Error: ", err)
+		} else {
+			if _, updateErr := round_repo.Update(tx, &models.Round{
+				RoundID: round.RoundID,
+				Status:  previousRoundStatus,
+			}); updateErr != nil {
+				log.Println("Error: ", updateErr)
+				tx.Rollback()
+			} else {
+				tx.Commit()
+			}
+		}
+
+		if _, updateErr := taskRepo.Update(conn, &models.Task{
+			TaskID:       task.TaskID,
+			Status:       task.Status,
+			SuccessCount: task.SuccessCount,
+			FailedCount:  task.FailedCount,
+		}); updateErr != nil {
+			log.Println("Error: ", updateErr)
+			return
+		}
+	}()
 	submission_repo := repository.NewSubmissionRepository()
 	jury_repo := repository.NewRoleRepository()
 	j := models.RoleTypeJury
-	fetchedJuries, err := jury_repo.FindRolesByUsername(tx, strategy.AssignableJuries, &models.RoleFilter{
+	fetchedJuries, err := jury_repo.FindRolesByUsername(conn, strategy.AssignableJuries, &models.RoleFilter{
 		Type:       &j,
 		RoundID:    &round.RoundID,
 		CampaignID: &round.CampaignID,
 	})
 	if err != nil {
+		task.Status = models.TaskStatusFailed
+		log.Println("Error: ", err)
 		return
 	}
 	if len(fetchedJuries) == 0 {
 		log.Println("No juries found")
+		task.Status = models.TaskStatusFailed
 		return
 	}
 	assignableJuryRoleIDs := []models.IDType{}
 	for _, jury := range fetchedJuries {
 		assignableJuryRoleIDs = append(assignableJuryRoleIDs, jury.RoleID)
 	}
-	submissions, err := submission_repo.ListAllSubmissions(tx.Where("assignment_count < ?", round.Quorum), &models.SubmissionListFilter{
+	submissions, err := submission_repo.ListAllSubmissions(conn.Where("assignment_count < ?", round.Quorum), &models.SubmissionListFilter{
 		RoundID:    round.RoundID,
 		CampaignID: round.CampaignID,
 	})
 	if err != nil {
+		task.Status = models.TaskStatusFailed
+		log.Println("Error: ", err)
 		return
 	}
 	created, err := strategy.createMissingEvaluations(tx, round.Type, round, submissions)
 	if err != nil {
+		task.Status = models.TaskStatusFailed
+		log.Println("Error: ", err)
 		return
 	}
 	log.Printf("Created %d missing evaluations", created)
 	taskDB, closeTaskDB := cache.GetTaskCacheDB(strategy.TaskId)
 	defer closeTaskDB()
-	totalEvaluations, err := strategy.importToCache(tx, taskDB, round)
+	totalEvaluations, err := strategy.importToCache(conn, taskDB, round)
 	if err != nil {
+		task.Status = models.TaskStatusFailed
+		log.Println("Error: ", err)
 		return
 	}
 
 	workload, err := strategy.calculateWorkloadQuota(taskDB, totalEvaluations, assignableJuryRoleIDs, fetchedJuries)
 	if err != nil {
+		task.Status = models.TaskStatusFailed
+		log.Println("Error: ", err)
 		return
 	}
 	log.Println("Workload: ", workload)
 	_, err = strategy.distribute(taskDB, workload)
 	if err != nil {
+		task.Status = models.TaskStatusFailed
+		log.Println("Error: ", err)
 		return
 	}
-	successCount, failedCount, err = strategy.exportFromCache2MainDB(taskDB, tx)
+	task.SuccessCount, task.FailedCount, err = strategy.exportFromCache2MainDB(taskDB, tx)
 	if err != nil {
+		task.Status = models.TaskStatusFailed
+		log.Println("Error: ", err)
 		return
 	}
 	err = strategy.triggerStatisticsUpdateByRoundID(tx, round)
-
-	return
+	if err != nil {
+		task.Status = models.TaskStatusFailed
+		log.Println("Error: ", err)
+		return
+	}
 }
 func (strategy *RoundRobinDistributionStrategy) createMissingEvaluations(tx *gorm.DB, evtype models.EvaluationType, round *models.Round, req []models.Submission) (int, error) {
 	evaluations := []models.Evaluation{}

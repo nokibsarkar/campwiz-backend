@@ -19,7 +19,6 @@ type CommonsCategoryListSource struct {
 	Categories           []string
 	currentCategoryIndex int
 	lastPageID           uint64
-	round                *models.Round
 	commons_repo         *repository.CommonsRepository
 }
 

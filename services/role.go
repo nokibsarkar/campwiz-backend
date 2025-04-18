@@ -15,7 +15,7 @@ type RoleService struct{}
 func NewRoleService() *RoleService {
 	return &RoleService{}
 }
-func (r *RoleService) CalculateRoleDifference(tx *gorm.DB, Type models.RoleType, filter *models.RoleFilter, updatedRoleUsernames []models.WikimediaUsernameType) (addedRoles []models.Role, removedRoles []models.IDType, err error) {
+func (r *RoleService) CalculateRoleDifferenceWithRole(tx *gorm.DB, Type models.RoleType, filter *models.RoleFilter, updatedRoleUsernames []models.WikimediaUsernameType) (addedRoles []models.Role, removedRoles []*models.Role, err error) {
 	role_repo := repository.NewRoleRepository()
 	user_repo := repository.NewUserRepository()
 	existingRoles, err := role_repo.ListAllRoles(tx.Unscoped(), filter)
@@ -51,7 +51,7 @@ func (r *RoleService) CalculateRoleDifference(tx *gorm.DB, Type models.RoleType,
 			// remove the role by adding isAllowed = false and permission would be null
 
 			log.Printf("%s is being removed as %s", existingRole.RoleID, Type)
-			removedRoles = append(removedRoles, existingRole.RoleID)
+			removedRoles = append(removedRoles, &existingRole)
 		} else {
 			// Remain unchanged
 			log.Printf("%s is unchanged as %s", userId2NameMap[existingRole.UserID], Type)
@@ -86,6 +86,16 @@ func (r *RoleService) CalculateRoleDifference(tx *gorm.DB, Type models.RoleType,
 	log.Println("Add: ", addedRoles)
 	log.Println("Remove ", removedRoles)
 	return addedRoles, removedRoles, nil
+}
+func (r *RoleService) CalculateRoleDifference(tx *gorm.DB, Type models.RoleType, filter *models.RoleFilter, updatedRoleUsernames []models.WikimediaUsernameType) (addedRoles []models.Role, removedRoleIds []models.IDType, err error) {
+	addedRoles, removedRoles, err := r.CalculateRoleDifferenceWithRole(tx, Type, filter, updatedRoleUsernames)
+	if err != nil {
+		return nil, nil, err
+	}
+	for _, role := range removedRoles {
+		removedRoleIds = append(removedRoleIds, role.RoleID)
+	}
+	return addedRoles, removedRoleIds, nil
 }
 func (service *RoleService) FetchChangeRoles(tx *gorm.DB, roleType models.RoleType, projectID models.IDType, targetProjectID *models.IDType, campaignId *models.IDType, roundID *models.IDType, updatedRoleUsernames []models.WikimediaUsernameType, unscoped bool) (currentRoles []models.Role, removedRoles []models.IDType, err error) {
 	filter := &models.RoleFilter{

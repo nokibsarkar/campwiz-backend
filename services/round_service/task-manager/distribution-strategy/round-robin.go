@@ -108,16 +108,7 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries() {
 		log.Println("Error: ", err)
 		return
 	}
-
-	tx := conn.Begin()
 	defer func() {
-		if err != nil {
-			tx.Rollback()
-			task.Status = models.TaskStatusFailed
-			log.Println("Error: ", err)
-		} else {
-			tx.Commit()
-		}
 		if _, updateErr := round_repo.Update(conn, &models.Round{
 			RoundID: round.RoundID,
 			Status:  previousRoundStatus,
@@ -136,6 +127,7 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries() {
 			return
 		}
 	}()
+
 	submission_repo := repository.NewSubmissionRepository()
 	jury_repo := repository.NewRoleRepository()
 	j := models.RoleTypeJury
@@ -167,7 +159,7 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries() {
 		log.Println("Error: ", err)
 		return
 	}
-	created, err := strategy.createMissingEvaluations(tx, round.Type, round, submissions)
+	created, err := strategy.createMissingEvaluations(conn, round.Type, round, submissions)
 	if err != nil {
 		task.Status = models.TaskStatusFailed
 		log.Println("Error: ", err)
@@ -196,6 +188,20 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries() {
 		log.Println("Error: ", err)
 		return
 	}
+	tx := conn.Begin()
+	defer func() {
+		log.Println("Distributing finished")
+		if err != nil {
+			tx.Rollback()
+			task.Status = models.TaskStatusFailed
+			log.Println("Error: ", err)
+		} else {
+			log.Println("Committing transaction")
+			tx.Commit()
+			task.Status = models.TaskStatusSuccess
+		}
+
+	}()
 	task.SuccessCount, task.FailedCount, err = strategy.exportFromCache2MainDB(taskDB, tx)
 	if err != nil {
 		task.Status = models.TaskStatusFailed
@@ -214,6 +220,7 @@ func (strategy *RoundRobinDistributionStrategy) createMissingEvaluations(tx *gor
 	log.Println("Creating missing evaluations", len(req))
 	updatedPrepared := tx.Session(&gorm.Session{PrepareStmt: false})
 	cnt := 0
+	submissionIds := []string{}
 	for _, submission := range req {
 		rest := round.Quorum - submission.AssignmentCount
 		for _ = range rest {
@@ -228,11 +235,16 @@ func (strategy *RoundRobinDistributionStrategy) createMissingEvaluations(tx *gor
 			}
 			evaluations = append(evaluations, evaluation)
 		}
-		if res := updatedPrepared.Limit(1).Updates(&models.Submission{
-			SubmissionID:    submission.SubmissionID,
-			AssignmentCount: submission.AssignmentCount + rest,
-		}); res.Error != nil {
-			return 0, res.Error
+		submissionIds = append(submissionIds, submission.SubmissionID.String())
+		if len(submissionIds) >= 5000 {
+			if res := updatedPrepared.
+				Where("submission_id IN (?)", submissionIds).
+				Updates(&models.Submission{
+					AssignmentCount: round.Quorum,
+				}); res.Error != nil {
+				return 0, res.Error
+			}
+			submissionIds = []string{}
 		}
 		cnt++
 		// if cnt%163800 == 0 {
@@ -245,10 +257,15 @@ func (strategy *RoundRobinDistributionStrategy) createMissingEvaluations(tx *gor
 		// 	updatedPrepared = tx.Session(&gorm.Session{PrepareStmt: false})
 		// }
 	}
-	// if res := updatedPrepared.Commit(); res.Error != nil {
-	// 	// updatedPrepared.Rollback()
-	// 	return 0, res.Error
-	// }
+	if len(submissionIds) > 0 {
+		if res := updatedPrepared.
+			Where("submission_id IN (?)", submissionIds).
+			Updates(&models.Submission{
+				AssignmentCount: round.Quorum,
+			}); res.Error != nil {
+			return 0, res.Error
+		}
+	}
 	if len(evaluations) == 0 {
 		return 0, nil
 	}
@@ -340,7 +357,6 @@ func (strategy *RoundRobinDistributionStrategy) distribute(cacheDB *gorm.DB, fai
 			continue
 		}
 		selectedJury := ass[0]
-		log.Println("Selected a replacement ", selectedJury)
 		unassigned.JudgeID = selectedJury.JudgeID
 		res, err := Assignment.Where(Assignment.EvaluationID.Eq(unassigned.EvaluationID.String())).Update(Assignment.JudgeID, selectedJury.JudgeID)
 		if err != nil {
@@ -349,7 +365,10 @@ func (strategy *RoundRobinDistributionStrategy) distribute(cacheDB *gorm.DB, fai
 		}
 		if res.Error != nil {
 			log.Println(res.Error)
+			continue
 		}
+
+		log.Printf("Selected Judge for %s is %s", unassigned.EvaluationID, selectedJury.JudgeID)
 	}
 	return 0, nil
 }

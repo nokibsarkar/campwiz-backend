@@ -18,7 +18,7 @@ type Evaluation struct {
 }
 
 type Dirtributor interface {
-	// UPDATE `evaluations` SET `judge_id` = @judge_id WHERE `evaluations`.`judge_id` IS NULL AND `evaluations`.`evaluation_id` IN (SELECT `evaluation_id` FROM `evaluations` WHERE `submission_id` NOT IN (SELECT DISTINCT submission_id FROM evaluations WHERE `judge_id` = @judge_id) AND `judge_id` IS NULL GROUP BY `submission_id` ORDER BY RAND() LIMIT @limit)
+	// UPDATE `evaluations` SET `judge_id` = @judge_id WHERE `evaluations`.`judge_id` IS NULL AND `evaluations`.`evaluation_id` IN (SELECT `evaluation_id` FROM `evaluations` WHERE `submission_id` NOT IN (SELECT DISTINCT submission_id FROM evaluations WHERE `judge_id` = @judge_id) AND `judge_id` IS NULL GROUP BY `submission_id` LIMIT @limit)
 	DistributeAssigments(judge_id models.IDType, limit int) (gen.RowsAffected, error)
 	// SELECT COUNT(`evaluation_id`) AS Count, `judge_id` FROM `evaluations` GROUP BY `judge_id`
 	CountAssignedEvaluations() ([]gen.T, error)

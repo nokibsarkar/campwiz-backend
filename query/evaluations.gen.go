@@ -717,7 +717,7 @@ type IEvaluationDo interface {
 	RemoveRedundantEvaluation(roundID string, quorum int)
 }
 
-// UPDATE `evaluations` SET `judge_id` = @judge_id WHERE `evaluations`.`judge_id` IS NULL AND `evaluations`.`evaluation_id` IN (SELECT MAX(`evaluation_id`) FROM `evaluations` WHERE `submission_id` NOT IN (SELECT DISTINCT submission_id FROM evaluations WHERE `judge_id` = @judge_id) AND `judge_id` IS NULL GROUP BY `submission_id` LIMIT @limit)
+// UPDATE `evaluations` SET `judge_id` = @judge_id WHERE `evaluations`.`judge_id` IS NULL AND `evaluations`.`evaluation_id` IN (SELECT `evaluation_id` FROM `evaluations` WHERE `submission_id` NOT IN (SELECT DISTINCT submission_id FROM evaluations WHERE `judge_id` = @judge_id) AND `judge_id` IS NULL GROUP BY `submission_id` LIMIT @limit)
 func (e evaluationDo) DistributeAssigments(judge_id models.IDType, limit int) (rowsAffected int64, err error) {
 	var params []interface{}
 
@@ -725,7 +725,7 @@ func (e evaluationDo) DistributeAssigments(judge_id models.IDType, limit int) (r
 	params = append(params, judge_id)
 	params = append(params, judge_id)
 	params = append(params, limit)
-	generateSQL.WriteString("UPDATE `evaluations` SET `judge_id` = ? WHERE `evaluations`.`judge_id` IS NULL AND `evaluations`.`evaluation_id` IN (SELECT MAX(`evaluation_id`) FROM `evaluations` WHERE `submission_id` NOT IN (SELECT DISTINCT submission_id FROM evaluations WHERE `judge_id` = ?) AND `judge_id` IS NULL GROUP BY `submission_id` LIMIT ?) ")
+	generateSQL.WriteString("UPDATE `evaluations` SET `judge_id` = ? WHERE `evaluations`.`judge_id` IS NULL AND `evaluations`.`evaluation_id` IN (SELECT `evaluation_id` FROM `evaluations` WHERE `submission_id` NOT IN (SELECT DISTINCT submission_id FROM evaluations WHERE `judge_id` = ?) AND `judge_id` IS NULL GROUP BY `submission_id` LIMIT ?) ")
 
 	var executeSQL *gorm.DB
 	executeSQL = e.UnderlyingDB().Exec(generateSQL.String(), params...) // ignore_security_alert

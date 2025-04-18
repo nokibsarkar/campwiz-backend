@@ -368,7 +368,7 @@ func (r *RoundService) UpdateRoundDetails(roundID models.IDType, req *RoundReque
 			Type:       &juryType,
 			ProjectID:  round.ProjectID,
 		}
-		addedRoles, removedRoleIDs, err := role_service.CalculateRoleDifference(tx, models.RoleTypeJury, filter, req.Juries)
+		addedRoles, removedRoles, err := role_service.CalculateRoleDifferenceWithRole(tx, models.RoleTypeJury, filter, req.Juries)
 		if err != nil {
 			log.Println(err)
 			tx.Rollback()
@@ -381,18 +381,29 @@ func (r *RoundService) UpdateRoundDetails(roundID models.IDType, req *RoundReque
 				return nil, res.Error
 			}
 		}
-		if len(removedRoleIDs) > 0 {
-			r := []string{}
-			for _, roleID := range removedRoleIDs {
-				res := tx.Delete(&models.Role{RoleID: roleID})
-				if res.Error != nil {
-					tx.Rollback()
-					return nil, res.Error
+		if len(removedRoles) > 0 {
+			availableForReassignment := []string{}
+			for _, role := range removedRoles {
+				if role.TotalEvaluated > 0 {
+					res := tx.Delete(&models.Role{RoleID: role.RoleID})
+					if res.Error != nil {
+						tx.Rollback()
+						return nil, res.Error
+					}
+					availableForReassignment = append(availableForReassignment, role.RoleID.String())
+				} else {
+					// Delete completely
+					// it would make all the evaluation NULL
+					res := tx.Unscoped().Delete(&models.Role{RoleID: role.RoleID})
+					if res.Error != nil {
+						tx.Rollback()
+						return nil, res.Error
+					}
 				}
-				r = append(r, roleID.String())
+
 			}
 			// make all the unevaluated evaluations available for re-assignment to other juries
-			_, err = q.Evaluation.Where(q.Evaluation.RoundID.Eq(roundID.String())).Where(q.Evaluation.JudgeID.In(r...)).
+			_, err = q.Evaluation.Where(q.Evaluation.RoundID.Eq(roundID.String())).Where(q.Evaluation.JudgeID.In(availableForReassignment...)).
 				Where(q.Evaluation.EvaluatedAt.IsNull()).Update(q.Evaluation.JudgeID, nil)
 			if err != nil {
 				tx.Rollback()

@@ -164,17 +164,15 @@ func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluation
 		tx.Rollback()
 		return nil, errors.New("no evaluations found")
 	}
-	// trigger submission score counting
-	if err := evaluation_repo.TriggerEvaluationScoreCount(tx, submissionIds); err != nil {
-		tx.Rollback()
-		return nil, err
-	}
+
 	res = tx.Model(&models.Role{}).Where(&models.Role{RoleID: juryRole.RoleID, UserID: juryRole.UserID}).First(&juryRole)
 	if res.Error != nil {
 		tx.Rollback()
 		return nil, res.Error
 	}
 	tx.Commit()
+	// trigger submission score counting
+	go evaluation_repo.TriggerEvaluationScoreCount(conn, submissionIds)
 	result = &models.EvaluationListResponseWithCurrentStats{
 		ResponseList: models.ResponseList[*models.Evaluation]{
 			Data: evaluations,
@@ -448,6 +446,9 @@ func (e *EvaluationService) Evaluate(currentUserID models.IDType, evaluationID m
 	}
 	defer close()
 	tx := conn.Begin()
+	defer func() {
+
+	}()
 	// first check if user
 	evaluation, err := ev_repo.FindEvaluationByID(tx.Preload("Submission").Preload("Submission.Round").Preload("Submission.Round.Campaign"), evaluationID)
 	if err != nil {
@@ -498,13 +499,13 @@ func (e *EvaluationService) Evaluate(currentUserID models.IDType, evaluationID m
 	// 	tx.Rollback()
 	// 	return nil, errors.New("user is not a jury")
 	// }
-	if evaluation.Type == models.EvaluationTypeBinary {
-		log.Println("Binary evaluation")
-	} else if evaluation.Type == models.EvaluationTypeRanking {
-		log.Println("Ranking evaluation")
-	} else if evaluation.Type == models.EvaluationTypeScore {
-		log.Println("Score evaluation")
-	}
+	// if evaluation.Type == models.EvaluationTypeBinary {
+	// 	log.Println("Binary evaluation")
+	// } else if evaluation.Type == models.EvaluationTypeRanking {
+	// 	log.Println("Ranking evaluation")
+	// } else if evaluation.Type == models.EvaluationTypeScore {
+	// 	log.Println("Score evaluation")
+	// }
 	if evaluationRequest.Comment != "" {
 		evaluation.Comment = evaluationRequest.Comment
 	}

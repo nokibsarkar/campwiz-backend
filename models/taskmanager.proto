@@ -11,6 +11,10 @@ service Distributor {
     // DistributeWithRoundRobin distributes the assignments to different juries in a round robin fashion
     rpc DistributeWithRoundRobin(DistributeWithRoundRobinRequest) returns (DistributeWithRoundRobinResponse);
 }
+// service StatisticsUpdater {
+//     // UpdateStatistics updates the statistics of a task
+//     rpc TriggerEvaluationScoreCount(UpdateStatisticsRequest) returns (UpdateStatisticsResponse);
+// }
 message ImportFromCommonsCategoryRequest {
     repeated string commons_category = 1;
     string round_id = 2;

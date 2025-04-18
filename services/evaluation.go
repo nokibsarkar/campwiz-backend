@@ -9,6 +9,7 @@ import (
 	"nokib/campwiz/query"
 	"nokib/campwiz/repository"
 	idgenerator "nokib/campwiz/services/idGenerator"
+	"nokib/campwiz/services/round_service"
 	"time"
 
 	"golang.org/x/net/context"
@@ -33,7 +34,6 @@ func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluation
 	// ev_repo := repository.NewEvaluationRepository()
 	user_repo := repository.NewUserRepository()
 	round_repo := repository.NewRoundRepository()
-	evaluation_repo := repository.NewEvaluationRepository()
 
 	// jury_repo := repository.NewRoleRepository()
 	conn, close, err := repository.GetDB()
@@ -171,8 +171,24 @@ func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluation
 		return nil, res.Error
 	}
 	tx.Commit()
-	// trigger submission score counting
-	go evaluation_repo.TriggerEvaluationScoreCount(conn, submissionIds)
+	grpcClient, err := round_service.NewGrpcClient("localhost:50051")
+	if err == nil {
+		defer grpcClient.Close()
+		// update the statistics
+		statisticsupdater := models.NewStatisticsUpdaterClient(grpcClient)
+		ids := []string{}
+		for _, submission := range submissionIds {
+			ids = append(ids, submission.String())
+		}
+		_, err = statisticsupdater.TriggerEvaluationScoreCount(context.Background(), &models.UpdateStatisticsRequest{
+			SubmissionIds: ids,
+		})
+		if err != nil {
+			log.Println("Error updating statistics : ", err)
+		}
+	} else {
+		log.Println("Error creating gRPC client : ", err)
+	}
 	result = &models.EvaluationListResponseWithCurrentStats{
 		ResponseList: models.ResponseList[*models.Evaluation]{
 			Data: evaluations,

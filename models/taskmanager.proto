@@ -7,14 +7,8 @@ service Importer {
     rpc ImportFromCommonsCategory(ImportFromCommonsCategoryRequest) returns (ImportResponse);
     rpc ImportFromPreviousRound(ImportFromPreviousRoundRequest) returns (ImportResponse);
 }
-service Distributor {
-    // DistributeWithRoundRobin distributes the assignments to different juries in a round robin fashion
-    rpc DistributeWithRoundRobin(DistributeWithRoundRobinRequest) returns (DistributeWithRoundRobinResponse);
-}
-// service StatisticsUpdater {
-//     // UpdateStatistics updates the statistics of a task
-//     rpc TriggerEvaluationScoreCount(UpdateStatisticsRequest) returns (UpdateStatisticsResponse);
-// }
+
+
 message ImportFromCommonsCategoryRequest {
     repeated string commons_category = 1;
     string round_id = 2;
@@ -30,6 +24,10 @@ message ImportResponse {
     string round_id = 2;
 }
 
+service Distributor {
+    // DistributeWithRoundRobin distributes the assignments to different juries in a round robin fashion
+    rpc DistributeWithRoundRobin(DistributeWithRoundRobinRequest) returns (DistributeWithRoundRobinResponse);
+}
 
 message DistributeWithRoundRobinRequest {
     string round_id = 1;
@@ -39,3 +37,12 @@ message DistributeWithRoundRobinRequest {
 message DistributeWithRoundRobinResponse {
    string task_id = 1;
 }
+
+service StatisticsUpdater {
+    // UpdateStatistics updates the statistics of a task
+    rpc TriggerEvaluationScoreCount(UpdateStatisticsRequest) returns (UpdateStatisticsResponse);
+}
+message UpdateStatisticsRequest {
+    repeated string submission_ids = 1;
+}
+message UpdateStatisticsResponse {}

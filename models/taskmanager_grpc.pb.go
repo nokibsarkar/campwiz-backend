@@ -261,3 +261,107 @@ var Distributor_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "models/taskmanager.proto",
 }
+
+const (
+	StatisticsUpdater_TriggerEvaluationScoreCount_FullMethodName = "/models.StatisticsUpdater/TriggerEvaluationScoreCount"
+)
+
+// StatisticsUpdaterClient is the client API for StatisticsUpdater service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type StatisticsUpdaterClient interface {
+	// UpdateStatistics updates the statistics of a task
+	TriggerEvaluationScoreCount(ctx context.Context, in *UpdateStatisticsRequest, opts ...grpc.CallOption) (*UpdateStatisticsResponse, error)
+}
+
+type statisticsUpdaterClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewStatisticsUpdaterClient(cc grpc.ClientConnInterface) StatisticsUpdaterClient {
+	return &statisticsUpdaterClient{cc}
+}
+
+func (c *statisticsUpdaterClient) TriggerEvaluationScoreCount(ctx context.Context, in *UpdateStatisticsRequest, opts ...grpc.CallOption) (*UpdateStatisticsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateStatisticsResponse)
+	err := c.cc.Invoke(ctx, StatisticsUpdater_TriggerEvaluationScoreCount_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// StatisticsUpdaterServer is the server API for StatisticsUpdater service.
+// All implementations must embed UnimplementedStatisticsUpdaterServer
+// for forward compatibility.
+type StatisticsUpdaterServer interface {
+	// UpdateStatistics updates the statistics of a task
+	TriggerEvaluationScoreCount(context.Context, *UpdateStatisticsRequest) (*UpdateStatisticsResponse, error)
+	mustEmbedUnimplementedStatisticsUpdaterServer()
+}
+
+// UnimplementedStatisticsUpdaterServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedStatisticsUpdaterServer struct{}
+
+func (UnimplementedStatisticsUpdaterServer) TriggerEvaluationScoreCount(context.Context, *UpdateStatisticsRequest) (*UpdateStatisticsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TriggerEvaluationScoreCount not implemented")
+}
+func (UnimplementedStatisticsUpdaterServer) mustEmbedUnimplementedStatisticsUpdaterServer() {}
+func (UnimplementedStatisticsUpdaterServer) testEmbeddedByValue()                           {}
+
+// UnsafeStatisticsUpdaterServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to StatisticsUpdaterServer will
+// result in compilation errors.
+type UnsafeStatisticsUpdaterServer interface {
+	mustEmbedUnimplementedStatisticsUpdaterServer()
+}
+
+func RegisterStatisticsUpdaterServer(s grpc.ServiceRegistrar, srv StatisticsUpdaterServer) {
+	// If the following call pancis, it indicates UnimplementedStatisticsUpdaterServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&StatisticsUpdater_ServiceDesc, srv)
+}
+
+func _StatisticsUpdater_TriggerEvaluationScoreCount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateStatisticsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StatisticsUpdaterServer).TriggerEvaluationScoreCount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StatisticsUpdater_TriggerEvaluationScoreCount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StatisticsUpdaterServer).TriggerEvaluationScoreCount(ctx, req.(*UpdateStatisticsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// StatisticsUpdater_ServiceDesc is the grpc.ServiceDesc for StatisticsUpdater service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var StatisticsUpdater_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "models.StatisticsUpdater",
+	HandlerType: (*StatisticsUpdaterServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "TriggerEvaluationScoreCount",
+			Handler:    _StatisticsUpdater_TriggerEvaluationScoreCount_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "models/taskmanager.proto",
+}

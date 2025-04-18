@@ -8,6 +8,7 @@ import (
 	"nokib/campwiz/models"
 	distributionstrategy "nokib/campwiz/services/round_service/task-manager/distribution-strategy"
 	importsources "nokib/campwiz/services/round_service/task-manager/import-sources"
+	statisticsupdater "nokib/campwiz/services/round_service/task-manager/statistics-updater"
 
 	"google.golang.org/grpc"
 )
@@ -42,6 +43,7 @@ func main() {
 	grpcServer := grpc.NewServer(opts...)
 	models.RegisterImporterServer(grpcServer, importsources.NewImporterServer())
 	models.RegisterDistributorServer(grpcServer, distributionstrategy.NewDistributorServer())
+	models.RegisterStatisticsUpdaterServer(grpcServer, statisticsupdater.NewStatisticsUpdaterServer())
 	log.Printf("Task Manager Server listening at %v", lis.Addr())
 	grpcServer.Serve(lis)
 }

@@ -1,8 +1,10 @@
 package repository
 
 import (
+	"math/rand"
 	"nokib/campwiz/models"
 	"nokib/campwiz/models/types"
+	"nokib/campwiz/query"
 
 	"gorm.io/gorm"
 )
@@ -23,61 +25,72 @@ func (r *EvaluationRepository) FindEvaluationByID(tx *gorm.DB, evaluationID mode
 	return evaluation, result.Error
 }
 func (r *EvaluationRepository) ListAllEvaluations(tx *gorm.DB, filter *models.EvaluationFilter) ([]*models.Evaluation, error) {
-	var evaluations []*models.Evaluation
-	condition := &models.Evaluation{}
-	stmt := tx
+	q := query.Use(tx)
+	Evaluation := q.Evaluation
+	stmt1 := Evaluation.Select((Evaluation.ALL))
 	if filter != nil {
+
 		if filter.IncludeSubmission {
-			stmt = tx.Preload("Submission")
-		}
-		s := &models.Submission{}
-		if filter.CampaignID != "" {
-			if filter.CampaignID != "" {
-				s.CampaignID = filter.CampaignID
-			}
-			stmt = stmt.Joins("Submission", tx.Where(s))
-		}
-		if filter.RoundID != "" {
-			condition.RoundID = filter.RoundID
-		}
-		if filter.ParticipantID != "" {
-			condition.ParticipantID = filter.ParticipantID
-		}
-		if filter.Type != "" {
-			condition.Type = filter.Type
+			stmt1 = stmt1.Preload(Evaluation.Submission)
 		}
 		if filter.IncludeEvaluated != nil {
 			if *filter.IncludeEvaluated {
-				stmt = stmt.Where("score IS NOT NULL")
+				stmt1 = stmt1.Where(Evaluation.Score.IsNotNull())
 			} else {
-				stmt = stmt.Where("score IS NULL")
+				stmt1 = stmt1.Where(Evaluation.Score.IsNull())
 			}
 		}
+		s := &models.Submission{}
+		if filter.CampaignID != "" {
+
+			if filter.CampaignID != "" {
+				s.CampaignID = filter.CampaignID
+				stmt1 = stmt1.Join(q.Submission, q.Submission.CampaignID.Eq(filter.CampaignID.String()))
+			}
+		}
+		if filter.RoundID != "" {
+			stmt1 = stmt1.Where(Evaluation.RoundID.Eq(filter.RoundID.String()))
+		}
+		if filter.ParticipantID != "" {
+			stmt1 = stmt1.Where(Evaluation.ParticipantID.Eq(filter.ParticipantID.String()))
+		}
+		if filter.Type != "" {
+			stmt1 = stmt1.Where(Evaluation.Type.Eq(string(filter.Type)))
+		}
+
 		if filter.IncludeSkipped != nil {
 			if *filter.IncludeSkipped {
-				stmt = stmt.Where("skip_expiration_at IS NOT NULL")
+				stmt1 = stmt1.Where(Evaluation.SkipExpirationAt.IsNotNull())
 			} else {
-				stmt = stmt.Where("skip_expiration_at IS NULL")
+				stmt1 = stmt1.Where(Evaluation.SkipExpirationAt.IsNull())
 			}
 		}
 		if filter.SubmissionID != "" {
-			condition.SubmissionID = filter.SubmissionID
+			stmt1 = stmt1.Where(Evaluation.SubmissionID.Eq(filter.SubmissionID.String()))
 		}
 		if filter.JuryRoleID != "" {
-			condition.JudgeID = &filter.JuryRoleID
+			stmt1 = stmt1.Where(Evaluation.JudgeID.Eq(filter.JuryRoleID.String()))
 		}
 		if filter.ContinueToken != "" {
-			stmt = stmt.Where("evaluation_id > ?", filter.ContinueToken)
+			stmt1 = stmt1.Where(Evaluation.EvaluationID.Gt(filter.ContinueToken))
 		}
 		if filter.PreviousToken != "" {
-			stmt = stmt.Where("evaluation_id < ?", filter.PreviousToken)
+			stmt1 = stmt1.Where(Evaluation.EvaluationID.Lt(filter.PreviousToken))
 		}
 		if filter.Limit > 0 {
-			stmt = stmt.Limit(max(5, filter.Limit))
+			stmt1 = stmt1.Limit(max(5, filter.Limit))
 		}
 	}
-	result := stmt.Where(condition).Find(&evaluations)
-	return evaluations, result.Error
+	evaluations, err := stmt1.Find()
+	if err != nil {
+		return nil, err
+	}
+	if filter.Randomize {
+		rand.Shuffle(len(evaluations), func(i, j int) {
+			evaluations[i], evaluations[j] = evaluations[j], evaluations[i]
+		})
+	}
+	return evaluations, err
 }
 func (r *EvaluationRepository) UpdateEvaluation(tx *gorm.DB, evaluation *models.Evaluation) error {
 	result := tx.Updates(evaluation)

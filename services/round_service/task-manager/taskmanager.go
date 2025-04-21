@@ -44,6 +44,7 @@ func main() {
 	models.RegisterImporterServer(grpcServer, importsources.NewImporterServer())
 	models.RegisterDistributorServer(grpcServer, distributionstrategy.NewDistributorServer())
 	models.RegisterStatisticsUpdaterServer(grpcServer, statisticsupdater.NewStatisticsUpdaterServer())
+
 	log.Printf("Task Manager Server listening at %v", lis.Addr())
 	grpcServer.Serve(lis)
 }

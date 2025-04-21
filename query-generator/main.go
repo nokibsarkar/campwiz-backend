@@ -14,7 +14,7 @@ func main() {
 	})
 	g.ApplyBasic(models.Project{}, models.User{}, models.Campaign{},
 		models.Round{}, models.Task{}, models.Role{}, models.Submission{},
-		models.Evaluation{}, cache.Evaluation{}, models.SubmissionResult{}, models.TaskData{})
+		models.Evaluation{}, cache.Evaluation{}, models.SubmissionResult{}, models.TaskData{}, models.Category{})
 	g.ApplyInterface(func(cache.Dirtributor) {}, cache.Evaluation{})
 	g.ApplyInterface(func(models.SubmissionStatisticsFetcher) {}, models.SubmissionStatistics{})
 	g.ApplyInterface(func(models.JuryStatisticsUpdater) {}, models.JuryStatistics{})

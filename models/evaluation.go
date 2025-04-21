@@ -17,11 +17,11 @@ const (
 type Evaluation struct {
 	EvaluationID  IDType                 `json:"evaluationId" gorm:"primaryKey"`
 	SubmissionID  types.SubmissionIDType `json:"submissionId" gorm:"index;uniqueIndex:idx_submission_judge"`
-	JudgeID       *IDType                `json:"judgeId" gorm:"index;uniqueIndex:idx_submission_judge"`
+	JudgeID       *IDType                `json:"judgeId" gorm:"index;uniqueIndex:idx_submission_judge;index:idx_evaluation_judge_round_score"`
 	ParticipantID IDType                 `json:"participantId"`
-	RoundID       IDType                 `json:"roundId" gorm:"index"`
+	RoundID       IDType                 `json:"roundId" gorm:"index;index:idx_evaluation_judge_round_score"`
 	Type          EvaluationType         `json:"type"`
-	Score         *ScoreType             `json:"score" gorm:"default:null;constraint:check:(score >= 0 AND score <= 100);index"`
+	Score         *ScoreType             `json:"score" gorm:"default:null;constraint:check:(score >= 0 AND score <= 100);index:idx_evaluation_judge_round_score"`
 	Comment       string                 `json:"comment" gorm:"default:null"`
 	Serial        uint                   `json:"serial"`
 	Submission    *Submission            `json:"submission" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
@@ -50,6 +50,7 @@ type EvaluationFilter struct {
 	IncludeSubmission bool `form:"includeSubmission"`
 	// Whether to include the non-evaluated submissions
 	IncludeNonEvaluated *bool `form:"includeNonEvaluated,default=true"`
+	Randomize           bool  `form:"randomize"`
 	CommonFilter
 }
 type GetEvaluationQueryFilter struct {

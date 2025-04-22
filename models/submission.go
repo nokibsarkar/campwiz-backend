@@ -3,6 +3,7 @@ package models
 import (
 	"crypto/md5"
 	"fmt"
+	"net/url"
 	"nokib/campwiz/models/types"
 	"strings"
 	"time"
@@ -160,7 +161,8 @@ func (c *CommonsSubmissionEntry) GetURL() string {
 	md5Hash := md5.Sum([]byte(c.PageTitle))
 	md5HashHex := fmt.Sprintf("%x", md5Hash)
 	folder1, folder2 := md5HashHex[:1], md5HashHex[:2]
-	URL := fmt.Sprintf("https://upload.wikimedia.org/wikipedia/commons/%s/%s/%s", folder1, folder2, c.PageTitle)
+	escapedTitle := url.QueryEscape(c.PageTitle)
+	URL := fmt.Sprintf("https://upload.wikimedia.org/wikipedia/commons/%s/%s/%s", folder1, folder2, escapedTitle)
 	return URL
 }
 func (c *CommonsSubmissionEntry) GetThumbURL() (string, uint64, uint64) {

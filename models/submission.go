@@ -186,6 +186,8 @@ func (c *CommonsSubmissionEntry) GetThumbURL() (string, uint64, uint64) {
 	case ".jpg", ".jpeg", ".png", ".webp":
 		// For image files, we can set extension as is
 		thumbSuffix = fileNameWithoutPrefix
+	case ".pdf":
+		thumbSuffix = "page1-" + fileNameWithoutPrefix + ".jpg"
 	case ".tiff", ".tif":
 		// For TIFF files, we can use a JPG thumbnail with lossy-page-1- as the prefix
 		thumbSuffix = "lossy-page1-" + fileNameWithoutPrefix + ".jpg"

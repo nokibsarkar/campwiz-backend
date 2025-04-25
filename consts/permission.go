@@ -61,6 +61,7 @@ const (
 	PermissionEvaluateSubmission
 	// Permission to submit a submission
 	PermissionSubmitSubmission
+	PermissionRandomize
 )
 const (
 	// PermissionGroups
@@ -95,7 +96,8 @@ const (
 		PermissionGroup(PermissionUpdateRoundStatus) | // update the status of a round (like open, closed, etc)
 		PermissionGroup(PermissionDeleteRound) | // delete a round , only if any one of the conditions is met:
 		PermissionGroup(PermissionSeeOthersEvaluationResult) | // See the evaluation results of the evaluations others have done (including he himself)
-		PermissionGroup(PermissionSeeOwnEvaluationResult)) // see the evaluation results of the evaluations they have done
+		PermissionGroup(PermissionSeeOwnEvaluationResult)) | // see the evaluation results of the evaluations they have done
+		PermissionGroup(PermissionRandomize) // randomize the submissions
 	/*
 		A lead can:
 			- Get all the permissions of a coordinator

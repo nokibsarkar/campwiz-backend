@@ -785,6 +785,32 @@ func (e *RoundService) AddMyselfAsJury(currentUserID models.IDType, roundID mode
 }
 
 func (e *RoundService) Randomize(userId models.IDType, roundId models.IDType) (*models.Task, error) {
+	round_repo := repository.NewRoundRepository()
+	role_repo := repository.NewRoleRepository()
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		return nil, err
+	}
+	defer close()
+	round, err := round_repo.FindByID(conn, roundId)
+	if err != nil {
+		return nil, err
+	} else if round == nil {
+		return nil, fmt.Errorf("round not found")
+	}
+	role, err := role_repo.FindRoleByUserIDAndRoundID(conn, userId, roundId, models.RoleTypeCoordinator)
+	if err != nil {
+		return nil, err
+	} else if role == nil {
+		return nil, fmt.Errorf("user is not a coordinator")
+	}
+	if role.DeletedAt != nil {
+		return nil, fmt.Errorf("user is not a coordinator")
+	}
+	// if !role.Permission.HasPermission(consts.PermissionRandomize) {
+	// 	return nil, fmt.Errorf("user does not have permission to randomize")
+	// }
+
 	grpcClient, err := round_service.NewGrpcClient("localhost:50051")
 	if err != nil {
 		return nil, err

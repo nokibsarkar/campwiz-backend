@@ -174,24 +174,27 @@ func (c *CommonsSubmissionEntry) GetThumbURL() (string, uint64, uint64) {
 	// Calculate the aspect ratio
 	// aspectRatio := float32(c.FrWidth) / float32(c.FrHeight)
 	aspectRatio := float32(c.FrWidth) / float32(c.FrHeight)
-	fileNameWithoutPrefix := fileURL[strings.LastIndex(fileURL, "/")+1:]
-	// extract the file extension
-	// extension := strings.ToLower(fileNameWithoutPrefix[strings.LastIndex(fileNameWithoutPrefix, "."):])
-	// thumbSuffix := fileNameWithoutPrefix
-	// switch extension {
-	// case ".jpg", ".jpeg", ".png", ".webp":
-	// 	// For image files, we can set extension as is
-	// 	thumbSuffix = fileNameWithoutPrefix
-	// default:
-	// 	// For SVG and GIF files, we can use a PNG thumbnail
-	// 	thumbSuffix = fileNameWithoutPrefix + ".png"
-	// }
-	// Calculate the width and height of the thumbnail
 	thumbWidth := targetWidth
 	// aspectRatio is the ratio of width to height
-	// thumbHeight = thumbWidth / aspectRatio
 	thumbHeight := uint64(float32(targetWidth) / aspectRatio)
-	thumbURL := fmt.Sprintf("https://commons.wikimedia.org/w/thumb.php?f=%s&width=%d&height=%d", fileNameWithoutPrefix, thumbWidth, thumbHeight)
+	// aspectRatio is the ratio of width to height
+	fileNameWithoutPrefix := fmt.Sprintf("%dpx-%s", thumbWidth, fileURL[strings.LastIndex(fileURL, "/")+1:])
+	// extract the file extension
+	extension := strings.ToLower(fileNameWithoutPrefix[strings.LastIndex(fileNameWithoutPrefix, "."):])
+	thumbSuffix := fileNameWithoutPrefix
+	switch extension {
+	case ".jpg", ".jpeg", ".png", ".webp":
+		// For image files, we can set extension as is
+		thumbSuffix = fileNameWithoutPrefix
+	case ".tiff", ".tif":
+		// For TIFF files, we can use a JPG thumbnail with lossy-page-1- as the prefix
+		thumbSuffix = "lossy-page1-" + fileNameWithoutPrefix + ".jpg"
+	default:
+		// For SVG and GIF files, we can use a PNG thumbnail
+		thumbSuffix = fileNameWithoutPrefix + ".png"
+	}
+	baseURL := strings.Replace(fileURL, "https://upload.wikimedia.org/wikipedia/commons/", "https://upload.wikimedia.org/wikipedia/commons/thumb/", 1)
+	thumbURL := fmt.Sprintf("%s/%s", baseURL, thumbSuffix)
 	return thumbURL, thumbWidth, thumbHeight
 }
 func (c *CommonsSubmissionEntry) GetSubmittedAt() time.Time {

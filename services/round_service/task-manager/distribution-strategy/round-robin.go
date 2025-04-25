@@ -370,6 +370,7 @@ func (strategy *RoundRobinDistributionStrategy) distribute(cacheDB *gorm.DB, fai
 
 		log.Printf("Selected Judge for %s is %s", unassigned.EvaluationID, selectedJury.JudgeID)
 	}
+	// strategy.Randomize(q,
 	return 0, nil
 }
 func (strategy *RoundRobinDistributionStrategy) exportFromCache2MainDB(cache *gorm.DB, tx *gorm.DB) (successCount int, failedCount int, err error) {

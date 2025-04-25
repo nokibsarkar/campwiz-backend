@@ -18,6 +18,7 @@ import (
 var (
 	Q                      = new(Query)
 	Campaign               *campaign
+	Category               *category
 	CommonsSubmissionEntry *commonsSubmissionEntry
 	Evaluation             *evaluation
 	JuryStatistics         *juryStatistics
@@ -36,6 +37,7 @@ var (
 func SetDefault(db *gorm.DB, opts ...gen.DOOption) {
 	*Q = *Use(db, opts...)
 	Campaign = &Q.Campaign
+	Category = &Q.Category
 	CommonsSubmissionEntry = &Q.CommonsSubmissionEntry
 	Evaluation = &Q.Evaluation
 	JuryStatistics = &Q.JuryStatistics
@@ -55,6 +57,7 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 	return &Query{
 		db:                     db,
 		Campaign:               newCampaign(db, opts...),
+		Category:               newCategory(db, opts...),
 		CommonsSubmissionEntry: newCommonsSubmissionEntry(db, opts...),
 		Evaluation:             newEvaluation(db, opts...),
 		JuryStatistics:         newJuryStatistics(db, opts...),
@@ -75,6 +78,7 @@ type Query struct {
 	db *gorm.DB
 
 	Campaign               campaign
+	Category               category
 	CommonsSubmissionEntry commonsSubmissionEntry
 	Evaluation             evaluation
 	JuryStatistics         juryStatistics
@@ -96,6 +100,7 @@ func (q *Query) clone(db *gorm.DB) *Query {
 	return &Query{
 		db:                     db,
 		Campaign:               q.Campaign.clone(db),
+		Category:               q.Category.clone(db),
 		CommonsSubmissionEntry: q.CommonsSubmissionEntry.clone(db),
 		Evaluation:             q.Evaluation.clone(db),
 		JuryStatistics:         q.JuryStatistics.clone(db),
@@ -124,6 +129,7 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 	return &Query{
 		db:                     db,
 		Campaign:               q.Campaign.replaceDB(db),
+		Category:               q.Category.replaceDB(db),
 		CommonsSubmissionEntry: q.CommonsSubmissionEntry.replaceDB(db),
 		Evaluation:             q.Evaluation.replaceDB(db),
 		JuryStatistics:         q.JuryStatistics.replaceDB(db),
@@ -142,6 +148,7 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 
 type queryCtx struct {
 	Campaign               ICampaignDo
+	Category               ICategoryDo
 	CommonsSubmissionEntry ICommonsSubmissionEntryDo
 	Evaluation             IEvaluationDo
 	JuryStatistics         IJuryStatisticsDo
@@ -160,6 +167,7 @@ type queryCtx struct {
 func (q *Query) WithContext(ctx context.Context) *queryCtx {
 	return &queryCtx{
 		Campaign:               q.Campaign.WithContext(ctx),
+		Category:               q.Category.WithContext(ctx),
 		CommonsSubmissionEntry: q.CommonsSubmissionEntry.WithContext(ctx),
 		Evaluation:             q.Evaluation.WithContext(ctx),
 		JuryStatistics:         q.JuryStatistics.WithContext(ctx),

@@ -160,6 +160,7 @@ var Importer_ServiceDesc = grpc.ServiceDesc{
 
 const (
 	Distributor_DistributeWithRoundRobin_FullMethodName = "/models.Distributor/DistributeWithRoundRobin"
+	Distributor_Randomize_FullMethodName                = "/models.Distributor/Randomize"
 )
 
 // DistributorClient is the client API for Distributor service.
@@ -168,6 +169,7 @@ const (
 type DistributorClient interface {
 	// DistributeWithRoundRobin distributes the assignments to different juries in a round robin fashion
 	DistributeWithRoundRobin(ctx context.Context, in *DistributeWithRoundRobinRequest, opts ...grpc.CallOption) (*DistributeWithRoundRobinResponse, error)
+	Randomize(ctx context.Context, in *DistributeWithRoundRobinRequest, opts ...grpc.CallOption) (*DistributeWithRoundRobinResponse, error)
 }
 
 type distributorClient struct {
@@ -188,12 +190,23 @@ func (c *distributorClient) DistributeWithRoundRobin(ctx context.Context, in *Di
 	return out, nil
 }
 
+func (c *distributorClient) Randomize(ctx context.Context, in *DistributeWithRoundRobinRequest, opts ...grpc.CallOption) (*DistributeWithRoundRobinResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DistributeWithRoundRobinResponse)
+	err := c.cc.Invoke(ctx, Distributor_Randomize_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DistributorServer is the server API for Distributor service.
 // All implementations must embed UnimplementedDistributorServer
 // for forward compatibility.
 type DistributorServer interface {
 	// DistributeWithRoundRobin distributes the assignments to different juries in a round robin fashion
 	DistributeWithRoundRobin(context.Context, *DistributeWithRoundRobinRequest) (*DistributeWithRoundRobinResponse, error)
+	Randomize(context.Context, *DistributeWithRoundRobinRequest) (*DistributeWithRoundRobinResponse, error)
 	mustEmbedUnimplementedDistributorServer()
 }
 
@@ -206,6 +219,9 @@ type UnimplementedDistributorServer struct{}
 
 func (UnimplementedDistributorServer) DistributeWithRoundRobin(context.Context, *DistributeWithRoundRobinRequest) (*DistributeWithRoundRobinResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DistributeWithRoundRobin not implemented")
+}
+func (UnimplementedDistributorServer) Randomize(context.Context, *DistributeWithRoundRobinRequest) (*DistributeWithRoundRobinResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Randomize not implemented")
 }
 func (UnimplementedDistributorServer) mustEmbedUnimplementedDistributorServer() {}
 func (UnimplementedDistributorServer) testEmbeddedByValue()                     {}
@@ -246,6 +262,24 @@ func _Distributor_DistributeWithRoundRobin_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Distributor_Randomize_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DistributeWithRoundRobinRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DistributorServer).Randomize(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Distributor_Randomize_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DistributorServer).Randomize(ctx, req.(*DistributeWithRoundRobinRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Distributor_ServiceDesc is the grpc.ServiceDesc for Distributor service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -256,6 +290,10 @@ var Distributor_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DistributeWithRoundRobin",
 			Handler:    _Distributor_DistributeWithRoundRobin_Handler,
+		},
+		{
+			MethodName: "Randomize",
+			Handler:    _Distributor_Randomize_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

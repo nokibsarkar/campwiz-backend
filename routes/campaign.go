@@ -243,7 +243,9 @@ func GetNextSubmission(c *gin.Context) {
 		"message": "Hello, World!",
 	})
 }
+
 func ApproveCampaign(c *gin.Context) {
+
 	c.JSON(200, gin.H{
 		"message": "Hello, World!",
 	})

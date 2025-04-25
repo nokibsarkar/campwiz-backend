@@ -783,3 +783,25 @@ func (e *RoundService) AddMyselfAsJury(currentUserID models.IDType, roundID mode
 	tx.Commit()
 	return role, nil
 }
+
+func (e *RoundService) Randomize(userId models.IDType, roundId models.IDType) (*models.Task, error) {
+	grpcClient, err := round_service.NewGrpcClient("localhost:50051")
+	if err != nil {
+		return nil, err
+	}
+	defer grpcClient.Close()
+	distributorClient := models.NewDistributorClient(grpcClient)
+	task := models.Task{
+		TaskID:            "123",
+		Status:            models.TaskStatusPending,
+		AssociatedRoundID: &roundId,
+		AssociatedUserID:  &userId,
+		CreatedByID:       userId,
+		Type:              models.TaskTypeRandomizeAssignments,
+	}
+	distributorClient.Randomize(context.Background(), &models.DistributeWithRoundRobinRequest{
+		TaskId:  task.TaskID.String(),
+		RoundId: roundId.String(),
+	})
+	return &task, nil
+}

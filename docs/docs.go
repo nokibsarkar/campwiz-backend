@@ -328,6 +328,11 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "boolean",
+                        "name": "randomize",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
                         "name": "roundId",
                         "in": "query"
@@ -1052,6 +1057,35 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/models.ResponseSingle-models_Submission"
+                        }
+                    }
+                }
+            }
+        },
+        "/round/{roundId}/randomize": {
+            "post": {
+                "description": "Randomize the evaluation distribution",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Round"
+                ],
+                "summary": "Randomize the evaluation distribution",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The round ID",
+                        "name": "roundId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResponseSingle-models_Task"
                         }
                     }
                 }
@@ -2567,14 +2601,16 @@ const docTemplate = `{
         "models.TaskType": {
             "type": "string",
             "enum": [
-                "import.commons",
-                "import.previous.round",
-                "distribute.evaluations"
+                "submissions.import.commons",
+                "submissions.import.previous",
+                "assignments.distribute",
+                "assignments.randomize"
             ],
             "x-enum-varnames": [
                 "TaskTypeImportFromCommons",
                 "TaskTypeImportFromPreviousRound",
-                "TaskTypeDistributeEvaluations"
+                "TaskTypeDistributeEvaluations",
+                "TaskTypeRandomizeAssignments"
             ]
         },
         "routes.RedirectResponse": {

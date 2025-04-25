@@ -834,14 +834,16 @@ definitions:
     - TaskStatusFailed
   models.TaskType:
     enum:
-    - import.commons
-    - import.previous.round
-    - distribute.evaluations
+    - submissions.import.commons
+    - submissions.import.previous
+    - assignments.distribute
+    - assignments.randomize
     type: string
     x-enum-varnames:
     - TaskTypeImportFromCommons
     - TaskTypeImportFromPreviousRound
     - TaskTypeDistributeEvaluations
+    - TaskTypeRandomizeAssignments
   routes.RedirectResponse:
     properties:
       redirect:
@@ -1289,6 +1291,9 @@ paths:
         name: prev
         type: string
       - in: query
+        name: randomize
+        type: boolean
+      - in: query
         name: roundId
         type: string
       - in: query
@@ -1690,6 +1695,25 @@ paths:
           schema:
             $ref: '#/definitions/models.ResponseSingle-models_Submission'
       summary: Get the next public submission
+      tags:
+      - Round
+  /round/{roundId}/randomize:
+    post:
+      description: Randomize the evaluation distribution
+      parameters:
+      - description: The round ID
+        in: path
+        name: roundId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ResponseSingle-models_Task'
+      summary: Randomize the evaluation distribution
       tags:
       - Round
   /round/{roundId}/results/{format}:

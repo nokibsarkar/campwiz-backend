@@ -40,6 +40,7 @@ func NewRoundRoutes(parent *gin.RouterGroup) {
 	r.GET("/:roundId/results/summary", WithSession(GetResultSummary))
 	r.GET("/:roundId/results/:format", WithSession(GetResults))
 	r.POST("/:roundId/status", WithSession(UpdateStatus))
+	r.POST("/:roundId/randomize", WithSession(Randomize))
 	r.POST("/", WithSession(CreateRound))
 	r.POST("/:roundId", WithSession(UpdateRoundDetails))
 	r.POST("/import/:roundId/commons", WithSession(ImportFromCommons))

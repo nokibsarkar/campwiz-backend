@@ -69,4 +69,6 @@ type EvaluationListResponseWithCurrentStats struct {
 type Evaluator interface {
 	// DELETE FROM `evaluations` WHERE `evaluations`.`evaluated_at` IS NULL AND `round_id` = @roundID AND `submission_id` IN (SELECT `submission_id` FROM `submissions` WHERE `evaluation_count` <= @quorum` AND `round_id` = @roundID)
 	RemoveRedundantEvaluation(roundID string, quorum int)
+	//SELECT evaluation_id, judge_id, submission_id FROM evaluations WHERE judge_id NOT IN (SELECT judge_id FROM evaluations WHERE submission_id IN (SELECT submission_id FROM evaluations WHERE judge_id=@amiJudgeID AND round_id=@roundId AND score IS NULL) AND round_id=@roundId) AND round_id=@roundId AND score IS NULL AND submission_id NOT IN (SELECT submission_id FROM evaluations WHERE judge_id=@amiJudgeID AND round_id=@roundId) GROUP BY submission_id ORDER BY RAND() LIMIT @limit;
+	FetchTargetSwappables(roundId string, amiJudgeID string, limit int) ([]*Evaluation, error)
 }

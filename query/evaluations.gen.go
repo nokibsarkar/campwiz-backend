@@ -715,6 +715,7 @@ type IEvaluationDo interface {
 	CountAssignedEvaluations() (result []cache.Evaluation, err error)
 	SelectUnAssignedJudges(submission_id types.SubmissionIDType, limit int) (result []*cache.Evaluation, err error)
 	RemoveRedundantEvaluation(roundID string, quorum int)
+	FetchTargetSwappables(roundId string, amiJudgeID string, limit int) (result []*models.Evaluation, err error)
 }
 
 // UPDATE `evaluations` SET `judge_id` = @judge_id WHERE `evaluations`.`judge_id` IS NULL AND `evaluations`.`evaluation_id` IN (SELECT `evaluation_id` FROM `evaluations` WHERE `submission_id` NOT IN (SELECT DISTINCT submission_id FROM evaluations WHERE `judge_id` = @judge_id) AND `judge_id` IS NULL GROUP BY `submission_id` LIMIT @limit)
@@ -776,6 +777,27 @@ func (e evaluationDo) RemoveRedundantEvaluation(roundID string, quorum int) {
 	var executeSQL *gorm.DB
 	executeSQL = e.UnderlyingDB().Exec(generateSQL.String(), params...) // ignore_security_alert
 	_ = executeSQL
+
+	return
+}
+
+// SELECT evaluation_id, judge_id, submission_id FROM evaluations WHERE judge_id NOT IN (SELECT judge_id FROM evaluations WHERE submission_id IN (SELECT submission_id FROM evaluations WHERE judge_id=@amiJudgeID AND round_id=@roundId AND score IS NULL) AND round_id=@roundId) AND round_id=@roundId AND score IS NULL AND submission_id NOT IN (SELECT submission_id FROM evaluations WHERE judge_id=@amiJudgeID AND round_id=@roundId) GROUP BY submission_id ORDER BY RAND() LIMIT @limit;
+func (e evaluationDo) FetchTargetSwappables(roundId string, amiJudgeID string, limit int) (result []*models.Evaluation, err error) {
+	var params []interface{}
+
+	var generateSQL strings.Builder
+	params = append(params, amiJudgeID)
+	params = append(params, roundId)
+	params = append(params, roundId)
+	params = append(params, roundId)
+	params = append(params, amiJudgeID)
+	params = append(params, roundId)
+	params = append(params, limit)
+	generateSQL.WriteString("SELECT evaluation_id, judge_id, submission_id FROM evaluations WHERE judge_id NOT IN (SELECT judge_id FROM evaluations WHERE submission_id IN (SELECT submission_id FROM evaluations WHERE judge_id=? AND round_id=? AND score IS NULL) AND round_id=?) AND round_id=? AND score IS NULL AND submission_id NOT IN (SELECT submission_id FROM evaluations WHERE judge_id=? AND round_id=?) GROUP BY submission_id ORDER BY RAND() LIMIT ?; ")
+
+	var executeSQL *gorm.DB
+	executeSQL = e.UnderlyingDB().Raw(generateSQL.String(), params...).Find(&result) // ignore_security_alert
+	err = executeSQL.Error
 
 	return
 }

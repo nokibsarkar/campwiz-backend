@@ -477,3 +477,27 @@ func addMySelfAsJury(c *gin.Context, sess *cache.Session) {
 	}
 	c.JSON(200, models.ResponseSingle[*models.Role]{Data: role})
 }
+
+// Randomize godoc
+// @Summary Randomize the evaluation distribution
+// @Description Randomize the evaluation distribution
+// @Produce  json
+// @Success 200 {object} models.ResponseSingle[models.Task]
+// @Router /round/{roundId}/randomize [post]
+// @Param roundId path string true "The round ID"
+// @Tags Round
+// @Error 400 {object} models.ResponseError
+func Randomize(c *gin.Context, sess *cache.Session) {
+	roundId := c.Param("roundId")
+	if roundId == "" {
+		c.JSON(400, models.ResponseError{Detail: "Invalid request : Round ID is required"})
+		return
+	}
+	round_service := services.NewRoundService()
+	task, err := round_service.Randomize(sess.UserID, models.IDType(roundId))
+	if err != nil {
+		c.JSON(400, models.ResponseError{Detail: "Failed to randomize evaluations : " + err.Error()})
+		return
+	}
+	c.JSON(200, models.ResponseSingle[*models.Task]{Data: task})
+}

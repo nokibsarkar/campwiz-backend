@@ -28,6 +28,7 @@ func NewRoutes(nonAPIParent *gin.RouterGroup) *gin.RouterGroup {
 	NewTaskRoutes(r)
 	NewEvaluationRoutes(r)
 	NewProjectRoutes(r)
+	AccessReportRoutes(r)
 	return r
 }
 func NewRoundRoutes(parent *gin.RouterGroup) {

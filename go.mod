@@ -16,7 +16,7 @@ require (
 	github.com/swaggo/swag v1.16.4
 	golang.org/x/net v0.40.0
 	golang.org/x/oauth2 v0.26.0
-	google.golang.org/grpc v1.71.1
+	google.golang.org/grpc v1.72.0
 	gorm.io/datatypes v1.2.5
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/driver/sqlite v1.5.7
@@ -28,7 +28,7 @@ require (
 
 require (
 	github.com/smartystreets/goconvey v1.8.1 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250115164207-1a7da9e5054f // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250218202821-56aae31c358a // indirect
 )
 
 require (

@@ -4,7 +4,7 @@ go 1.23.5
 
 require (
 	github.com/dimail777/snowflake-go v0.0.0-20240111153750-b698a70b85ca
-	github.com/getsentry/sentry-go v0.31.1
+	github.com/getsentry/sentry-go v0.32.0
 	github.com/getsentry/sentry-go/gin v0.31.1
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-gorm/caches/v4 v4.0.5

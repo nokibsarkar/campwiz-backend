@@ -8,7 +8,7 @@ require (
 	github.com/getsentry/sentry-go/gin v0.31.1
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-gorm/caches/v4 v4.0.5
-	github.com/golang-jwt/jwt/v5 v5.2.1
+	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/golang/protobuf v1.5.4
 	github.com/spf13/viper v1.19.0
 	github.com/swaggo/files v1.0.1

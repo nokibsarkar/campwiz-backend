@@ -59,11 +59,11 @@ func (t *ImporterServer) importFrom(source IImportSource, taskId string, roundId
 		log.Println("Error fetching round: ", err)
 		return
 	}
-	if round.LatestDistributionTaskID != nil && *round.LatestDistributionTaskID != task.TaskID {
-		log.Println("Task is not the latest task for the round")
-		task.Status = models.TaskStatusFailed
-		return
-	}
+	// if round.LatestDistributionTaskID != nil && *round.LatestDistributionTaskID != task.TaskID {
+	// 	log.Println("Task is not the latest task for the round")
+	// 	task.Status = models.TaskStatusFailed
+	// 	return
+	// }
 
 	if source == nil {
 		log.Println("Error creating commons category lister")

@@ -31,5 +31,4 @@ func GetAccessReport(c *gin.Context, sess *cache.Session) {
 func AccessReportRoutes(parent *gin.RouterGroup) {
 	r := parent.Group("/access-report")
 	r.GET("/", WithSession(GetAccessReport))
-
 }

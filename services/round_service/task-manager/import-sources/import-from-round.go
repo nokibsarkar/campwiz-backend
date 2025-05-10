@@ -3,6 +3,7 @@ package importsources
 import (
 	"context"
 	"fmt"
+	"log"
 	"nokib/campwiz/models"
 	"nokib/campwiz/repository"
 )
@@ -16,6 +17,7 @@ type RoundPreviousRound struct {
 }
 
 func (t *ImporterServer) ImportFromPreviousRound(ctx context.Context, req *models.ImportFromPreviousRoundRequest) (*models.ImportResponse, error) {
+	log.Println("Importing from previous round")
 	roundId := req.GetRoundId()
 	if roundId == "" {
 		return nil, fmt.Errorf("roundId is required")

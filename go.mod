@@ -1,6 +1,6 @@
 module nokib/campwiz
 
-go 1.23.5
+go 1.24.0
 
 require (
 	github.com/dimail777/snowflake-go v0.0.0-20240111153750-b698a70b85ca
@@ -23,7 +23,7 @@ require (
 	gorm.io/gen v0.3.26
 	gorm.io/gorm v1.26.0
 	gorm.io/plugin/dbresolver v1.6.0
-	k8s.io/apimachinery v0.32.2
+	k8s.io/apimachinery v0.33.0
 )
 
 require (

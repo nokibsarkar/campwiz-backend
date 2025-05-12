@@ -1573,16 +1573,17 @@ const docTemplate = `{
                 131072,
                 262144,
                 524288,
+                1048576,
                 0,
                 1,
                 327681,
-                258177,
-                262017,
-                262137
+                1306753,
+                1310593,
+                1310713
             ],
             "x-enum-comments": {
                 "PermissionGroupADMIN": "access other projects",
-                "PermissionGroupCoordinator": "see the evaluation results of the evaluations they have done",
+                "PermissionGroupCoordinator": "randomize the submissions",
                 "PermissionGroupJury": "see the evaluation results of the evaluations they have done",
                 "PermissionGroupLead": "delete a campaign"
             },

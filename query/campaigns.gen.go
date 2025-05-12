@@ -6,6 +6,7 @@ package query
 
 import (
 	"context"
+	"database/sql"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -294,11 +295,26 @@ func (c *campaign) fillFieldMap() {
 
 func (c campaign) clone(db *gorm.DB) campaign {
 	c.campaignDo.ReplaceConnPool(db.Statement.ConnPool)
+	c.Roles.db = db.Session(&gorm.Session{Initialized: true})
+	c.Roles.db.Statement.ConnPool = db.Statement.ConnPool
+	c.Rounds.db = db.Session(&gorm.Session{Initialized: true})
+	c.Rounds.db.Statement.ConnPool = db.Statement.ConnPool
+	c.CreatedBy.db = db.Session(&gorm.Session{Initialized: true})
+	c.CreatedBy.db.Statement.ConnPool = db.Statement.ConnPool
+	c.Project.db = db.Session(&gorm.Session{Initialized: true})
+	c.Project.db.Statement.ConnPool = db.Statement.ConnPool
+	c.LatestRound.db = db.Session(&gorm.Session{Initialized: true})
+	c.LatestRound.db.Statement.ConnPool = db.Statement.ConnPool
 	return c
 }
 
 func (c campaign) replaceDB(db *gorm.DB) campaign {
 	c.campaignDo.ReplaceDB(db)
+	c.Roles.db = db.Session(&gorm.Session{})
+	c.Rounds.db = db.Session(&gorm.Session{})
+	c.CreatedBy.db = db.Session(&gorm.Session{})
+	c.Project.db = db.Session(&gorm.Session{})
+	c.LatestRound.db = db.Session(&gorm.Session{})
 	return c
 }
 
@@ -378,6 +394,11 @@ func (a campaignHasManyRoles) Model(m *models.Campaign) *campaignHasManyRolesTx 
 	return &campaignHasManyRolesTx{a.db.Model(m).Association(a.Name())}
 }
 
+func (a campaignHasManyRoles) Unscoped() *campaignHasManyRoles {
+	a.db = a.db.Unscoped()
+	return &a
+}
+
 type campaignHasManyRolesTx struct{ tx *gorm.Association }
 
 func (a campaignHasManyRolesTx) Find() (result []*models.Role, err error) {
@@ -416,6 +437,11 @@ func (a campaignHasManyRolesTx) Count() int64 {
 	return a.tx.Count()
 }
 
+func (a campaignHasManyRolesTx) Unscoped() *campaignHasManyRolesTx {
+	a.tx = a.tx.Unscoped()
+	return &a
+}
+
 type campaignHasManyRounds struct {
 	db *gorm.DB
 
@@ -447,6 +473,11 @@ func (a campaignHasManyRounds) Session(session *gorm.Session) *campaignHasManyRo
 
 func (a campaignHasManyRounds) Model(m *models.Campaign) *campaignHasManyRoundsTx {
 	return &campaignHasManyRoundsTx{a.db.Model(m).Association(a.Name())}
+}
+
+func (a campaignHasManyRounds) Unscoped() *campaignHasManyRounds {
+	a.db = a.db.Unscoped()
+	return &a
 }
 
 type campaignHasManyRoundsTx struct{ tx *gorm.Association }
@@ -487,6 +518,11 @@ func (a campaignHasManyRoundsTx) Count() int64 {
 	return a.tx.Count()
 }
 
+func (a campaignHasManyRoundsTx) Unscoped() *campaignHasManyRoundsTx {
+	a.tx = a.tx.Unscoped()
+	return &a
+}
+
 type campaignBelongsToCreatedBy struct {
 	db *gorm.DB
 
@@ -518,6 +554,11 @@ func (a campaignBelongsToCreatedBy) Session(session *gorm.Session) *campaignBelo
 
 func (a campaignBelongsToCreatedBy) Model(m *models.Campaign) *campaignBelongsToCreatedByTx {
 	return &campaignBelongsToCreatedByTx{a.db.Model(m).Association(a.Name())}
+}
+
+func (a campaignBelongsToCreatedBy) Unscoped() *campaignBelongsToCreatedBy {
+	a.db = a.db.Unscoped()
+	return &a
 }
 
 type campaignBelongsToCreatedByTx struct{ tx *gorm.Association }
@@ -558,6 +599,11 @@ func (a campaignBelongsToCreatedByTx) Count() int64 {
 	return a.tx.Count()
 }
 
+func (a campaignBelongsToCreatedByTx) Unscoped() *campaignBelongsToCreatedByTx {
+	a.tx = a.tx.Unscoped()
+	return &a
+}
+
 type campaignBelongsToProject struct {
 	db *gorm.DB
 
@@ -589,6 +635,11 @@ func (a campaignBelongsToProject) Session(session *gorm.Session) *campaignBelong
 
 func (a campaignBelongsToProject) Model(m *models.Campaign) *campaignBelongsToProjectTx {
 	return &campaignBelongsToProjectTx{a.db.Model(m).Association(a.Name())}
+}
+
+func (a campaignBelongsToProject) Unscoped() *campaignBelongsToProject {
+	a.db = a.db.Unscoped()
+	return &a
 }
 
 type campaignBelongsToProjectTx struct{ tx *gorm.Association }
@@ -629,6 +680,11 @@ func (a campaignBelongsToProjectTx) Count() int64 {
 	return a.tx.Count()
 }
 
+func (a campaignBelongsToProjectTx) Unscoped() *campaignBelongsToProjectTx {
+	a.tx = a.tx.Unscoped()
+	return &a
+}
+
 type campaignBelongsToLatestRound struct {
 	db *gorm.DB
 
@@ -660,6 +716,11 @@ func (a campaignBelongsToLatestRound) Session(session *gorm.Session) *campaignBe
 
 func (a campaignBelongsToLatestRound) Model(m *models.Campaign) *campaignBelongsToLatestRoundTx {
 	return &campaignBelongsToLatestRoundTx{a.db.Model(m).Association(a.Name())}
+}
+
+func (a campaignBelongsToLatestRound) Unscoped() *campaignBelongsToLatestRound {
+	a.db = a.db.Unscoped()
+	return &a
 }
 
 type campaignBelongsToLatestRoundTx struct{ tx *gorm.Association }
@@ -698,6 +759,11 @@ func (a campaignBelongsToLatestRoundTx) Clear() error {
 
 func (a campaignBelongsToLatestRoundTx) Count() int64 {
 	return a.tx.Count()
+}
+
+func (a campaignBelongsToLatestRoundTx) Unscoped() *campaignBelongsToLatestRoundTx {
+	a.tx = a.tx.Unscoped()
+	return &a
 }
 
 type campaignDo struct{ gen.DO }
@@ -757,6 +823,8 @@ type ICampaignDo interface {
 	FirstOrCreate() (*models.Campaign, error)
 	FindByPage(offset int, limit int) (result []*models.Campaign, count int64, err error)
 	ScanByPage(result interface{}, offset int, limit int) (count int64, err error)
+	Rows() (*sql.Rows, error)
+	Row() *sql.Row
 	Scan(result interface{}) (err error)
 	Returning(value interface{}, columns ...string) ICampaignDo
 	UnderlyingDB() *gorm.DB

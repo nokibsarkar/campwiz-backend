@@ -6,6 +6,7 @@ package query
 
 import (
 	"context"
+	"database/sql"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -127,11 +128,14 @@ func (t *taskData) fillFieldMap() {
 
 func (t taskData) clone(db *gorm.DB) taskData {
 	t.taskDataDo.ReplaceConnPool(db.Statement.ConnPool)
+	t.Task.db = db.Session(&gorm.Session{Initialized: true})
+	t.Task.db.Statement.ConnPool = db.Statement.ConnPool
 	return t
 }
 
 func (t taskData) replaceDB(db *gorm.DB) taskData {
 	t.taskDataDo.ReplaceDB(db)
+	t.Task.db = db.Session(&gorm.Session{})
 	return t
 }
 
@@ -181,6 +185,11 @@ func (a taskDataBelongsToTask) Model(m *models.TaskData) *taskDataBelongsToTaskT
 	return &taskDataBelongsToTaskTx{a.db.Model(m).Association(a.Name())}
 }
 
+func (a taskDataBelongsToTask) Unscoped() *taskDataBelongsToTask {
+	a.db = a.db.Unscoped()
+	return &a
+}
+
 type taskDataBelongsToTaskTx struct{ tx *gorm.Association }
 
 func (a taskDataBelongsToTaskTx) Find() (result *models.Task, err error) {
@@ -217,6 +226,11 @@ func (a taskDataBelongsToTaskTx) Clear() error {
 
 func (a taskDataBelongsToTaskTx) Count() int64 {
 	return a.tx.Count()
+}
+
+func (a taskDataBelongsToTaskTx) Unscoped() *taskDataBelongsToTaskTx {
+	a.tx = a.tx.Unscoped()
+	return &a
 }
 
 type taskDataDo struct{ gen.DO }
@@ -276,6 +290,8 @@ type ITaskDataDo interface {
 	FirstOrCreate() (*models.TaskData, error)
 	FindByPage(offset int, limit int) (result []*models.TaskData, count int64, err error)
 	ScanByPage(result interface{}, offset int, limit int) (count int64, err error)
+	Rows() (*sql.Rows, error)
+	Row() *sql.Row
 	Scan(result interface{}) (err error)
 	Returning(value interface{}, columns ...string) ITaskDataDo
 	UnderlyingDB() *gorm.DB

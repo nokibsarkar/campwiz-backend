@@ -169,6 +169,7 @@ const (
 type DistributorClient interface {
 	// DistributeWithRoundRobin distributes the assignments to different juries in a round robin fashion
 	DistributeWithRoundRobin(ctx context.Context, in *DistributeWithRoundRobinRequest, opts ...grpc.CallOption) (*DistributeWithRoundRobinResponse, error)
+	// Randomize the assignments to different juries so that the distribution is random
 	Randomize(ctx context.Context, in *DistributeWithRoundRobinRequest, opts ...grpc.CallOption) (*DistributeWithRoundRobinResponse, error)
 }
 
@@ -206,6 +207,7 @@ func (c *distributorClient) Randomize(ctx context.Context, in *DistributeWithRou
 type DistributorServer interface {
 	// DistributeWithRoundRobin distributes the assignments to different juries in a round robin fashion
 	DistributeWithRoundRobin(context.Context, *DistributeWithRoundRobinRequest) (*DistributeWithRoundRobinResponse, error)
+	// Randomize the assignments to different juries so that the distribution is random
 	Randomize(context.Context, *DistributeWithRoundRobinRequest) (*DistributeWithRoundRobinResponse, error)
 	mustEmbedUnimplementedDistributorServer()
 }

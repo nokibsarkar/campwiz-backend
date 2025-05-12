@@ -6,6 +6,7 @@ package query
 
 import (
 	"context"
+	"database/sql"
 	"strings"
 
 	"gorm.io/gorm"
@@ -358,11 +359,20 @@ func (e *evaluation) fillFieldMap() {
 
 func (e evaluation) clone(db *gorm.DB) evaluation {
 	e.evaluationDo.ReplaceConnPool(db.Statement.ConnPool)
+	e.Submission.db = db.Session(&gorm.Session{Initialized: true})
+	e.Submission.db.Statement.ConnPool = db.Statement.ConnPool
+	e.Participant.db = db.Session(&gorm.Session{Initialized: true})
+	e.Participant.db.Statement.ConnPool = db.Statement.ConnPool
+	e.Judge.db = db.Session(&gorm.Session{Initialized: true})
+	e.Judge.db.Statement.ConnPool = db.Statement.ConnPool
 	return e
 }
 
 func (e evaluation) replaceDB(db *gorm.DB) evaluation {
 	e.evaluationDo.ReplaceDB(db)
+	e.Submission.db = db.Session(&gorm.Session{})
+	e.Participant.db = db.Session(&gorm.Session{})
+	e.Judge.db = db.Session(&gorm.Session{})
 	return e
 }
 
@@ -469,6 +479,11 @@ func (a evaluationBelongsToSubmission) Model(m *models.Evaluation) *evaluationBe
 	return &evaluationBelongsToSubmissionTx{a.db.Model(m).Association(a.Name())}
 }
 
+func (a evaluationBelongsToSubmission) Unscoped() *evaluationBelongsToSubmission {
+	a.db = a.db.Unscoped()
+	return &a
+}
+
 type evaluationBelongsToSubmissionTx struct{ tx *gorm.Association }
 
 func (a evaluationBelongsToSubmissionTx) Find() (result *models.Submission, err error) {
@@ -507,6 +522,11 @@ func (a evaluationBelongsToSubmissionTx) Count() int64 {
 	return a.tx.Count()
 }
 
+func (a evaluationBelongsToSubmissionTx) Unscoped() *evaluationBelongsToSubmissionTx {
+	a.tx = a.tx.Unscoped()
+	return &a
+}
+
 type evaluationBelongsToParticipant struct {
 	db *gorm.DB
 
@@ -538,6 +558,11 @@ func (a evaluationBelongsToParticipant) Session(session *gorm.Session) *evaluati
 
 func (a evaluationBelongsToParticipant) Model(m *models.Evaluation) *evaluationBelongsToParticipantTx {
 	return &evaluationBelongsToParticipantTx{a.db.Model(m).Association(a.Name())}
+}
+
+func (a evaluationBelongsToParticipant) Unscoped() *evaluationBelongsToParticipant {
+	a.db = a.db.Unscoped()
+	return &a
 }
 
 type evaluationBelongsToParticipantTx struct{ tx *gorm.Association }
@@ -578,6 +603,11 @@ func (a evaluationBelongsToParticipantTx) Count() int64 {
 	return a.tx.Count()
 }
 
+func (a evaluationBelongsToParticipantTx) Unscoped() *evaluationBelongsToParticipantTx {
+	a.tx = a.tx.Unscoped()
+	return &a
+}
+
 type evaluationBelongsToJudge struct {
 	db *gorm.DB
 
@@ -609,6 +639,11 @@ func (a evaluationBelongsToJudge) Session(session *gorm.Session) *evaluationBelo
 
 func (a evaluationBelongsToJudge) Model(m *models.Evaluation) *evaluationBelongsToJudgeTx {
 	return &evaluationBelongsToJudgeTx{a.db.Model(m).Association(a.Name())}
+}
+
+func (a evaluationBelongsToJudge) Unscoped() *evaluationBelongsToJudge {
+	a.db = a.db.Unscoped()
+	return &a
 }
 
 type evaluationBelongsToJudgeTx struct{ tx *gorm.Association }
@@ -647,6 +682,11 @@ func (a evaluationBelongsToJudgeTx) Clear() error {
 
 func (a evaluationBelongsToJudgeTx) Count() int64 {
 	return a.tx.Count()
+}
+
+func (a evaluationBelongsToJudgeTx) Unscoped() *evaluationBelongsToJudgeTx {
+	a.tx = a.tx.Unscoped()
+	return &a
 }
 
 type evaluationDo struct{ gen.DO }
@@ -706,6 +746,8 @@ type IEvaluationDo interface {
 	FirstOrCreate() (*models.Evaluation, error)
 	FindByPage(offset int, limit int) (result []*models.Evaluation, count int64, err error)
 	ScanByPage(result interface{}, offset int, limit int) (count int64, err error)
+	Rows() (*sql.Rows, error)
+	Row() *sql.Row
 	Scan(result interface{}) (err error)
 	Returning(value interface{}, columns ...string) IEvaluationDo
 	UnderlyingDB() *gorm.DB

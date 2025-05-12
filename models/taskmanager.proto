@@ -27,6 +27,7 @@ message ImportResponse {
 service Distributor {
     // DistributeWithRoundRobin distributes the assignments to different juries in a round robin fashion
     rpc DistributeWithRoundRobin(DistributeWithRoundRobinRequest) returns (DistributeWithRoundRobinResponse);
+    // Randomize the assignments to different juries so that the distribution is random
     rpc Randomize(DistributeWithRoundRobinRequest) returns (DistributeWithRoundRobinResponse);
 }
 

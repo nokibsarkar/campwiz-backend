@@ -6,6 +6,7 @@ package query
 
 import (
 	"context"
+	"database/sql"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -268,11 +269,23 @@ func (r *role) fillFieldMap() {
 
 func (r role) clone(db *gorm.DB) role {
 	r.roleDo.ReplaceConnPool(db.Statement.ConnPool)
+	r.Round.db = db.Session(&gorm.Session{Initialized: true})
+	r.Round.db.Statement.ConnPool = db.Statement.ConnPool
+	r.Campaign.db = db.Session(&gorm.Session{Initialized: true})
+	r.Campaign.db.Statement.ConnPool = db.Statement.ConnPool
+	r.User.db = db.Session(&gorm.Session{Initialized: true})
+	r.User.db.Statement.ConnPool = db.Statement.ConnPool
+	r.Project.db = db.Session(&gorm.Session{Initialized: true})
+	r.Project.db.Statement.ConnPool = db.Statement.ConnPool
 	return r
 }
 
 func (r role) replaceDB(db *gorm.DB) role {
 	r.roleDo.ReplaceDB(db)
+	r.Round.db = db.Session(&gorm.Session{})
+	r.Campaign.db = db.Session(&gorm.Session{})
+	r.User.db = db.Session(&gorm.Session{})
+	r.Project.db = db.Session(&gorm.Session{})
 	return r
 }
 
@@ -352,6 +365,11 @@ func (a roleBelongsToRound) Model(m *models.Role) *roleBelongsToRoundTx {
 	return &roleBelongsToRoundTx{a.db.Model(m).Association(a.Name())}
 }
 
+func (a roleBelongsToRound) Unscoped() *roleBelongsToRound {
+	a.db = a.db.Unscoped()
+	return &a
+}
+
 type roleBelongsToRoundTx struct{ tx *gorm.Association }
 
 func (a roleBelongsToRoundTx) Find() (result *models.Round, err error) {
@@ -390,6 +408,11 @@ func (a roleBelongsToRoundTx) Count() int64 {
 	return a.tx.Count()
 }
 
+func (a roleBelongsToRoundTx) Unscoped() *roleBelongsToRoundTx {
+	a.tx = a.tx.Unscoped()
+	return &a
+}
+
 type roleBelongsToCampaign struct {
 	db *gorm.DB
 
@@ -421,6 +444,11 @@ func (a roleBelongsToCampaign) Session(session *gorm.Session) *roleBelongsToCamp
 
 func (a roleBelongsToCampaign) Model(m *models.Role) *roleBelongsToCampaignTx {
 	return &roleBelongsToCampaignTx{a.db.Model(m).Association(a.Name())}
+}
+
+func (a roleBelongsToCampaign) Unscoped() *roleBelongsToCampaign {
+	a.db = a.db.Unscoped()
+	return &a
 }
 
 type roleBelongsToCampaignTx struct{ tx *gorm.Association }
@@ -461,6 +489,11 @@ func (a roleBelongsToCampaignTx) Count() int64 {
 	return a.tx.Count()
 }
 
+func (a roleBelongsToCampaignTx) Unscoped() *roleBelongsToCampaignTx {
+	a.tx = a.tx.Unscoped()
+	return &a
+}
+
 type roleBelongsToUser struct {
 	db *gorm.DB
 
@@ -492,6 +525,11 @@ func (a roleBelongsToUser) Session(session *gorm.Session) *roleBelongsToUser {
 
 func (a roleBelongsToUser) Model(m *models.Role) *roleBelongsToUserTx {
 	return &roleBelongsToUserTx{a.db.Model(m).Association(a.Name())}
+}
+
+func (a roleBelongsToUser) Unscoped() *roleBelongsToUser {
+	a.db = a.db.Unscoped()
+	return &a
 }
 
 type roleBelongsToUserTx struct{ tx *gorm.Association }
@@ -532,6 +570,11 @@ func (a roleBelongsToUserTx) Count() int64 {
 	return a.tx.Count()
 }
 
+func (a roleBelongsToUserTx) Unscoped() *roleBelongsToUserTx {
+	a.tx = a.tx.Unscoped()
+	return &a
+}
+
 type roleBelongsToProject struct {
 	db *gorm.DB
 
@@ -563,6 +606,11 @@ func (a roleBelongsToProject) Session(session *gorm.Session) *roleBelongsToProje
 
 func (a roleBelongsToProject) Model(m *models.Role) *roleBelongsToProjectTx {
 	return &roleBelongsToProjectTx{a.db.Model(m).Association(a.Name())}
+}
+
+func (a roleBelongsToProject) Unscoped() *roleBelongsToProject {
+	a.db = a.db.Unscoped()
+	return &a
 }
 
 type roleBelongsToProjectTx struct{ tx *gorm.Association }
@@ -601,6 +649,11 @@ func (a roleBelongsToProjectTx) Clear() error {
 
 func (a roleBelongsToProjectTx) Count() int64 {
 	return a.tx.Count()
+}
+
+func (a roleBelongsToProjectTx) Unscoped() *roleBelongsToProjectTx {
+	a.tx = a.tx.Unscoped()
+	return &a
 }
 
 type roleDo struct{ gen.DO }
@@ -660,6 +713,8 @@ type IRoleDo interface {
 	FirstOrCreate() (*models.Role, error)
 	FindByPage(offset int, limit int) (result []*models.Role, count int64, err error)
 	ScanByPage(result interface{}, offset int, limit int) (count int64, err error)
+	Rows() (*sql.Rows, error)
+	Row() *sql.Row
 	Scan(result interface{}) (err error)
 	Returning(value interface{}, columns ...string) IRoleDo
 	UnderlyingDB() *gorm.DB

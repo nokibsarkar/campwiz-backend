@@ -6,6 +6,7 @@ package query
 
 import (
 	"context"
+	"database/sql"
 	"strings"
 
 	"gorm.io/gorm"
@@ -152,6 +153,8 @@ type ISubmissionStatisticsDo interface {
 	FirstOrCreate() (*models.SubmissionStatistics, error)
 	FindByPage(offset int, limit int) (result []*models.SubmissionStatistics, count int64, err error)
 	ScanByPage(result interface{}, offset int, limit int) (count int64, err error)
+	Rows() (*sql.Rows, error)
+	Row() *sql.Row
 	Scan(result interface{}) (err error)
 	Returning(value interface{}, columns ...string) ISubmissionStatisticsDo
 	UnderlyingDB() *gorm.DB

@@ -6,6 +6,7 @@ package query
 
 import (
 	"context"
+	"database/sql"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -386,11 +387,23 @@ func (r *round) fillFieldMap() {
 
 func (r round) clone(db *gorm.DB) round {
 	r.roundDo.ReplaceConnPool(db.Statement.ConnPool)
+	r.Roles.db = db.Session(&gorm.Session{Initialized: true})
+	r.Roles.db.Statement.ConnPool = db.Statement.ConnPool
+	r.Campaign.db = db.Session(&gorm.Session{Initialized: true})
+	r.Campaign.db.Statement.ConnPool = db.Statement.ConnPool
+	r.Creator.db = db.Session(&gorm.Session{Initialized: true})
+	r.Creator.db.Statement.ConnPool = db.Statement.ConnPool
+	r.DependsOnRound.db = db.Session(&gorm.Session{Initialized: true})
+	r.DependsOnRound.db.Statement.ConnPool = db.Statement.ConnPool
 	return r
 }
 
 func (r round) replaceDB(db *gorm.DB) round {
 	r.roundDo.ReplaceDB(db)
+	r.Roles.db = db.Session(&gorm.Session{})
+	r.Campaign.db = db.Session(&gorm.Session{})
+	r.Creator.db = db.Session(&gorm.Session{})
+	r.DependsOnRound.db = db.Session(&gorm.Session{})
 	return r
 }
 
@@ -470,6 +483,11 @@ func (a roundHasManyRoles) Model(m *models.Round) *roundHasManyRolesTx {
 	return &roundHasManyRolesTx{a.db.Model(m).Association(a.Name())}
 }
 
+func (a roundHasManyRoles) Unscoped() *roundHasManyRoles {
+	a.db = a.db.Unscoped()
+	return &a
+}
+
 type roundHasManyRolesTx struct{ tx *gorm.Association }
 
 func (a roundHasManyRolesTx) Find() (result []*models.Role, err error) {
@@ -508,6 +526,11 @@ func (a roundHasManyRolesTx) Count() int64 {
 	return a.tx.Count()
 }
 
+func (a roundHasManyRolesTx) Unscoped() *roundHasManyRolesTx {
+	a.tx = a.tx.Unscoped()
+	return &a
+}
+
 type roundBelongsToCampaign struct {
 	db *gorm.DB
 
@@ -539,6 +562,11 @@ func (a roundBelongsToCampaign) Session(session *gorm.Session) *roundBelongsToCa
 
 func (a roundBelongsToCampaign) Model(m *models.Round) *roundBelongsToCampaignTx {
 	return &roundBelongsToCampaignTx{a.db.Model(m).Association(a.Name())}
+}
+
+func (a roundBelongsToCampaign) Unscoped() *roundBelongsToCampaign {
+	a.db = a.db.Unscoped()
+	return &a
 }
 
 type roundBelongsToCampaignTx struct{ tx *gorm.Association }
@@ -579,6 +607,11 @@ func (a roundBelongsToCampaignTx) Count() int64 {
 	return a.tx.Count()
 }
 
+func (a roundBelongsToCampaignTx) Unscoped() *roundBelongsToCampaignTx {
+	a.tx = a.tx.Unscoped()
+	return &a
+}
+
 type roundBelongsToCreator struct {
 	db *gorm.DB
 
@@ -610,6 +643,11 @@ func (a roundBelongsToCreator) Session(session *gorm.Session) *roundBelongsToCre
 
 func (a roundBelongsToCreator) Model(m *models.Round) *roundBelongsToCreatorTx {
 	return &roundBelongsToCreatorTx{a.db.Model(m).Association(a.Name())}
+}
+
+func (a roundBelongsToCreator) Unscoped() *roundBelongsToCreator {
+	a.db = a.db.Unscoped()
+	return &a
 }
 
 type roundBelongsToCreatorTx struct{ tx *gorm.Association }
@@ -650,6 +688,11 @@ func (a roundBelongsToCreatorTx) Count() int64 {
 	return a.tx.Count()
 }
 
+func (a roundBelongsToCreatorTx) Unscoped() *roundBelongsToCreatorTx {
+	a.tx = a.tx.Unscoped()
+	return &a
+}
+
 type roundBelongsToDependsOnRound struct {
 	db *gorm.DB
 
@@ -681,6 +724,11 @@ func (a roundBelongsToDependsOnRound) Session(session *gorm.Session) *roundBelon
 
 func (a roundBelongsToDependsOnRound) Model(m *models.Round) *roundBelongsToDependsOnRoundTx {
 	return &roundBelongsToDependsOnRoundTx{a.db.Model(m).Association(a.Name())}
+}
+
+func (a roundBelongsToDependsOnRound) Unscoped() *roundBelongsToDependsOnRound {
+	a.db = a.db.Unscoped()
+	return &a
 }
 
 type roundBelongsToDependsOnRoundTx struct{ tx *gorm.Association }
@@ -719,6 +767,11 @@ func (a roundBelongsToDependsOnRoundTx) Clear() error {
 
 func (a roundBelongsToDependsOnRoundTx) Count() int64 {
 	return a.tx.Count()
+}
+
+func (a roundBelongsToDependsOnRoundTx) Unscoped() *roundBelongsToDependsOnRoundTx {
+	a.tx = a.tx.Unscoped()
+	return &a
 }
 
 type roundDo struct{ gen.DO }
@@ -778,6 +831,8 @@ type IRoundDo interface {
 	FirstOrCreate() (*models.Round, error)
 	FindByPage(offset int, limit int) (result []*models.Round, count int64, err error)
 	ScanByPage(result interface{}, offset int, limit int) (count int64, err error)
+	Rows() (*sql.Rows, error)
+	Row() *sql.Row
 	Scan(result interface{}) (err error)
 	Returning(value interface{}, columns ...string) IRoundDo
 	UnderlyingDB() *gorm.DB

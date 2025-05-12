@@ -6,6 +6,7 @@ package query
 
 import (
 	"context"
+	"database/sql"
 	"strings"
 
 	"gorm.io/gorm"
@@ -172,6 +173,8 @@ type ICommonsSubmissionEntryDo interface {
 	FirstOrCreate() (*models.CommonsSubmissionEntry, error)
 	FindByPage(offset int, limit int) (result []*models.CommonsSubmissionEntry, count int64, err error)
 	ScanByPage(result interface{}, offset int, limit int) (count int64, err error)
+	Rows() (*sql.Rows, error)
+	Row() *sql.Row
 	Scan(result interface{}) (err error)
 	Returning(value interface{}, columns ...string) ICommonsSubmissionEntryDo
 	UnderlyingDB() *gorm.DB

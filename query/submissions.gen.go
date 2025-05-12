@@ -6,6 +6,7 @@ package query
 
 import (
 	"context"
+	"database/sql"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -365,11 +366,29 @@ func (s *submission) fillFieldMap() {
 
 func (s submission) clone(db *gorm.DB) submission {
 	s.submissionDo.ReplaceConnPool(db.Statement.ConnPool)
+	s.Participant.db = db.Session(&gorm.Session{Initialized: true})
+	s.Participant.db.Statement.ConnPool = db.Statement.ConnPool
+	s.Submitter.db = db.Session(&gorm.Session{Initialized: true})
+	s.Submitter.db.Statement.ConnPool = db.Statement.ConnPool
+	s.Campaign.db = db.Session(&gorm.Session{Initialized: true})
+	s.Campaign.db.Statement.ConnPool = db.Statement.ConnPool
+	s.Round.db = db.Session(&gorm.Session{Initialized: true})
+	s.Round.db.Statement.ConnPool = db.Statement.ConnPool
+	s.DistributionTask.db = db.Session(&gorm.Session{Initialized: true})
+	s.DistributionTask.db.Statement.ConnPool = db.Statement.ConnPool
+	s.ImportTask.db = db.Session(&gorm.Session{Initialized: true})
+	s.ImportTask.db.Statement.ConnPool = db.Statement.ConnPool
 	return s
 }
 
 func (s submission) replaceDB(db *gorm.DB) submission {
 	s.submissionDo.ReplaceDB(db)
+	s.Participant.db = db.Session(&gorm.Session{})
+	s.Submitter.db = db.Session(&gorm.Session{})
+	s.Campaign.db = db.Session(&gorm.Session{})
+	s.Round.db = db.Session(&gorm.Session{})
+	s.DistributionTask.db = db.Session(&gorm.Session{})
+	s.ImportTask.db = db.Session(&gorm.Session{})
 	return s
 }
 
@@ -410,6 +429,11 @@ func (a submissionBelongsToParticipant) Model(m *models.Submission) *submissionB
 	return &submissionBelongsToParticipantTx{a.db.Model(m).Association(a.Name())}
 }
 
+func (a submissionBelongsToParticipant) Unscoped() *submissionBelongsToParticipant {
+	a.db = a.db.Unscoped()
+	return &a
+}
+
 type submissionBelongsToParticipantTx struct{ tx *gorm.Association }
 
 func (a submissionBelongsToParticipantTx) Find() (result *models.User, err error) {
@@ -448,6 +472,11 @@ func (a submissionBelongsToParticipantTx) Count() int64 {
 	return a.tx.Count()
 }
 
+func (a submissionBelongsToParticipantTx) Unscoped() *submissionBelongsToParticipantTx {
+	a.tx = a.tx.Unscoped()
+	return &a
+}
+
 type submissionBelongsToSubmitter struct {
 	db *gorm.DB
 
@@ -479,6 +508,11 @@ func (a submissionBelongsToSubmitter) Session(session *gorm.Session) *submission
 
 func (a submissionBelongsToSubmitter) Model(m *models.Submission) *submissionBelongsToSubmitterTx {
 	return &submissionBelongsToSubmitterTx{a.db.Model(m).Association(a.Name())}
+}
+
+func (a submissionBelongsToSubmitter) Unscoped() *submissionBelongsToSubmitter {
+	a.db = a.db.Unscoped()
+	return &a
 }
 
 type submissionBelongsToSubmitterTx struct{ tx *gorm.Association }
@@ -517,6 +551,11 @@ func (a submissionBelongsToSubmitterTx) Clear() error {
 
 func (a submissionBelongsToSubmitterTx) Count() int64 {
 	return a.tx.Count()
+}
+
+func (a submissionBelongsToSubmitterTx) Unscoped() *submissionBelongsToSubmitterTx {
+	a.tx = a.tx.Unscoped()
+	return &a
 }
 
 type submissionBelongsToCampaign struct {
@@ -592,6 +631,11 @@ func (a submissionBelongsToCampaign) Model(m *models.Submission) *submissionBelo
 	return &submissionBelongsToCampaignTx{a.db.Model(m).Association(a.Name())}
 }
 
+func (a submissionBelongsToCampaign) Unscoped() *submissionBelongsToCampaign {
+	a.db = a.db.Unscoped()
+	return &a
+}
+
 type submissionBelongsToCampaignTx struct{ tx *gorm.Association }
 
 func (a submissionBelongsToCampaignTx) Find() (result *models.Campaign, err error) {
@@ -630,6 +674,11 @@ func (a submissionBelongsToCampaignTx) Count() int64 {
 	return a.tx.Count()
 }
 
+func (a submissionBelongsToCampaignTx) Unscoped() *submissionBelongsToCampaignTx {
+	a.tx = a.tx.Unscoped()
+	return &a
+}
+
 type submissionBelongsToRound struct {
 	db *gorm.DB
 
@@ -661,6 +710,11 @@ func (a submissionBelongsToRound) Session(session *gorm.Session) *submissionBelo
 
 func (a submissionBelongsToRound) Model(m *models.Submission) *submissionBelongsToRoundTx {
 	return &submissionBelongsToRoundTx{a.db.Model(m).Association(a.Name())}
+}
+
+func (a submissionBelongsToRound) Unscoped() *submissionBelongsToRound {
+	a.db = a.db.Unscoped()
+	return &a
 }
 
 type submissionBelongsToRoundTx struct{ tx *gorm.Association }
@@ -699,6 +753,11 @@ func (a submissionBelongsToRoundTx) Clear() error {
 
 func (a submissionBelongsToRoundTx) Count() int64 {
 	return a.tx.Count()
+}
+
+func (a submissionBelongsToRoundTx) Unscoped() *submissionBelongsToRoundTx {
+	a.tx = a.tx.Unscoped()
+	return &a
 }
 
 type submissionBelongsToDistributionTask struct {
@@ -744,6 +803,11 @@ func (a submissionBelongsToDistributionTask) Model(m *models.Submission) *submis
 	return &submissionBelongsToDistributionTaskTx{a.db.Model(m).Association(a.Name())}
 }
 
+func (a submissionBelongsToDistributionTask) Unscoped() *submissionBelongsToDistributionTask {
+	a.db = a.db.Unscoped()
+	return &a
+}
+
 type submissionBelongsToDistributionTaskTx struct{ tx *gorm.Association }
 
 func (a submissionBelongsToDistributionTaskTx) Find() (result *models.Task, err error) {
@@ -782,6 +846,11 @@ func (a submissionBelongsToDistributionTaskTx) Count() int64 {
 	return a.tx.Count()
 }
 
+func (a submissionBelongsToDistributionTaskTx) Unscoped() *submissionBelongsToDistributionTaskTx {
+	a.tx = a.tx.Unscoped()
+	return &a
+}
+
 type submissionBelongsToImportTask struct {
 	db *gorm.DB
 
@@ -813,6 +882,11 @@ func (a submissionBelongsToImportTask) Session(session *gorm.Session) *submissio
 
 func (a submissionBelongsToImportTask) Model(m *models.Submission) *submissionBelongsToImportTaskTx {
 	return &submissionBelongsToImportTaskTx{a.db.Model(m).Association(a.Name())}
+}
+
+func (a submissionBelongsToImportTask) Unscoped() *submissionBelongsToImportTask {
+	a.db = a.db.Unscoped()
+	return &a
 }
 
 type submissionBelongsToImportTaskTx struct{ tx *gorm.Association }
@@ -851,6 +925,11 @@ func (a submissionBelongsToImportTaskTx) Clear() error {
 
 func (a submissionBelongsToImportTaskTx) Count() int64 {
 	return a.tx.Count()
+}
+
+func (a submissionBelongsToImportTaskTx) Unscoped() *submissionBelongsToImportTaskTx {
+	a.tx = a.tx.Unscoped()
+	return &a
 }
 
 type submissionDo struct{ gen.DO }
@@ -910,6 +989,8 @@ type ISubmissionDo interface {
 	FirstOrCreate() (*models.Submission, error)
 	FindByPage(offset int, limit int) (result []*models.Submission, count int64, err error)
 	ScanByPage(result interface{}, offset int, limit int) (count int64, err error)
+	Rows() (*sql.Rows, error)
+	Row() *sql.Row
 	Scan(result interface{}) (err error)
 	Returning(value interface{}, columns ...string) ISubmissionDo
 	UnderlyingDB() *gorm.DB

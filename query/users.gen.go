@@ -6,6 +6,7 @@ package query
 
 import (
 	"context"
+	"database/sql"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -101,11 +102,14 @@ func (u *user) fillFieldMap() {
 
 func (u user) clone(db *gorm.DB) user {
 	u.userDo.ReplaceConnPool(db.Statement.ConnPool)
+	u.LeadingProject.db = db.Session(&gorm.Session{Initialized: true})
+	u.LeadingProject.db.Statement.ConnPool = db.Statement.ConnPool
 	return u
 }
 
 func (u user) replaceDB(db *gorm.DB) user {
 	u.userDo.ReplaceDB(db)
+	u.LeadingProject.db = db.Session(&gorm.Session{})
 	return u
 }
 
@@ -140,6 +144,11 @@ func (a userBelongsToLeadingProject) Session(session *gorm.Session) *userBelongs
 
 func (a userBelongsToLeadingProject) Model(m *models.User) *userBelongsToLeadingProjectTx {
 	return &userBelongsToLeadingProjectTx{a.db.Model(m).Association(a.Name())}
+}
+
+func (a userBelongsToLeadingProject) Unscoped() *userBelongsToLeadingProject {
+	a.db = a.db.Unscoped()
+	return &a
 }
 
 type userBelongsToLeadingProjectTx struct{ tx *gorm.Association }
@@ -178,6 +187,11 @@ func (a userBelongsToLeadingProjectTx) Clear() error {
 
 func (a userBelongsToLeadingProjectTx) Count() int64 {
 	return a.tx.Count()
+}
+
+func (a userBelongsToLeadingProjectTx) Unscoped() *userBelongsToLeadingProjectTx {
+	a.tx = a.tx.Unscoped()
+	return &a
 }
 
 type userDo struct{ gen.DO }
@@ -237,6 +251,8 @@ type IUserDo interface {
 	FirstOrCreate() (*models.User, error)
 	FindByPage(offset int, limit int) (result []*models.User, count int64, err error)
 	ScanByPage(result interface{}, offset int, limit int) (count int64, err error)
+	Rows() (*sql.Rows, error)
+	Row() *sql.Row
 	Scan(result interface{}) (err error)
 	Returning(value interface{}, columns ...string) IUserDo
 	UnderlyingDB() *gorm.DB

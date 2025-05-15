@@ -79,7 +79,7 @@ func SetupRouter(testing bool) *gin.Engine {
 func main() {
 	preRun()
 	r := SetupRouter(false)
-	r.Run("localhost:" + consts.Config.Server.Port)
+	r.Run("0.0.0.0:" + consts.Config.Server.Port)
 	postRun()
 
 }

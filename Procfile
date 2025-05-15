@@ -1,2 +1,2 @@
-web: campwiz
+web: campwiz --port $PORT
 taskmanager: taskmanager

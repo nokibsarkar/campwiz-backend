@@ -90,6 +90,7 @@ func init() {
 	Config = &ApplicationConfiguration{}
 	viper.SetConfigName(".env")
 	viper.AddConfigPath(".")
+	viper.AddConfigPath("/data/project/campwiz-bot")
 	viper.SetConfigType("yaml")
 	viper.AutomaticEnv()
 	err := viper.ReadInConfig()

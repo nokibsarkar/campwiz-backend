@@ -1,2 +1,2 @@
-web: sh -c 'ls && GIN_MODE=release campwiz'
-taskmanager: sh -c 'GIN_MODE=release campwiz-taskmanager'
+web: sh -c 'cp /data/project/campwiz-backend/.env* . && cp /data/project/campwiz-backend/campwiz.p* . && campwiz'
+taskmanager: sh -c 'GIN_MODE=release taskmanager'

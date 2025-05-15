@@ -1,2 +1,2 @@
-web: ./campwiz
+web: ./campwiz-backend
 taskmanager: ./campwiz-taskmanager

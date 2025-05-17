@@ -38,7 +38,7 @@ deploy-server:
     - curl --silent "https://gitlab.com/gitlab-org/incubation-engineering/mobile-devops/download-secure-files/-/raw/main/installer" | bash
     - mv $SECURE_FILES_DOWNLOAD_PATH/$PRIVATE_KEY_NAME ~/.ssh
     - chmod 600 ~/.ssh/$PRIVATE_KEY_NAME
-    - ssh -i "~/.ssh/$PRIVATE_KEY_NAME" "$SSH_USER@$SSH_HOST" << EOF
+    - ssh -i "~/.ssh/$PRIVATE_KEY_NAME" "$SSH_USER@$SSH_HOST" <<EOF
       become campwiz-backend
       toolforge build start -L https://gitlab.wikimedia.org/nokibsarkar/campwiz-backend.git --ref $CI_COMMIT_SHORT_SHA --build-args
       toolforge webservice buildservice restart --mount all
@@ -46,38 +46,3 @@ deploy-server:
       exit
       exit
       EOF
-
-    # - name: Build The main server
-    #   run: |
-    #           - name: Build Read-only server
-    #   run: |
-    #     mkdir -p read-only
-    #     go build -v -tags readonly  -ldflags="-X 'nokib/campwiz/consts.Version=backend-${{ github.sha }}' -X 'nokib/campwiz/consts.Release=backend-${{ github.sha }}' -X 'nokib/campwiz/consts.BuildTime=$(date)' -X 'nokib/campwiz/consts.CommitHash=${{ github.sha }}'" -o read-only/campwiz-read-only .
-    #     ls read-only
-    # - name: Build TaskManager
-    #   run: |
-    #     ls
-    #     go build -v -o campwiz-task-manager services/round_service/task-manager/taskmanager.go
-    #     ls
-    #     cd ../..
-    # - name: Setup Deployment Environment
-    #   run: |
-    #     mkdir -p ~/.ssh
-    #     ssh-keyscan ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
-    #     echo "${{ secrets.SSH_PRIVATE_KEY }}" > id_rsa
-    #     chmod 600 id_rsa
-    # - name: Send Build to Server
-    #   run: |
-    #     rsync -Pav --no-perms --omit-dir-times -e "ssh -i id_rsa" campwiz  "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.SSH_REMOTE_PATH }}"
-    # - name: Send Read-Only Build to Server
-    #   run: |
-    #     rsync -Pav --no-perms --omit-dir-times -e "ssh -i id_rsa" read-only/campwiz-read-only  "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.SSH_REMOTE_PATH }}/read-only"
-    # - name: Send TaskManager Build to Server
-    #   run: |
-    #     rsync -Pav --no-perms --omit-dir-times -e "ssh -i id_rsa" campwiz-task-manager  "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.SSH_REMOTE_PATH }}"
-    # - name: Restart Campwiz
-    #   run: |
-    #     ssh -i id_rsa "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" "cd ${{ secrets.SSH_REMOTE_PATH }} && pm2 restart ecosystem.config.js && pm2 restart read-only/campwiz-backend-read-only.config.js"
-    # - name: Delete SSH Key
-    #   run: |
-    #     rm id_rsa

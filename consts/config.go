@@ -72,13 +72,17 @@ type AuthenticationConfiguration struct {
 	RSAPrivateKeyPath string              `mapstructure:"RSAPrivateKeyPath"`
 	RSAPublicKeyPath  string              `mapstructure:"RSAPublicKeyPath"`
 }
-
+type TaskManagerConfiguration struct {
+	Host string `mapstructure:"Host"`
+	Port string `mapstructure:"Port"`
+}
 type ApplicationConfiguration struct {
 	Server       ServerConfiguration         `mapstructure:"Server"`
 	Database     DatabaseConfiguration       `mapstructure:"Database"`
 	Auth         AuthenticationConfiguration `mapstructure:"Authentication"`
 	Distribution DistributionConfiguration   `mapstructure:"DistributionStrategy"`
 	Sentry       SentryConfig                `mapstructure:"Sentry"`
+	TaskManager  TaskManagerConfiguration    `mapstructure:"TaskManager"`
 }
 
 var Config *ApplicationConfiguration

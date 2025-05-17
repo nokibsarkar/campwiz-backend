@@ -175,7 +175,7 @@ func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluation
 	if res := tx.Commit(); res.Error != nil {
 		return nil, res.Error
 	}
-	grpcClient, err := round_service.NewGrpcClient("localhost:50051")
+	grpcClient, err := round_service.NewGrpcClient()
 	if err == nil {
 		defer grpcClient.Close()
 		// update the statistics

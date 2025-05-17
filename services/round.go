@@ -196,7 +196,7 @@ func (b *RoundService) ImportFromCommons(roundId models.IDType, categories []str
 	}
 	tx.Commit()
 	log.Println("Task created with ID: ", task.TaskID)
-	grpcConn, err := round_service.NewGrpcClient("localhost:50051")
+	grpcConn, err := round_service.NewGrpcClient()
 	if err != nil {
 		return nil, err
 	}
@@ -282,7 +282,7 @@ func (b *RoundService) ImportFromPreviousRound(currentUserId models.IDType, targ
 	}
 	tx.Commit()
 	log.Println("Task created with ID: ", task.TaskID)
-	grpcClient, err := round_service.NewGrpcClient("localhost:50051")
+	grpcClient, err := round_service.NewGrpcClient()
 	if err != nil {
 		return nil, err
 	}
@@ -476,7 +476,7 @@ func (r *RoundService) DistributeEvaluations(currentUserID models.IDType, roundI
 		return nil, err
 	}
 	tx.Commit()
-	grpcClient, err := round_service.NewGrpcClient("localhost:50051")
+	grpcClient, err := round_service.NewGrpcClient()
 	if err != nil {
 		return nil, err
 	}
@@ -813,7 +813,7 @@ func (e *RoundService) Randomize(userId models.IDType, roundId models.IDType) (*
 	// 	return nil, fmt.Errorf("user does not have permission to randomize")
 	// }
 
-	grpcClient, err := round_service.NewGrpcClient("localhost:50051")
+	grpcClient, err := round_service.NewGrpcClient()
 	if err != nil {
 		return nil, err
 	}

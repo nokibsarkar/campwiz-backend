@@ -18,10 +18,11 @@ deploy:
   stage: deploy
   environment: production
   variables:
-    SECURE_FILES_DOWNLOAD_PATH: ".secure_files"
+    SECURE_FILES_DOWNLOAD_PATH: ".ssh"
   script:
     - curl --silent "https://gitlab.com/gitlab-org/incubation-engineering/mobile-devops/download-secure-files/-/raw/main/installer" | bash
-    - ls $SECURE_FILES_DOWNLOAD_PATH
+    - ssh-keyscan $SSH_HOST >> ~/.ssh/known_hosts
+    - rsync -Pav --no-perms --omit-dir-times -e "ssh -i ~/.ssh/id_rsa.toolforge" campwiz/*  "$SSH_USER@$SSH_HOST:$SSH_REMOTE_PATH"
 
     # - name: Build The main server
     #   run: |

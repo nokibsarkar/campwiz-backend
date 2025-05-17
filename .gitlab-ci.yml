@@ -22,7 +22,7 @@ deploy:
     PRIVATE_KEY_NAME: id_rsa.toolforge
   script:
     - mkdir -p ~/.ssh
-    - ssh-keyscan $SSH_HOST >> ~/.ssh/authorized_keys
+    - ssh-keyscan $SSH_HOST >> ~/.ssh/known_hosts
     - curl --silent "https://gitlab.com/gitlab-org/incubation-engineering/mobile-devops/download-secure-files/-/raw/main/installer" | bash
     - mv $SECURE_FILES_DOWNLOAD_PATH/$PRIVATE_KEY_NAME ~/.ssh
     - chmod 600 ~/.ssh/$PRIVATE_KEY_NAME

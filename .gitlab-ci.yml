@@ -22,11 +22,11 @@ deploy:
   script:
     - mkdir -p $SECURE_FILES_DOWNLOAD_PATH
     - ssh-keyscan $SSH_HOST >> /root/.ssh/authorized_keys
+    - curl --silent "https://gitlab.com/gitlab-org/incubation-engineering/mobile-devops/download-secure-files/-/raw/main/installer" | bash
     - echo $SECURE_FILES_DOWNLOAD_PATH
     - ls $SECURE_FILES_DOWNLOAD_PATH
     - apt update
     - apt install -y rsync
-    - curl --silent "https://gitlab.com/gitlab-org/incubation-engineering/mobile-devops/download-secure-files/-/raw/main/installer" | bash
     - ls -la /root/.ssh
     - rsync -Pav --no-perms --omit-dir-times -e "ssh -i /root/.ssh/id_rsa.toolforge" campwiz/*  "$SSH_USER@$SSH_HOST:$SSH_REMOTE_PATH"
 

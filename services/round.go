@@ -290,9 +290,10 @@ func (b *RoundService) ImportFromPreviousRound(currentUserId models.IDType, targ
 	defer grpcClient.Close()
 	importClient := models.NewImporterClient(grpcClient)
 	importClient.ImportFromPreviousRound(context.Background(), &models.ImportFromPreviousRoundRequest{
-		RoundId:      sourceRound.RoundID.String(),
-		TaskId:       task.TaskID.String(),
-		MinimumScore: float32(filter.Scores[0]),
+		RoundId:       targetRound.RoundID.String(),
+		SourceRoundId: sourceRound.RoundID.String(),
+		TaskId:        task.TaskID.String(),
+		MinimumScore:  float32(filter.Scores[0]),
 	})
 	return task, nil
 }

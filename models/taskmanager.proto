@@ -18,6 +18,7 @@ message ImportFromPreviousRoundRequest {
     string round_id = 1;
    string task_id = 2;
    float minimum_score = 3;
+   string source_round_id = 4;
 }
 message ImportResponse {
    string task_id = 1;

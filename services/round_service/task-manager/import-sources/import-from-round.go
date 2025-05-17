@@ -9,17 +9,21 @@ import (
 )
 
 type RoundPreviousRound struct {
-	Score        float64
-	RoundId      string
-	currentIndex string
-	limit        int
-	round_repo   *repository.RoundRepository
+	Score         float64
+	SourceRoundId string
+	currentIndex  string
+	limit         int
+	round_repo    *repository.RoundRepository
 }
 
 func (t *ImporterServer) ImportFromPreviousRound(ctx context.Context, req *models.ImportFromPreviousRoundRequest) (*models.ImportResponse, error) {
 	log.Println("Importing from previous round")
-	roundId := req.GetRoundId()
-	if roundId == "" {
+	currentRoundId := req.GetRoundId()
+	sourceRoundId := req.GetSourceRoundId()
+	if sourceRoundId == "" {
+		return nil, fmt.Errorf("sourceRoundId is required")
+	}
+	if currentRoundId == "" {
 		return nil, fmt.Errorf("roundId is required")
 	}
 	minimumScore := models.ScoreType(req.GetMinimumScore())
@@ -30,17 +34,17 @@ func (t *ImporterServer) ImportFromPreviousRound(ctx context.Context, req *model
 	scores := models.ScoreType(minimumScore)
 
 	source := RoundPreviousRound{
-		Score:        float64(scores),
-		RoundId:      roundId,
-		currentIndex: "",
-		round_repo:   repository.NewRoundRepository(),
-		limit:        100,
+		Score:         float64(scores),
+		SourceRoundId: sourceRoundId,
+		currentIndex:  "",
+		round_repo:    repository.NewRoundRepository(),
+		limit:         100,
 	}
-	go t.importFrom(&source, taskId, roundId)
+	go t.importFrom(&source, taskId, currentRoundId)
 
 	return &models.ImportResponse{
 		TaskId:  taskId,
-		RoundId: roundId,
+		RoundId: currentRoundId,
 	}, nil
 
 }
@@ -48,7 +52,7 @@ func (t *ImporterServer) ImportFromPreviousRound(ctx context.Context, req *model
 // ImportImageResults imports images from previous rounds
 // For Each invocation it will import images from a single round
 // If all rounds are imported it will return nil
-func (c *RoundPreviousRound) ImportImageResults(round *models.Round, failedImageReason *map[string]string) ([]models.MediaResult, *map[string]string) {
+func (c *RoundPreviousRound) ImportImageResults(currentRound *models.Round, failedImageReason *map[string]string) ([]models.MediaResult, *map[string]string) {
 	imageResults := []models.MediaResult{}
 	q, close := repository.GetDBWithGen()
 	defer close()
@@ -73,7 +77,7 @@ func (c *RoundPreviousRound) ImportImageResults(round *models.Round, failedImage
 			Submission.SubmittedAt.As("SubmittedAt"),
 			Submission.PageID.As("PageID"),
 		).Where(Submission.SubmissionID.Gt(c.currentIndex)).
-		Where(Submission.RoundID.Eq(c.RoundId)).
+		Where(Submission.RoundID.Eq(c.SourceRoundId)).
 		Where(Submission.Score.Gte(c.Score)).
 		Limit(c.limit).
 		Scan(&imageResults)
@@ -89,11 +93,11 @@ func (c *RoundPreviousRound) ImportImageResults(round *models.Round, failedImage
 }
 func NewRoundPreviousRound(scores models.ScoreType, roundId models.IDType) *RoundPreviousRound {
 	res := &RoundPreviousRound{
-		Score:        float64(scores),
-		RoundId:      roundId.String(),
-		currentIndex: "",
-		round_repo:   repository.NewRoundRepository(),
-		limit:        100,
+		Score:         float64(scores),
+		SourceRoundId: roundId.String(),
+		currentIndex:  "",
+		round_repo:    repository.NewRoundRepository(),
+		limit:         100,
 	}
 
 	return res

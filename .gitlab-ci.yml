@@ -7,6 +7,7 @@ stages:
 compile:
   stage: build
   script:
+    - echo $CI_COMMIT_SHORT_SHA
     - mkdir -p campwiz
     - go build -v -ldflags="-X 'nokib/campwiz/consts.Version=backend-$CI_COMMIT_SHORT_SHA' -X 'nokib/campwiz/consts.Release=backend-$CI_COMMIT_SHORT_SHA' -X 'nokib/campwiz/consts.BuildTime=$(date)' -X 'nokib/campwiz/consts.CommitHash=$CI_COMMIT_SHORT_SHA'" -o campwiz ./...
   artifacts:

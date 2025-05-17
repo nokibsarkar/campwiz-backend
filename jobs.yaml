@@ -3,5 +3,5 @@
   image: bookworm
   command: ./task-manager --rpcport 50051 --rpchost 0.0.0.0
   continuous: true
-  emails: on-failure
+  emails: onfailure
   port: 50051

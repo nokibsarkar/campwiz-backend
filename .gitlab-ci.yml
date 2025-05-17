@@ -28,6 +28,9 @@ deploy:
     - apt update
     - apt install -y rsync
     - ls -la /root/.ssh
+    - ls
+    - ls /root
+
     - rsync -Pav --no-perms --omit-dir-times -e "ssh -i /root/.ssh/id_rsa.toolforge" campwiz/*  "$SSH_USER@$SSH_HOST:$SSH_REMOTE_PATH"
 
     # - name: Build The main server

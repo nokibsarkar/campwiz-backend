@@ -19,7 +19,7 @@ func main() {
 		// certFile = flag.String("cert_file", "", "The TLS cert file")
 		// keyFile  = flag.String("key_file", "", "The TLS key file")
 		port = flag.Int("rpcport", 50051, "The server port")
-		host = flag.String("rpchost", "localhost", "The server host")
+		host = flag.String("rpchost", "0.0.0.0", "The server host")
 	)
 	flag.Parse()
 	var opts []grpc.ServerOption

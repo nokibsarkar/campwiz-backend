@@ -1,7 +1,7 @@
 # a continuous job
 - name: campwiz-task-manager
   image: bookworm
-  command: ./task-manager --rpcport 50051 --rpchost 0.0.0.0
+  command: "./task-manager --rpcport 50051 --rpchost 0.0.0.0"
   continuous: true
   emails: onfailure
   port: 50051

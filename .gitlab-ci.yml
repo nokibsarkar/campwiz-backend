@@ -18,7 +18,7 @@ deploy:
   stage: deploy
   environment: production
   variables:
-    SECURE_FILES_DOWNLOAD_PATH: /root/.ssh/
+    SECURE_FILES_DOWNLOAD_PATH: .ssh
   script:
     # - mkdir -p $SECURE_FILES_DOWNLOAD_PATH
     # - ssh-keyscan $SSH_HOST >> /root/.ssh/authorized_keys

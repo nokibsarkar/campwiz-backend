@@ -22,6 +22,8 @@ deploy:
   script:
     - curl --silent "https://gitlab.com/gitlab-org/incubation-engineering/mobile-devops/download-secure-files/-/raw/main/installer" | bash
     - ssh-keyscan $SSH_HOST >> /root/.ssh/known_hosts
+    - apt update
+    - apt install -y rsync
     - rsync -Pav --no-perms --omit-dir-times -e "ssh -i /root/.ssh/id_rsa.toolforge" campwiz/*  "$SSH_USER@$SSH_HOST:$SSH_REMOTE_PATH"
 
     # - name: Build The main server

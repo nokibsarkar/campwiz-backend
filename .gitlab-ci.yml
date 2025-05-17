@@ -4,7 +4,6 @@ variables:
   PRIVATE_KEY_NAME: id_rsa.toolforge
 stages:
   - build
-  - stage
   - deploy
 
 compile:
@@ -17,8 +16,8 @@ compile:
     paths:
       - campwiz
 
-prepare:
-  stage: stage
+deploy-taskmanager:
+  stage: deploy
   environment: production
   script:
     - mkdir -p ~/.ssh
@@ -26,11 +25,6 @@ prepare:
     - curl --silent "https://gitlab.com/gitlab-org/incubation-engineering/mobile-devops/download-secure-files/-/raw/main/installer" | bash
     - mv $SECURE_FILES_DOWNLOAD_PATH/$PRIVATE_KEY_NAME ~/.ssh
     - chmod 600 ~/.ssh/$PRIVATE_KEY_NAME
-
-deploy-taskmanager:
-  stage: deploy
-  environment: production
-  script:
     - apt update
     - apt install -y rsync
     - rsync -Pav --no-perms --omit-dir-times -e "ssh -i ~/.ssh/$PRIVATE_KEY_NAME" campwiz/*  "$SSH_USER@$SSH_HOST:$SSH_REMOTE_PATH"
@@ -39,6 +33,11 @@ deploy-server:
   stage: deploy
   environment: production
   script:
+    - mkdir -p ~/.ssh
+    - ssh-keyscan $SSH_HOST >> ~/.ssh/known_hosts
+    - curl --silent "https://gitlab.com/gitlab-org/incubation-engineering/mobile-devops/download-secure-files/-/raw/main/installer" | bash
+    - mv $SECURE_FILES_DOWNLOAD_PATH/$PRIVATE_KEY_NAME ~/.ssh
+    - chmod 600 ~/.ssh/$PRIVATE_KEY_NAME
     - ssh -i "~/.ssh/$PRIVATE_KEY_NAME" "$SSH_USER@$SSH_HOST" << EOF
       become campwiz-backend
       toolforge build start -L https://gitlab.wikimedia.org/nokibsarkar/campwiz-backend.git --ref $CI_COMMIT_SHORT_SHA --build-args

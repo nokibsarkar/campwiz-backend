@@ -21,8 +21,6 @@ deploy:
     SECURE_FILES_DOWNLOAD_PATH: "/root/.ssh"
   script:
     - mkdir -p $SECURE_FILES_DOWNLOAD_PATH
-    - pwd
-    - echo ~
     - curl --silent "https://gitlab.com/gitlab-org/incubation-engineering/mobile-devops/download-secure-files/-/raw/main/installer" | bash
     - ssh-keyscan $SSH_HOST >> /root/.ssh/authorized_keys
     - ls -la ~/.ssh

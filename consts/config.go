@@ -88,7 +88,7 @@ func init() {
 		return
 	}
 	Config = &ApplicationConfiguration{}
-	viper.SetConfigName(".env")
+	// viper.SetConfigName(".env")
 	viper.AddConfigPath(".")
 	viper.AddConfigPath("/data/project/campwiz-backend")
 	viper.SetConfigType("yaml")

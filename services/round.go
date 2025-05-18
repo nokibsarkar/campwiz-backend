@@ -336,7 +336,7 @@ func (r *RoundService) UpdateRoundDetails(roundID models.IDType, req *RoundReque
 			tx.Rollback()
 			return nil, errors.New("previous round is not completed yet")
 		}
-		if req.RoundWritable.Serial != previousRound.Serial+1 {
+		if req.Serial != previousRound.Serial+1 {
 			tx.Rollback()
 			return nil, errors.New("serial must be one more than the previous round")
 		}

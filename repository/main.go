@@ -90,7 +90,7 @@ func GetTestDB() (db *gorm.DB, mock sqlmock.Sqlmock, close func()) {
 		if err != nil {
 			panic("failed to connect database")
 		}
-		raw_db.Close()
+		raw_db.Close() //nolint:errcheck
 	}
 }
 func GetDBWithGen() (q *query.Query, close func()) {
@@ -110,7 +110,7 @@ func GetDBWithGen() (q *query.Query, close func()) {
 			log.Printf("failed to connect database %s", err.Error())
 			return
 		}
-		raw_db.Close()
+		raw_db.Close() //nolint:errcheck
 	}
 }
 func GetCommonsReplicaWithGen() (q *query.Query, close func()) {
@@ -128,7 +128,7 @@ func GetCommonsReplicaWithGen() (q *query.Query, close func()) {
 		if err != nil {
 			panic("failed to connect database")
 		}
-		raw_db.Close()
+		raw_db.Close() //nolint:errcheck
 	}
 }
 

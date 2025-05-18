@@ -57,6 +57,9 @@ func SetupRouter(testing bool) *gin.Engine {
 	afterSetupRouter(testing)
 	return r
 }
+func init() {
+	consts.LoadConfig()
+}
 
 // @title Campwiz API
 // @version 1

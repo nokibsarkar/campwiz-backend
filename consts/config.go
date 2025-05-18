@@ -1,9 +1,7 @@
 package consts
 
 import (
-	"flag"
 	"log"
-	"strconv"
 
 	"github.com/spf13/viper"
 )
@@ -87,31 +85,31 @@ type ApplicationConfiguration struct {
 
 var Config *ApplicationConfiguration
 
-func init() {
+func LoadConfig() {
 	if Config != nil {
 		return
 	}
 	Config = &ApplicationConfiguration{}
-	viper.SetConfigName(".env")
+
 	viper.AddConfigPath(".")
 	viper.AddConfigPath("/data/project/campwiz-backend")
+	viper.SetConfigName(".env")
 	viper.SetConfigType("yaml")
 	viper.AutomaticEnv()
 	err := viper.ReadInConfig()
-	if err != nil {
+	if err == nil {
+		err = viper.Unmarshal(Config)
+		if err != nil {
+			log.Printf("Error unmarshalling config file: %s", err)
+		}
+	} else {
 		log.Printf("Error reading config file: %s", err)
-		return
 	}
 
-	err = viper.Unmarshal(Config)
-	if err != nil {
-		log.Printf("Error unmarshalling config file: %s", err)
-	}
-	flagPort := flag.Int("port", 8081, "Port to run the server on")
-	flag.Parse()
-	if flagPort != nil {
-		Config.Server.Port = strconv.Itoa(*flagPort)
-		log.Printf("Using port from commandline: %s", Config.Server.Port)
-	}
-
+}
+func init() {
+	// Load the config file
+	LoadConfig()
+	// Set the release version
+	Release = Version
 }

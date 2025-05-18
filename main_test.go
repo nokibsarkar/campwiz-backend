@@ -1,10 +1,5 @@
 package main_test
 
-import (
-	"flag"
-	"log"
-)
-
 //	func TestHome(t *testing.T) {
 //		var router = SetupRouter(true)
 //		w := httptest.NewRecorder()
@@ -14,10 +9,14 @@ import (
 //		assert.NotEqual(t, "", w.Body.String())
 //	}
 func init() {
-	testFile := flag.String("test.testlogfile", "", "The test file to run")
-	flag.Parse()
-	if *testFile != "" {
-		// Run the test file
-		log.Printf("Running test file: %s", *testFile)
-	}
+	// testFile := flag.String("test.testlogfile", "", "The test file to run")
+	// panicExit := flag.Bool("test.paniconexit0", false, "Exit on panic")
+	// timeout := flag.String("test.timeout", "", "Timeout for the test")
+	// // v := flag.Bool("test.v", false, "Verbose output")
+	// flag.Parse()
+	// log.Printf("Test file: %s", *testFile)
+	// log.Printf("Panic on exit: %v", *panicExit)
+	// log.Printf("Timeout: %s", *timeout)
+	// log.Printf("Verbose output: %v", *v)
+
 }

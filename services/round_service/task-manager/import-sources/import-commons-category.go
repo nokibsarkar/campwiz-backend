@@ -50,14 +50,14 @@ func (c *CommonsCategoryListSource) ImportImageResults(currentRound *models.Roun
 }
 
 func NewCommonsCategoryListSource(categories []string) *CommonsCategoryListSource {
-	ct := []string{}
+	normalizedCategories := []string{}
 	for _, category := range categories {
-		kt := strings.Replace(category, " ", "_", -1)
-		kt = strings.Replace(kt, "Category:", "", -1)
-		ct = append(ct, kt)
+		categoryWithUnderscores := strings.ReplaceAll(category, " ", "_")
+		categoryWithUnderscores = strings.ReplaceAll(categoryWithUnderscores, "Category:", "")
+		normalizedCategories = append(normalizedCategories, categoryWithUnderscores)
 	}
 	return &CommonsCategoryListSource{
-		Categories:           ct,
+		Categories:           normalizedCategories,
 		currentCategoryIndex: 0,
 		lastPageID:           0,
 		commons_repo:         repository.NewCommonsRepository(),

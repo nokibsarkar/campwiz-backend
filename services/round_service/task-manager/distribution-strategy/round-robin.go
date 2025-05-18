@@ -224,7 +224,7 @@ func (strategy *RoundRobinDistributionStrategy) createMissingEvaluations(tx *gor
 	submissionIds := []string{}
 	for _, submission := range req {
 		rest := round.Quorum - submission.AssignmentCount
-		for _ = range rest {
+		for range rest {
 			evID := idgenerator.GenerateID("e")
 			evaluation := models.Evaluation{
 				SubmissionID:       submission.SubmissionID,

@@ -41,6 +41,7 @@ deploy-taskmanager:
     - apt update
     - apt install -y rsync
     - rsync -Pav --no-perms --omit-dir-times -e "ssh -i ~/.ssh/$PRIVATE_KEY_NAME" campwiz/*  "$SSH_USER@$SSH_HOST:$SSH_REMOTE_PATH"
+    - echo "Success"
 
 deploy-server:
   stage: deploy

@@ -39,17 +39,18 @@ func SetupRouter(testing bool) *gin.Engine {
 	beforeSetupRouter(testing)
 	r := gin.Default()
 	Mode := consts.Config.Server.Mode
-	if Mode == "debug" {
+	switch Mode {
+	case "debug":
 		r.Use(gin.Logger())
-	} else if Mode == "release" {
+	case "release":
 		r.Use(gin.Recovery())
-
-	} else {
+	case "test":
+		r.Use(gin.Recovery())
+	default:
 		log.Panicf("Invalid mode %s", Mode)
 	}
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
+	r.GET("/api/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 	if consts.Config.Sentry.DSN != "" {
-
 		r.Use(routes.NewSentryMiddleWare())
 	}
 	routes.NewRoutes(r.Group("/"))

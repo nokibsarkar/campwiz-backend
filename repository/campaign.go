@@ -18,7 +18,6 @@ func (c *CampaignRepository) Create(conn *gorm.DB, campaign *models.Campaign) er
 	return result.Error
 }
 func (c *CampaignRepository) FindByID(conn *gorm.DB, id models.IDType) (*models.Campaign, error) {
-	campaign := &models.Campaign{}
 	q := query.Use(conn)
 	campaign, err := q.Campaign.Where(q.Campaign.CampaignID.Eq(id.String())).First()
 	return campaign, err

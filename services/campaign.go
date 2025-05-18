@@ -163,7 +163,9 @@ func (service *CampaignService) ListPrivateCampaigns(sess *cache.Session, qry *m
 		}
 	}
 	stmt = stmt.Group(q.Campaign.CampaignID).Limit(qry.Limit)
-	stmt.Scan(&campaigns)
+	if err := stmt.Scan(&campaigns); err != nil {
+		log.Println("Error scanning campaigns: ", err)
+	}
 	return campaigns
 }
 

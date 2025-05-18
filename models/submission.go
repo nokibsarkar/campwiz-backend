@@ -181,7 +181,7 @@ func (c *CommonsSubmissionEntry) GetThumbURL() (string, uint64, uint64) {
 	fileNameWithoutPrefix := fmt.Sprintf("%dpx-%s", thumbWidth, fileURL[strings.LastIndex(fileURL, "/")+1:])
 	// extract the file extension
 	extension := strings.ToLower(fileNameWithoutPrefix[strings.LastIndex(fileNameWithoutPrefix, "."):])
-	thumbSuffix := fileNameWithoutPrefix
+	var thumbSuffix string
 	switch extension {
 	case ".jpg", ".jpeg", ".png", ".webp":
 		// For image files, we can set extension as is

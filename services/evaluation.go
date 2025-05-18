@@ -127,13 +127,13 @@ func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluation
 			tx.Rollback()
 			return nil, errors.New("no score is given")
 		}
-		if evaluation.Type == models.EvaluationTypeBinary {
-			log.Println("Binary evaluation")
-		} else if evaluation.Type == models.EvaluationTypeRanking {
-			log.Println("Ranking evaluation")
-		} else if evaluation.Type == models.EvaluationTypeScore {
-			log.Println("Score evaluation")
-		}
+		// if evaluation.Type == models.EvaluationTypeBinary {
+		// 	log.Println("Binary evaluation")
+		// } else if evaluation.Type == models.EvaluationTypeRanking {
+		// 	log.Println("Ranking evaluation")
+		// } else if evaluation.Type == models.EvaluationTypeScore {
+		// 	log.Println("Score evaluation")
+		// }
 
 		now := time.Now().UTC()
 		res = tx.Updates(&models.Evaluation{
@@ -177,7 +177,7 @@ func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluation
 	}
 	grpcClient, err := round_service.NewGrpcClient()
 	if err == nil {
-		defer grpcClient.Close()
+		defer grpcClient.Close() //nolint:errcheck
 		// update the statistics
 		statisticsupdater := models.NewStatisticsUpdaterClient(grpcClient)
 		ids := []string{}
@@ -409,13 +409,13 @@ func (e *EvaluationService) PublicBulkEvaluate(currentUserID models.IDType, eval
 				err = errors.New("no score is given")
 				return
 			}
-			if evaluation.Type == models.EvaluationTypeBinary {
-				log.Println("Binary evaluation")
-			} else if evaluation.Type == models.EvaluationTypeRanking {
-				log.Println("Ranking evaluation")
-			} else if evaluation.Type == models.EvaluationTypeScore {
-				log.Println("Score evaluation")
-			}
+			// if evaluation.Type == models.EvaluationTypeBinary {
+			// 	log.Println("Binary evaluation")
+			// } else if evaluation.Type == models.EvaluationTypeRanking {
+			// 	log.Println("Ranking evaluation")
+			// } else if evaluation.Type == models.EvaluationTypeScore {
+			// 	log.Println("Score evaluation")
+			// }
 			res := tx.Updates(&models.Evaluation{
 				EvaluationID: evaluationRequest.EvaluationID,
 				Score:        evaluationRequest.Score,

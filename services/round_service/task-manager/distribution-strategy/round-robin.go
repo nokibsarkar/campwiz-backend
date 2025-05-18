@@ -214,7 +214,7 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries() {
 		log.Println("Error: ", err)
 		return
 	}
-	go randomize(strategy.RoundId)
+	go randomize(strategy.RoundId) //nolint:errcheck
 }
 func (strategy *RoundRobinDistributionStrategy) createMissingEvaluations(tx *gorm.DB, evtype models.EvaluationType, round *models.Round, req []models.Submission) (int, error) {
 	evaluations := []models.Evaluation{}

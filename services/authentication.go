@@ -42,8 +42,12 @@ func init() {
 	}
 	privateKeyBytes := bytes.NewBuffer(nil)
 	publicBytes := bytes.NewBuffer(nil)
-	rsaPublicFp.WriteTo(publicBytes)
-	rsaPrivateFp.WriteTo(privateKeyBytes)
+	if _, err := rsaPublicFp.WriteTo(publicBytes); err != nil {
+		log.Panicln("Error writing public key: ", err)
+	}
+	if _, err := rsaPrivateFp.WriteTo(privateKeyBytes); err != nil {
+		log.Panicln("Error writing private key: ", err)
+	}
 	RSAPrivateKey, err = jwt.ParseECPrivateKeyFromPEM(privateKeyBytes.Bytes())
 	if err != nil {
 		log.Panicln("Error parsing private key: ", err)

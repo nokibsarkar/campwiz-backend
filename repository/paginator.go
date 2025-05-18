@@ -33,7 +33,8 @@ func (p *Paginator[PageType]) Query(params url.Values) (chan *PageType, error) {
 			if err != nil {
 				log.Fatal(err)
 			}
-			defer stream.Close()
+			defer stream.Close() //nolint:errcheck
+			// Create a new buffer to copy the stream
 			resp := &PageQueryResponse[PageType]{}
 			streamCopy := bytes.NewBuffer(nil)
 			// Copy the stream to a buffer

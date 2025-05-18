@@ -38,7 +38,10 @@ func GetDB() (db *gorm.DB, close func(), err error) {
 		// Cacher: memoryCache,
 	}}
 	// Use caches plugin
-	db.Use(cachesPlugin)
+	if err := db.Use(cachesPlugin); err != nil {
+		log.Printf("failed to use caches plugin %s", err.Error())
+		return nil, nil, err
+	}
 	return db, func() {
 		raw_db, err := db.DB()
 		if err != nil {

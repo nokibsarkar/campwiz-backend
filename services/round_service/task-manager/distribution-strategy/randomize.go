@@ -15,7 +15,7 @@ type Randomizer struct{}
 
 func (d *DistributorServer) Randomize(ctx context.Context, req *models.DistributeWithRoundRobinRequest) (*models.DistributeWithRoundRobinResponse, error) {
 	roundId := models.IDType(req.RoundId)
-	go randomize(roundId)
+	go randomize(roundId) //nolint:errcheck
 	return &models.DistributeWithRoundRobinResponse{
 		TaskId: req.TaskId,
 	}, nil

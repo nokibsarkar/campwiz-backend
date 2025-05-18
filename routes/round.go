@@ -337,32 +337,40 @@ func GetResults(c *gin.Context, sess *cache.Session) {
 		c.JSON(404, models.ResponseError{Detail: "Failed to get round results : " + err.Error()})
 		return
 	}
-	if format == models.ResultExportFormatJSON {
+	switch format {
+	case models.ResultExportFormatJSON:
 		result := models.ResponseList[models.SubmissionResult]{Data: results}
 		if len(results) > 0 {
 			result.ContinueToken = results[len(results)-1].SubmissionID.String()
 			result.PreviousToken = results[0].SubmissionID.String()
 		}
 		c.JSON(200, result)
-	} else if format == models.ResultExportFormatCSV {
+	case models.ResultExportFormatCSV:
 		c.Writer.Header().Set("Content-Type", "text/csv")
 		c.Writer.Header().Set("Content-Disposition", fmt.Sprintf("attachment;filename=round-%s-results.csv", roundId))
 		csvWriter := csv.NewWriter(c.Writer)
-		csvWriter.Write([]string{"Submission ID", "Name", "Score", "Author", "Evaluation Count", "Media Type"})
+		err := csvWriter.Write([]string{"Submission ID", "Name", "Score", "Author", "Evaluation Count", "Media Type"})
+		if err != nil {
+			c.JSON(400, models.ResponseError{Detail: "Failed to write CSV header : " + err.Error()})
+			return
+		}
 		for _, result := range results {
-			csvWriter.Write([]string{result.SubmissionID.String(),
+			err = csvWriter.Write([]string{result.SubmissionID.String(),
 				result.Name, fmt.Sprintf("%f", result.Score),
 				result.Author,
 				fmt.Sprintf("%d", result.EvaluationCount),
 				string(result.MediaType)})
-
+			if err != nil {
+				c.JSON(400, models.ResponseError{Detail: "Failed to write CSV row : " + err.Error()})
+				return
+			}
 		}
 		csvWriter.Flush()
 		if err := csvWriter.Error(); err != nil {
 			c.JSON(400, models.ResponseError{Detail: "Failed to write CSV : " + err.Error()})
 			return
 		}
-	} else {
+	default:
 		c.JSON(400, models.ResponseError{Detail: "Invalid request : Invalid format"})
 		return
 	}

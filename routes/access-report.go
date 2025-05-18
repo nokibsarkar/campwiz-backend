@@ -19,9 +19,12 @@ func GetAccessReport(c *gin.Context, sess *cache.Session) {
 		c.String(404, "Error opening file: %v", err)
 		return
 	}
-	defer fp.Close()
+	defer fp.Close() //nolint:errcheck
 	c.Header("Content-Type", "text/html")
-	fp.Seek(0, 0)
+	if _, err := fp.Seek(0, 0); err != nil {
+		c.String(500, "Error seeking file: %v", err)
+		return
+	}
 	_, err = fp.WriteTo(c.Writer)
 	if err != nil {
 		c.String(500, "Error writing file: %v", err)

@@ -83,7 +83,7 @@ func (o *OAuth2Service) GetUser(token *oauth2.Token) (*WikipediaProfileFull, err
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 	user := &WikipediaProfile{}
 	err = json.NewDecoder(resp.Body).Decode(user)
 	if err != nil {

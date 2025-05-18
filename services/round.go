@@ -200,7 +200,7 @@ func (b *RoundService) ImportFromCommons(roundId models.IDType, categories []str
 	if err != nil {
 		return nil, err
 	}
-	defer grpcConn.Close()
+	defer grpcConn.Close() //nolint:errcheck
 	importer := models.NewImporterClient(grpcConn)
 	importResponse, err := importer.ImportFromCommonsCategory(context.Background(), &models.ImportFromCommonsCategoryRequest{
 		CommonsCategory: categories,
@@ -287,15 +287,15 @@ func (b *RoundService) ImportFromPreviousRound(currentUserId models.IDType, targ
 		return nil, err
 	}
 	log.Println("GRPC client created")
-	defer grpcClient.Close()
+	defer grpcClient.Close() //nolint:errcheck
 	importClient := models.NewImporterClient(grpcClient)
-	importClient.ImportFromPreviousRound(context.Background(), &models.ImportFromPreviousRoundRequest{
+	_, err = importClient.ImportFromPreviousRound(context.Background(), &models.ImportFromPreviousRoundRequest{
 		RoundId:       targetRound.RoundID.String(),
 		SourceRoundId: sourceRound.RoundID.String(),
 		TaskId:        task.TaskID.String(),
 		MinimumScore:  float32(filter.Scores[0]),
 	})
-	return task, nil
+	return task, err
 }
 func (b *RoundService) GetById(roundId models.IDType) (*models.Round, error) {
 	round_repo := repository.NewRoundRepository()
@@ -480,18 +480,18 @@ func (r *RoundService) DistributeEvaluations(currentUserID models.IDType, roundI
 	if err != nil {
 		return nil, err
 	}
-	defer grpcClient.Close()
+	defer grpcClient.Close() //nolint:errcheck
 	distributorClient := models.NewDistributorClient(grpcClient)
 	juryUsername := make([]string, len(distributionReq.AmongJuriesUsername))
 	for i, username := range distributionReq.AmongJuriesUsername {
 		juryUsername[i] = username.String()
 	}
-	distributorClient.DistributeWithRoundRobin(context.Background(), &models.DistributeWithRoundRobinRequest{
+	_, err = distributorClient.DistributeWithRoundRobin(context.Background(), &models.DistributeWithRoundRobinRequest{
 		RoundId:       round.RoundID.String(),
 		TaskId:        task.TaskID.String(),
 		JuryUsernames: juryUsername,
 	})
-	return task, nil
+	return task, err
 }
 func (r *RoundService) GetResultSummary(roundID models.IDType) (results []models.EvaluationResult, err error) {
 	round_repo := repository.NewRoundRepository()
@@ -827,9 +827,9 @@ func (e *RoundService) Randomize(userId models.IDType, roundId models.IDType) (*
 		CreatedByID:       userId,
 		Type:              models.TaskTypeRandomizeAssignments,
 	}
-	distributorClient.Randomize(context.Background(), &models.DistributeWithRoundRobinRequest{
+	_, err = distributorClient.Randomize(context.Background(), &models.DistributeWithRoundRobinRequest{
 		TaskId:  task.TaskID.String(),
 		RoundId: roundId.String(),
 	})
-	return &task, nil
+	return &task, err
 }

@@ -46,5 +46,10 @@ func main() {
 	models.RegisterStatisticsUpdaterServer(grpcServer, statisticsupdater.NewStatisticsUpdaterServer())
 
 	log.Printf("Task Manager Server listening at %v", lis.Addr())
-	grpcServer.Serve(lis)
+	if err := grpcServer.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %v", err)
+	}
+	defer grpcServer.Stop()
+	defer lis.Close() //
+	log.Printf("Task Manager Server stopped")
 }

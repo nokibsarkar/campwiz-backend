@@ -79,7 +79,9 @@ func SetupRouter(testing bool) *gin.Engine {
 func main() {
 	preRun()
 	r := SetupRouter(false)
-	r.Run("0.0.0.0:" + consts.Config.Server.Port)
+	if err := r.Run("0.0.0.0:" + consts.Config.Server.Port); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
+	}
 	postRun()
 
 }

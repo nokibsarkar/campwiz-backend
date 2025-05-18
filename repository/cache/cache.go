@@ -25,7 +25,9 @@ func GetCacheDB() (db *gorm.DB, close func()) {
 		if err != nil {
 			log.Fatal("failed to get cache database on close")
 		}
-		raw_db.Close()
+		if err := raw_db.Close(); err != nil {
+			log.Fatal("failed to close cache database")
+		}
 	}
 }
 func GetTaskCacheDB(taskID models.IDType) (db *gorm.DB, close func()) {
@@ -40,14 +42,18 @@ func GetTaskCacheDB(taskID models.IDType) (db *gorm.DB, close func()) {
 	if err != nil {
 		log.Fatal("failed to connect cache database")
 	}
-	db.AutoMigrate(&Evaluation{})
+	if err := db.AutoMigrate(&Evaluation{}); err != nil {
+		log.Fatal("failed to migrate cache database")
+	}
 	return db, func() {
 		raw_db, err := db.DB()
 		if err != nil {
 			log.Fatal("failed to get cache database on close")
 		}
 		raw_db.Close()
-		os.Remove(dsn)
+		if err := os.Remove(dsn); err != nil {
+			log.Fatal("failed to remove cache database")
+		}
 	}
 }
 func GetTestCacheDB() (db *gorm.DB, close func()) {
@@ -63,7 +69,9 @@ func GetTestCacheDB() (db *gorm.DB, close func()) {
 		if err != nil {
 			log.Fatal("failed to get cache database on close")
 		}
-		raw_db.Close()
+		if err := raw_db.Close(); err != nil {
+			log.Fatal("failed to close cache database")
+		}
 	}
 }
 func InitCacheDB(testing bool) {
@@ -72,5 +80,7 @@ func InitCacheDB(testing bool) {
 		db, close = GetTestCacheDB()
 	}
 	defer close()
-	db.AutoMigrate(&Session{})
+	if err := db.AutoMigrate(&Session{}); err != nil {
+		log.Fatal("failed to migrate cache database")
+	}
 }

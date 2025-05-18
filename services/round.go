@@ -85,15 +85,15 @@ func (s *RoundService) CreateRound(request *RoundRequest) (*models.Round, error)
 			tx.Rollback()
 			return nil, errors.New("previous round is not completed yet")
 		}
-		request.RoundWritable.Serial = previousRound.Serial + 1
+		request.RoundWritable.Serial = previousRound.Serial + 1 //nolint:staticcheck
 		if request.IsPublicJury && !previousRound.IsPublicJury {
 			tx.Rollback()
 			return nil, errors.New("public jury cannot be created after private jury on the same campaign")
 		}
 		// current request is public if all previous rounds are public and the current request is for public
-		request.RoundWritable.IsPublicJury = request.IsPublicJury && previousRound.IsPublicJury
+		request.RoundWritable.IsPublicJury = request.IsPublicJury && previousRound.IsPublicJury //nolint:staticcheck
 
-		request.RoundWritable.DependsOnRoundID = &previousRound.RoundID
+		request.RoundWritable.DependsOnRoundID = &previousRound.RoundID //nolint:staticcheck
 	} else {
 		log.Println("No previous round found")
 		request.Serial = 1
@@ -817,7 +817,7 @@ func (e *RoundService) Randomize(userId models.IDType, roundId models.IDType) (*
 	if err != nil {
 		return nil, err
 	}
-	defer grpcClient.Close()
+	defer grpcClient.Close() //nolint:errcheck
 	distributorClient := models.NewDistributorClient(grpcClient)
 	task := models.Task{
 		TaskID:            "123",

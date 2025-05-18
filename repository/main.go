@@ -47,7 +47,9 @@ func GetDB() (db *gorm.DB, close func(), err error) {
 		if err != nil {
 			panic("failed to connect database")
 		}
-		raw_db.Close()
+		if err := raw_db.Close(); err != nil {
+			log.Printf("failed to close database %s", err.Error())
+		}
 	}, nil
 }
 func GetDbWithoutDefaultTransaction() (db *gorm.DB, close func()) {
@@ -64,7 +66,9 @@ func GetDbWithoutDefaultTransaction() (db *gorm.DB, close func()) {
 		if err != nil {
 			panic("failed to connect database")
 		}
-		raw_db.Close()
+		if err := raw_db.Close(); err != nil {
+			log.Printf("failed to close database %s", err.Error())
+		}
 	}
 }
 func GetTestDB() (db *gorm.DB, mock sqlmock.Sqlmock, close func()) {

@@ -50,6 +50,6 @@ func main() {
 		log.Fatalf("failed to serve: %v", err)
 	}
 	defer grpcServer.Stop()
-	defer lis.Close() //
+	defer lis.Close() //nolint:errcheck
 	log.Printf("Task Manager Server stopped")
 }

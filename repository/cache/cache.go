@@ -50,7 +50,9 @@ func GetTaskCacheDB(taskID models.IDType) (db *gorm.DB, close func()) {
 		if err != nil {
 			log.Fatal("failed to get cache database on close")
 		}
-		raw_db.Close()
+		if err := raw_db.Close(); err != nil {
+			log.Fatal("failed to close cache database")
+		}
 		if err := os.Remove(dsn); err != nil {
 			log.Fatal("failed to remove cache database")
 		}

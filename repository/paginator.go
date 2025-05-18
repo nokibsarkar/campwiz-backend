@@ -88,7 +88,7 @@ func (p *Paginator[PageType]) UserList(params url.Values) (chan *models.Wikimedi
 			if err != nil {
 				log.Fatal(err)
 			}
-			defer stream.Close()
+			defer stream.Close() //nolint:errcheck
 			resp := &UserListQueryResponse{}
 			err = json.NewDecoder(stream).Decode(resp)
 			if err != nil {

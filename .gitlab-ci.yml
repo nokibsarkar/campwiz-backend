@@ -5,9 +5,11 @@ variables:
 stages:
   - build
   - deploy
-
+include:
+  - component: $CI_SERVER_FQDN/components/code-quality-oss/codequality-os-scanners-integration/golangci@1.0.1
 compile:
   stage: build
+
   script:
     - echo $CI_COMMIT_SHORT_SHA
     - mkdir -p campwiz

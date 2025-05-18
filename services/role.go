@@ -79,8 +79,6 @@ func (r *RoleService) CalculateRoleDifferenceWithRole(tx *gorm.DB, Type models.R
 			}
 			log.Printf("adding %s was banned earlier.", newRole.RoleID)
 			addedRoles = append(addedRoles, newRole)
-		} else {
-			//remain unchanged
 		}
 	}
 	log.Println("Add: ", addedRoles)

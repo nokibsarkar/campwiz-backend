@@ -103,7 +103,7 @@ func (a *AuthenticationService) NewRefreshToken(tokenMap *SessionClaims) (string
 			Audience:  jwt.ClaimStrings{"campwiz"},
 			Subject:   tokenMap.Subject,
 			Issuer:    a.Config.Issuer,
-			ExpiresAt: jwt.NewNumericDate(tokenMap.ExpiresAt.Time.Add(time.Second * time.Duration(a.Config.Refresh))),
+			ExpiresAt: jwt.NewNumericDate(tokenMap.ExpiresAt.Add(time.Second * time.Duration(a.Config.Refresh))),
 		},
 		Permission: tokenMap.Permission,
 		Name:       tokenMap.Name,

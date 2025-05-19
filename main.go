@@ -36,7 +36,7 @@ func beforeSetupRouter(testing bool) {
 }
 func afterSetupRouter(testing bool) {
 }
-func SetupRouter(testing bool) *gin.Engine {
+func SetupRouter(testing bool, readOnly bool) *gin.Engine {
 	beforeSetupRouter(testing)
 	r := gin.Default()
 	Mode := consts.Config.Server.Mode
@@ -54,7 +54,14 @@ func SetupRouter(testing bool) *gin.Engine {
 	if consts.Config.Sentry.DSN != "" {
 		r.Use(routes.NewSentryMiddleWare())
 	}
-	routes.NewRoutes(r.Group("/"))
+
+	if readOnly {
+		log.Println("Creating Routes for ReadOnly Mode")
+		routes.NewReadOnlyRoutes(r.Group("/"))
+	} else {
+		log.Println("Creating Routes for ReadWrite Mode")
+		routes.NewRoutes(r.Group("/"))
+	}
 	afterSetupRouter(testing)
 	return r
 }
@@ -65,7 +72,6 @@ func init() {
 // @title Campwiz API
 // @version 1
 // @description This is the API documentation for Campwiz
-// @host localhost:8081
 // @BasePath /api/v2
 // @schemes http https
 // @produce json
@@ -88,8 +94,9 @@ func main() {
 		log.Printf("Failed to parse port from config: %s", err.Error())
 	}
 	port := flag.Int("port", portVal, "Port to run the server on")
+	readOnly := flag.Bool("readonly", false, "Run the server in read-only mode")
 	flag.Parse()
-	r := SetupRouter(false)
+	r := SetupRouter(false, *readOnly)
 	if err := r.Run(fmt.Sprintf("0.0.0.0:%d", *port)); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}

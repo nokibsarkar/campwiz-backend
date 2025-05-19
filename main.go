@@ -84,7 +84,9 @@ func init() {
 func main() {
 	preRun()
 	portVal := 8081 // default port fallback
-	fmt.Sscanf(consts.Config.Server.Port, "%d", &portVal)
+	if _, err := fmt.Sscanf(consts.Config.Server.Port, "%d", &portVal); err != nil {
+		log.Printf("Failed to parse port from config: %s", err.Error())
+	}
 	port := flag.Int("port", portVal, "Port to run the server on")
 	flag.Parse()
 	r := SetupRouter(false)

@@ -13,3 +13,5 @@ After a lot of effort, I managed to
 My new issue is
 - My code is built for nodejs version 22, but toolforge supports upto 18. That's why some functions are not available like `toSorted`
 
+## 19-05-2025: An issue with the `campwiz-backend` tool
+Last night, I accidentally remove the flag for  port, so it was running the default port. But since two servers were running on the same default port, one of them errored. Now nginx was trying to balance the load between them. But since one of them errored, nginx was switching to the read-only mode.

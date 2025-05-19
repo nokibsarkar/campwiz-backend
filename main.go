@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"nokib/campwiz/consts"
@@ -82,8 +83,12 @@ func init() {
 // @query.collection.format multi
 func main() {
 	preRun()
+	portVal := 8081 // default port fallback
+	fmt.Sscanf(consts.Config.Server.Port, "%d", &portVal)
+	port := flag.Int("port", portVal, "Port to run the server on")
+	flag.Parse()
 	r := SetupRouter(false)
-	if err := r.Run("0.0.0.0:" + consts.Config.Server.Port); err != nil {
+	if err := r.Run(fmt.Sprintf("0.0.0.0:%d", *port)); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 	postRun()

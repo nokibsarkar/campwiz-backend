@@ -17,10 +17,10 @@ My new issue is
 Last night, I accidentally remove the flag for  port, so it was running the default port. But since two servers were running on the same default port, one of them errored. Now nginx was trying to balance the load between them. But since one of them errored, nginx was switching to the read-only mode. Now I added the port flag.
 
 ## 20-05-2025: The tools is now running behind nginx reverse proxy on toolforge
-So, David Caro helped me setup the architecture I wanted. What I wanted was to run the golang server behind nginx reverse proxy.Also, another read-only server would be used as failover server. So, if the main server goes down, the nginx will switch to the read-only server. I also started running a GRPC Server on port 50051. The GRPC server wuld be used for asynchronous tasks like importing images and descriptions. The GRPC server is not behind the nginx reverse proxy. So, it can be accessed directly. Our solution was (actually, david caror's solution):
+So, David Caro helped me setup the architecture I wanted. What I wanted was to run the golang server behind nginx reverse proxy.Also, another read-only server would be used as failover server. So, if the main server goes down, the nginx will switch to the read-only server. I also started running a GRPC Server on port 50051. The GRPC server would be used for asynchronous tasks like importing images and descriptions. The GRPC server is not behind the nginx reverse proxy. So, it can be accessed directly. Our solution was (actually, david caror's solution):
 - Build a image with standard golang buildpack.
     - It built two binaries: `campwiz` and `taskmanager`
-- Build another image with `heroku-php-nginx` buildpack.
+- Build another image with `heroku-php-nginx` buildpack from the branch `fake-nginx`
     - Actually, it just contains a `composer.json` file which tricks the build pack into choosing the `heroku-php-nginx` buildpack.
     - Also contains a `nginx.conf` file which is used to configure the nginx server.
     - This `nginx.conf` file is given in the `web` entry of the `Procfile`.

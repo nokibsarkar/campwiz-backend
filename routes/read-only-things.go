@@ -18,7 +18,7 @@ func NewReadOnlyRoutes(nonAPIParent *gin.RouterGroup) *gin.RouterGroup {
 	r := nonAPIParent.Group("/api/v2")
 	r.Use(ServerInfoHeaderMiddleware)
 	authenticatorService := NewAuthenticationService()
-	NewUserAuthenticationRoutes(r)
+	// NewUserAuthenticationRoutes(r)
 	r.Use(authenticatorService.Authenticate2)
 	NewPermissionRoutes(nonAPIParent)
 	NewReadOnlyCampaignRoutes(r)

@@ -257,7 +257,11 @@ func (service *CampaignService) UpdateCampaignStatus(usrId models.IDType, ID mod
 	user_repo := repository.NewUserRepository()
 	campaign_repo := repository.NewCampaignRepository()
 	round_repo := repository.NewRoundRepository()
-	campaign, err := campaign_repo.FindByID(tx.Preload("LatestRound"), ID)
+	tx1 := tx
+	if !IsArchived { // Already archived, we need to unarchive
+		tx1 = tx.Unscoped()
+	}
+	campaign, err := campaign_repo.FindByID(tx1.Preload("LatestRound"), ID)
 	if err != nil {
 		log.Println("Error: ", err)
 		tx.Rollback()
@@ -283,7 +287,6 @@ func (service *CampaignService) UpdateCampaignStatus(usrId models.IDType, ID mod
 		return nil, fmt.Errorf("user does not have permission to update campaign status")
 	}
 	if IsArchived {
-
 		err = campaign_repo.ArchiveCampaign(tx, ID)
 		latestRound := campaign.LatestRound
 		if latestRound != nil {

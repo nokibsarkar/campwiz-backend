@@ -29,7 +29,7 @@ compile:
     paths:
       - campwiz
 
-deploy-taskmanager:
+deploy-server:
   stage: deploy
   environment: production
   script:
@@ -40,16 +40,6 @@ deploy-taskmanager:
     - chmod 600 ~/.ssh/$PRIVATE_KEY_NAME
     - apt update
     - apt install -y rsync
-    - rsync -Pav --no-perms --omit-dir-times -e "ssh -i ~/.ssh/$PRIVATE_KEY_NAME" campwiz/*  "$SSH_USER@$SSH_HOST:$SSH_REMOTE_PATH"
+    - rsync -Pav --no-perms --omit-dir-times -e "ssh -i ~/.ssh/$PRIVATE_KEY_NAME" jobs.yaml  "$SSH_USER@$SSH_HOST:$SSH_REMOTE_PATH"
     - echo "Success"
-
-deploy-server:
-  stage: deploy
-  environment: production
-  script:
-    - mkdir -p ~/.ssh
-    - ssh-keyscan $SSH_HOST >> ~/.ssh/known_hosts
-    - curl --silent "https://gitlab.com/gitlab-org/incubation-engineering/mobile-devops/download-secure-files/-/raw/main/installer" | bash
-    - mv $SECURE_FILES_DOWNLOAD_PATH/$PRIVATE_KEY_NAME ~/.ssh
-    - chmod 600 ~/.ssh/$PRIVATE_KEY_NAME
     - ssh -i "~/.ssh/$PRIVATE_KEY_NAME" "$SSH_USER@$SSH_HOST" 'bash -s' < ./deploy.sh

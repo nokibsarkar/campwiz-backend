@@ -50,9 +50,9 @@ func SetupRouter(testing bool) *gin.Engine {
 		log.Panicf("Invalid mode %s", Mode)
 	}
 	r.GET("/api/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
-	if consts.Config.Sentry.DSN != "" {
-		r.Use(routes.NewSentryMiddleWare())
-	}
+	// if consts.Config.Sentry.DSN != "" {
+	// 	r.Use(routes.NewSentryMiddleWare())
+	// }
 	routes.NewRoutes(r.Group("/"))
 	afterSetupRouter(testing)
 	return r

@@ -16,7 +16,7 @@ require (
 	github.com/swaggo/swag v1.16.4
 	golang.org/x/net v0.40.0
 	golang.org/x/oauth2 v0.30.0
-	google.golang.org/grpc v1.72.0
+	google.golang.org/grpc v1.72.1
 	gorm.io/datatypes v1.2.5
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/driver/sqlite v1.5.7

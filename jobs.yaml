@@ -1,7 +1,7 @@
 # a continuous job
 - name: campwiz-task-manager
-  image: bookworm
-  command: ./task-manager
+  image: tool-campwiz-backend/tool-campwiz-backend:latest
+  command: launcher task-manager
   continuous: true
   emails: onfailure
   port: 50051

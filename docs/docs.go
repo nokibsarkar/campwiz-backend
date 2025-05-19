@@ -2984,7 +2984,7 @@ var SwaggerInfo = &swag.Spec{
 	Version:          "1",
 	Host:             "",
 	BasePath:         "/api/v2",
-	Schemes:          []string{"http", "https"},
+	Schemes:          []string{},
 	Title:            "Campwiz API",
 	Description:      "This is the API documentation for Campwiz",
 	InfoInstanceName: "swagger",

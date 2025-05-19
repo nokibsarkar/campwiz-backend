@@ -73,7 +73,6 @@ func init() {
 // @version 1
 // @description This is the API documentation for Campwiz
 // @BasePath /api/v2
-// @schemes http https
 // @produce json
 // @consumes json
 // @securitydefinitions.oauth2 implicit

@@ -1,5 +1,5 @@
 # Continuous job for doing that shit
-- name: campwiz-backend
+- name: campwiz-backend-thing
   image: tool-campwiz-backend/tool-campwiz-backend:latest
   command: campwiz -port 8080
   continuous: true

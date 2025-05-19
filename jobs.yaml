@@ -5,3 +5,5 @@
   continuous: true
   emails: onfailure
   port: 50051
+  cpu: 1
+  memory: 1Gi

@@ -1,0 +1,16 @@
+image: golang:latest
+variables:
+  SECURE_FILES_DOWNLOAD_PATH: .
+  PRIVATE_KEY_NAME: id_rsa.toolforge
+stages:
+  - deploy
+deploy-server:
+  stage: deploy
+  environment: production
+  script:
+    - mkdir -p ~/.ssh
+    - ssh-keyscan $SSH_HOST >> ~/.ssh/known_hosts
+    - curl --silent "https://gitlab.com/gitlab-org/incubation-engineering/mobile-devops/download-secure-files/-/raw/main/installer" | bash
+    - mv $SECURE_FILES_DOWNLOAD_PATH/$PRIVATE_KEY_NAME ~/.ssh
+    - chmod 600 ~/.ssh/$PRIVATE_KEY_NAME
+    - ssh -i "~/.ssh/$PRIVATE_KEY_NAME" "$SSH_USER@$SSH_HOST" 'bash -s' < ./deploy.sh

@@ -162,7 +162,7 @@ func ImportFromPreviousRound(c *gin.Context, sess *cache.Session) {
 // @Param file formData file true "The CSV file (upto 10MB CSV)"
 // @Tags Round
 // @Error 400 {object} models.ResponseError
-func ImportFromCSV(c *gin.Context) {
+func ImportFromCSV(c *gin.Context, sess *cache.Session) {
 	roundId := c.Param("roundId")
 	if roundId == "" {
 		c.JSON(400, models.ResponseError{Detail: "Invalid request : Round ID is required"})

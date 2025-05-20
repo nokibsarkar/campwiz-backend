@@ -58,7 +58,6 @@ func (a *AuthenticationMiddleWare) checkIfUnauthenticatedAllowed(c *gin.Context)
 		"/user/login",
 		"/user/callback",
 		"/api/v2/campaign/",
-		"POST /api/v2/round/import/*",
 	}
 	for _, p := range UnRestrictedPaths {
 		if c.Request.Method == "POST" {

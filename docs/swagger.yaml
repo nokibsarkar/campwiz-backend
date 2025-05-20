@@ -836,14 +836,25 @@ definitions:
     enum:
     - submissions.import.commons
     - submissions.import.previous
+    - submissions.import.csv
     - assignments.distribute
     - assignments.randomize
     type: string
     x-enum-varnames:
     - TaskTypeImportFromCommons
     - TaskTypeImportFromPreviousRound
+    - TaskTypeImportFromCSV
     - TaskTypeDistributeEvaluations
     - TaskTypeRandomizeAssignments
+  multipart.FileHeader:
+    properties:
+      filename:
+        type: string
+      header:
+        $ref: '#/definitions/textproto.MIMEHeader'
+      size:
+        type: integer
+    type: object
   routes.RedirectResponse:
     properties:
       redirect:
@@ -1085,6 +1096,12 @@ definitions:
         type: string
       userId:
         type: string
+    type: object
+  textproto.MIMEHeader:
+    additionalProperties:
+      items:
+        type: string
+      type: array
     type: object
 info:
   contact:
@@ -1861,6 +1878,46 @@ paths:
           schema:
             $ref: '#/definitions/models.ResponseSingle-models_Task'
       summary: Import images from commons
+      tags:
+      - Round
+  /round/import/{roundId}/csv:
+    post:
+      description: The user would provide a round ID and a CSV file path and the system
+        would import images from that CSV file
+      parameters:
+      - description: The round ID
+        in: path
+        name: roundId
+        required: true
+        type: string
+      - description: The column name of the file name (if exists, it is the slowest
+          way to import. **Not recommended**)
+        in: formData
+        name: fileNameColumn
+        type: string
+      - description: The column name of the page ID (if exists, it is the second fastest
+          way to import)
+        in: formData
+        name: pageIdColumn
+        type: string
+      - description: The column name of the submission ID (if exists, it is the fastest
+          way to import. **Highly recommended**)
+        in: formData
+        name: submissionIdColumn
+        type: string
+      - description: The CSV file (upto 10MB CSV)
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ResponseSingle-models_Task'
+      summary: Import images from CSV
       tags:
       - Round
   /round/import/{targetRoundId}/previous:

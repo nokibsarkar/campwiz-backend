@@ -51,18 +51,24 @@ func (a *AuthenticationMiddleWare) extractAccessToken(c *gin.Context) (string, e
 
 func (a *AuthenticationMiddleWare) checkIfUnauthenticatedAllowed(c *gin.Context) bool {
 	fmt.Println("Checking if unauthenticated allowed", c.Request.Method, c.Request.URL.Path)
-	if c.Request.Method != "GET" {
-		return false
-	}
+
 	path := c.Request.URL.Path
 	// return true
 	var UnRestrictedPaths = []string{
 		"/user/login",
 		"/user/callback",
 		"/api/v2/campaign/",
-		// "/api/v2/user/logout",
+		"POST /api/v2/round/import/*",
 	}
 	for _, p := range UnRestrictedPaths {
+		if c.Request.Method == "POST" {
+			if strings.HasPrefix(p, "POST ") {
+				p = strings.TrimLeft(p, "POST ")
+			} else {
+				continue
+			}
+		}
+
 		if strings.HasSuffix(p, "*") {
 			rest := p[:len(p)-1]
 			if strings.HasPrefix(path, rest) {

@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log"
+	"mime/multipart"
 	"nokib/campwiz/consts"
 	"nokib/campwiz/models"
 	"nokib/campwiz/query"
@@ -12,6 +14,7 @@ import (
 	"nokib/campwiz/repository/cache"
 	idgenerator "nokib/campwiz/services/idGenerator"
 	"nokib/campwiz/services/round_service"
+	"os"
 
 	"gorm.io/datatypes"
 )
@@ -37,6 +40,16 @@ type ImportFromPreviousRoundPayload struct {
 	RoundID models.IDType `json:"roundId" binding:"required"`
 	// Scores of the images to be fetched
 	Scores []models.ScoreType `json:"scores" binding:"required"`
+}
+type ImportFromCSVRequest struct {
+	// The file to be imported, it should be a CSV file
+	File *multipart.FileHeader `form:"file" binding:"required"`
+	// The column name of the submission ID (if exists, it is the fastest way to import. **Highly recommended**)
+	SubmissionIDColumn string `form:"submissionIdColumn"`
+	// The column name of the page ID (if exists, it is the second fastest way to import)
+	PageIDColumn string `form:"pageIdColumn"`
+	// The column name of the file name (if exists, it is the slowest way to import. **Not recommended**)
+	FileNameColumn string `form:"fileNameColumn"`
 }
 type Jury struct {
 	ID            uint64 `json:"id" gorm:"primaryKey"`
@@ -297,6 +310,79 @@ func (b *RoundService) ImportFromPreviousRound(currentUserId models.IDType, targ
 	})
 	return task, err
 }
+
+func (b *RoundService) ImportFromCSV(roundId models.IDType, req *ImportFromCSVRequest) (*models.Task, error) {
+
+	round_repo := repository.NewRoundRepository()
+	task_repo := repository.NewTaskRepository()
+	conn, close, err := repository.GetDB()
+	if err != nil {
+		return nil, err
+	}
+	defer close()
+	tx := conn.Begin()
+	round, err := round_repo.FindByID(tx.Preload("Campaign"), roundId)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	} else if round == nil {
+		tx.Rollback()
+		return nil, fmt.Errorf("round not found")
+	} else if round.Campaign == nil {
+		tx.Rollback()
+		return nil, fmt.Errorf("campaign not found")
+	}
+	tempFile, err := os.CreateTemp("", "import-*.csv")
+	if err != nil {
+		return nil, err
+	}
+	// copy the file to the temp file
+	src, err := req.File.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer src.Close()
+	_, err = io.Copy(tempFile, src)
+	if err != nil {
+		return nil, err
+	}
+	taskReq := &models.Task{
+		TaskID:               idgenerator.GenerateID("t"),
+		Type:                 models.TaskTypeImportFromCSV,
+		Status:               models.TaskStatusPending,
+		AssociatedRoundID:    &roundId,
+		AssociatedUserID:     &round.CreatedByID,
+		CreatedByID:          round.CreatedByID,
+		AssociatedCampaignID: &round.CampaignID,
+		SuccessCount:         0,
+		FailedCount:          0,
+		FailedIds:            &datatypes.JSONType[map[string]string]{},
+		RemainingCount:       0,
+	}
+	task, err := task_repo.Create(tx, taskReq)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	tx.Commit()
+	grpcClient, err := round_service.NewGrpcClient()
+	if err != nil {
+		return nil, err
+	}
+	log.Println("GRPC client created")
+	defer grpcClient.Close() //nolint:errcheck
+	importClient := models.NewImporterClient(grpcClient)
+	_, err = importClient.ImportFromCSV(context.Background(), &models.ImportFromCSVRequest{
+		FilePath:           tempFile.Name(),
+		SubmissionIdColumn: req.SubmissionIDColumn,
+		PageIdColumn:       req.PageIDColumn,
+		FileNameColumn:     req.FileNameColumn,
+		RoundId:            round.RoundID.String(),
+		TaskId:             task.TaskID.String(),
+	})
+	return task, err
+}
+
 func (b *RoundService) GetById(roundId models.IDType) (*models.Round, error) {
 	round_repo := repository.NewRoundRepository()
 	conn, close, err := repository.GetDB()

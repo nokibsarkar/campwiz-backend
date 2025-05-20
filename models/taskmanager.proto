@@ -6,6 +6,7 @@ option go_package = "nokib/campwiz/models;models";
 service Importer {
     rpc ImportFromCommonsCategory(ImportFromCommonsCategoryRequest) returns (ImportResponse);
     rpc ImportFromPreviousRound(ImportFromPreviousRoundRequest) returns (ImportResponse);
+    rpc ImportFromCSV(ImportFromCSVRequest) returns (ImportResponse);
 }
 
 
@@ -19,6 +20,14 @@ message ImportFromPreviousRoundRequest {
    string task_id = 2;
    float minimum_score = 3;
    string source_round_id = 4;
+}
+message ImportFromCSVRequest {
+    string filePath = 1;
+    string submissionIdColumn = 2;
+    string pageIdColumn = 3;
+    string fileNameColumn = 4;
+    string round_id = 5;
+    string task_id = 6;
 }
 message ImportResponse {
    string task_id = 1;

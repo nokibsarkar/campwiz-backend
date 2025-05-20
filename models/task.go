@@ -12,6 +12,7 @@ type TaskType string
 const (
 	TaskTypeImportFromCommons       TaskType = "submissions.import.commons"
 	TaskTypeImportFromPreviousRound TaskType = "submissions.import.previous"
+	TaskTypeImportFromCSV           TaskType = "submissions.import.csv"
 	TaskTypeDistributeEvaluations   TaskType = "assignments.distribute"
 	TaskTypeRandomizeAssignments    TaskType = "assignments.randomize"
 )

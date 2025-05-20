@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"log"
+	"nokib/campwiz/consts"
 	"nokib/campwiz/models"
 	"nokib/campwiz/repository/cache"
 	"nokib/campwiz/services"
@@ -142,6 +143,50 @@ func ImportFromPreviousRound(c *gin.Context, sess *cache.Session) {
 		return
 	}
 	task, err := round_service.ImportFromPreviousRound(sess.UserID, models.IDType(roundId), req)
+	if err != nil {
+		c.JSON(400, models.ResponseError{Detail: "Failed to import images : " + err.Error()})
+		return
+	}
+	c.JSON(200, models.ResponseSingle[*models.Task]{Data: task})
+}
+
+// ImportFromCSV godoc
+// @Summary Import images from CSV
+// @Description The user would provide a round ID and a CSV file path and the system would import images from that CSV file
+// @Consumes multipart/form-data
+// @Produce  json
+// @Success 200 {object} models.ResponseSingle[models.Task]
+// @Router /round/import/{roundId}/csv [post]
+// @Param roundId path string true "The round ID"
+// @Param ImportFromCSVRequest formData services.ImportFromCSVRequest true "The import from CSV request"
+// @Param file formData file true "The CSV file (upto 10MB CSV)"
+// @Tags Round
+// @Error 400 {object} models.ResponseError
+func ImportFromCSV(c *gin.Context) {
+	roundId := c.Param("roundId")
+	if roundId == "" {
+		c.JSON(400, models.ResponseError{Detail: "Invalid request : Round ID is required"})
+		return
+	}
+	req := &services.ImportFromCSVRequest{}
+	err := c.ShouldBind(req)
+	if err != nil {
+		c.JSON(400, models.ResponseError{Detail: "Error Decoding : " + err.Error()})
+		return
+	}
+	file := req.File
+	if file == nil {
+		c.JSON(400, models.ResponseError{Detail: "Invalid request : No file provided"})
+		return
+	}
+	size := file.Size
+	if size > consts.MAX_CSV_FILE_SIZE {
+		c.JSON(400, models.ResponseError{Detail: "Invalid request : File size exceeds " + fmt.Sprintf("%dMB", consts.MAX_CSV_FILE_SIZE>>20)})
+		return
+	}
+
+	round_service := services.NewRoundService()
+	task, err := round_service.ImportFromCSV(models.IDType(roundId), req)
 	if err != nil {
 		c.JSON(400, models.ResponseError{Detail: "Failed to import images : " + err.Error()})
 		return

@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	Importer_ImportFromCommonsCategory_FullMethodName = "/models.Importer/ImportFromCommonsCategory"
 	Importer_ImportFromPreviousRound_FullMethodName   = "/models.Importer/ImportFromPreviousRound"
+	Importer_ImportFromCSV_FullMethodName             = "/models.Importer/ImportFromCSV"
 )
 
 // ImporterClient is the client API for Importer service.
@@ -29,6 +30,7 @@ const (
 type ImporterClient interface {
 	ImportFromCommonsCategory(ctx context.Context, in *ImportFromCommonsCategoryRequest, opts ...grpc.CallOption) (*ImportResponse, error)
 	ImportFromPreviousRound(ctx context.Context, in *ImportFromPreviousRoundRequest, opts ...grpc.CallOption) (*ImportResponse, error)
+	ImportFromCSV(ctx context.Context, in *ImportFromCSVRequest, opts ...grpc.CallOption) (*ImportResponse, error)
 }
 
 type importerClient struct {
@@ -59,12 +61,23 @@ func (c *importerClient) ImportFromPreviousRound(ctx context.Context, in *Import
 	return out, nil
 }
 
+func (c *importerClient) ImportFromCSV(ctx context.Context, in *ImportFromCSVRequest, opts ...grpc.CallOption) (*ImportResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ImportResponse)
+	err := c.cc.Invoke(ctx, Importer_ImportFromCSV_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ImporterServer is the server API for Importer service.
 // All implementations must embed UnimplementedImporterServer
 // for forward compatibility.
 type ImporterServer interface {
 	ImportFromCommonsCategory(context.Context, *ImportFromCommonsCategoryRequest) (*ImportResponse, error)
 	ImportFromPreviousRound(context.Context, *ImportFromPreviousRoundRequest) (*ImportResponse, error)
+	ImportFromCSV(context.Context, *ImportFromCSVRequest) (*ImportResponse, error)
 	mustEmbedUnimplementedImporterServer()
 }
 
@@ -80,6 +93,9 @@ func (UnimplementedImporterServer) ImportFromCommonsCategory(context.Context, *I
 }
 func (UnimplementedImporterServer) ImportFromPreviousRound(context.Context, *ImportFromPreviousRoundRequest) (*ImportResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ImportFromPreviousRound not implemented")
+}
+func (UnimplementedImporterServer) ImportFromCSV(context.Context, *ImportFromCSVRequest) (*ImportResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ImportFromCSV not implemented")
 }
 func (UnimplementedImporterServer) mustEmbedUnimplementedImporterServer() {}
 func (UnimplementedImporterServer) testEmbeddedByValue()                  {}
@@ -138,6 +154,24 @@ func _Importer_ImportFromPreviousRound_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Importer_ImportFromCSV_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ImportFromCSVRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ImporterServer).ImportFromCSV(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Importer_ImportFromCSV_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ImporterServer).ImportFromCSV(ctx, req.(*ImportFromCSVRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Importer_ServiceDesc is the grpc.ServiceDesc for Importer service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -152,6 +186,10 @@ var Importer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ImportFromPreviousRound",
 			Handler:    _Importer_ImportFromPreviousRound_Handler,
+		},
+		{
+			MethodName: "ImportFromCSV",
+			Handler:    _Importer_ImportFromCSV_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

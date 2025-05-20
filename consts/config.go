@@ -11,6 +11,7 @@ var BuildTime string
 var CommitHash string
 var Release string
 
+const MAX_CSV_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
 type SentryConfig struct {
 	DSN         string            `mapstructure:"DSN"`
 	Environment string            `mapstructure:"Environment"`

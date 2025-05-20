@@ -903,6 +903,60 @@ const docTemplate = `{
                 }
             }
         },
+        "/round/import/{roundId}/csv": {
+            "post": {
+                "description": "The user would provide a round ID and a CSV file path and the system would import images from that CSV file",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Round"
+                ],
+                "summary": "Import images from CSV",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The round ID",
+                        "name": "roundId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "The column name of the file name (if exists, it is the slowest way to import. **Not recommended**)",
+                        "name": "fileNameColumn",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "The column name of the page ID (if exists, it is the second fastest way to import)",
+                        "name": "pageIdColumn",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "The column name of the submission ID (if exists, it is the fastest way to import. **Highly recommended**)",
+                        "name": "submissionIdColumn",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "The CSV file (upto 10MB CSV)",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResponseSingle-models_Task"
+                        }
+                    }
+                }
+            }
+        },
         "/round/import/{targetRoundId}/previous": {
             "post": {
                 "description": "The user would provide a round ID and a list of scores and the system would import images from the previous round with those scores",
@@ -2604,15 +2658,31 @@ const docTemplate = `{
             "enum": [
                 "submissions.import.commons",
                 "submissions.import.previous",
+                "submissions.import.csv",
                 "assignments.distribute",
                 "assignments.randomize"
             ],
             "x-enum-varnames": [
                 "TaskTypeImportFromCommons",
                 "TaskTypeImportFromPreviousRound",
+                "TaskTypeImportFromCSV",
                 "TaskTypeDistributeEvaluations",
                 "TaskTypeRandomizeAssignments"
             ]
+        },
+        "multipart.FileHeader": {
+            "type": "object",
+            "properties": {
+                "filename": {
+                    "type": "string"
+                },
+                "header": {
+                    "$ref": "#/definitions/textproto.MIMEHeader"
+                },
+                "size": {
+                    "type": "integer"
+                }
+            }
         },
         "routes.RedirectResponse": {
             "type": "object",
@@ -2972,6 +3042,15 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "userId": {
+                    "type": "string"
+                }
+            }
+        },
+        "textproto.MIMEHeader": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "array",
+                "items": {
                     "type": "string"
                 }
             }

@@ -341,7 +341,7 @@ func (b *RoundService) ImportFromCSV(roundId models.IDType, req *ImportFromCSVRe
 	if err != nil {
 		return nil, err
 	}
-	defer src.Close()
+	defer src.Close() //nolint:errcheck
 	_, err = io.Copy(tempFile, src)
 	if err != nil {
 		return nil, err

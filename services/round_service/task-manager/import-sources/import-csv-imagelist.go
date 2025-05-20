@@ -1,12 +1,15 @@
 package importsources
 
 import (
+	"bytes"
 	"context"
 	"encoding/csv"
 	"io"
 	"log"
 	"nokib/campwiz/models"
+	"nokib/campwiz/repository"
 	"os"
+	"strings"
 )
 
 type CSVListSource struct {
@@ -64,6 +67,15 @@ func (c *CSVListSource) ImportImageResults(currentRound *models.Round, failedIma
 	}
 	return nil, failedImageReason
 }
+
+func removeBOMFromString(s string) string {
+	bom := []byte{0xEF, 0xBB, 0xBF}
+	b := []byte(s)
+	if bytes.HasPrefix(b, bom) {
+		return string(b[len(bom):])
+	}
+	return s
+}
 func (c *CSVListSource) importUsingSubmissionId(reader *csv.Reader, failedImageReason *map[string]string) ([]models.MediaResult, *map[string]string) {
 	headers, err := reader.Read()
 	if err != nil {
@@ -72,7 +84,13 @@ func (c *CSVListSource) importUsingSubmissionId(reader *csv.Reader, failedImageR
 		return nil, failedImageReason
 	}
 	submissionIDColumnIndex := -1
+	log.Printf("Headers: %v", headers)
 	for i, header := range headers {
+		bytesHeader := []byte(strings.TrimSpace(header))
+		bh := []byte(*c.SubmissionIDColumn)
+		header = removeBOMFromString(header)
+		// h := strings.TrimSpace(*c.SubmissionIDColumn)
+		log.Printf("Header: %v, %v", bytesHeader, bh)
 		if *c.SubmissionIDColumn == header {
 			submissionIDColumnIndex = i
 			break
@@ -81,6 +99,7 @@ func (c *CSVListSource) importUsingSubmissionId(reader *csv.Reader, failedImageR
 	if submissionIDColumnIndex == -1 {
 		(*failedImageReason)["*"] = "SubmissionID column not found : " + *c.SubmissionIDColumn
 		log.Printf("SubmissionID column not found: %s", *c.SubmissionIDColumn)
+		// return nil, failedImageReason
 	}
 	submissionIds := []string{}
 	for {
@@ -104,6 +123,48 @@ func (c *CSVListSource) importUsingSubmissionId(reader *csv.Reader, failedImageR
 		// Process the submissionID as needed
 		submissionIds = append(submissionIds, submissionID)
 	}
-	log.Printf("Submission IDs: %v", submissionIds)
-	return nil, failedImageReason
+	q, close := repository.GetDBWithGen()
+	// if err != nil {
+	// 	(*failedImageReason)["*"] = err.Error()
+	// 	log.Printf("Error getting DB connection: %s", err)
+	// 	return nil, failedImageReason
+	// }
+	defer close()
+	Submission := q.Submission
+	submissions, err := Submission.Select(Submission.ALL).Where(Submission.SubmissionID.In(submissionIds...)).Find()
+	if err != nil {
+		(*failedImageReason)["*"] = err.Error()
+		log.Printf("Error getting submissions: %s", err)
+		return nil, failedImageReason
+	}
+	if len(submissions) == 0 {
+		(*failedImageReason)["*"] = "No submissions found"
+		log.Printf("No submissions found")
+		return nil, failedImageReason
+	}
+
+	results := make([]models.MediaResult, len(submissions))
+	for i, submission := range submissions {
+		results[i] = models.MediaResult{
+			SubmissionID:     models.IDType(submission.SubmissionID),
+			PageID:           submission.PageID,
+			Name:             submission.Name,
+			URL:              submission.URL,
+			UploaderUsername: submission.Author,
+			Height:           submission.Height,
+			Width:            submission.Width,
+			Size:             submission.Size,
+			License:          submission.License,
+			MediaType:        string(submission.MediaType),
+			Duration:         submission.Duration,
+			Description:      submission.Description,
+			Resolution:       submission.Resolution,
+			ThumbHeight:      &submission.ThumbHeight,
+			ThumbWidth:       &submission.ThumbWidth,
+			ThumbURL:         &submission.ThumbURL,
+			CreditHTML:       submission.CreditHTML,
+			SubmittedAt:      submission.SubmittedAt,
+		}
+	}
+	return results, failedImageReason
 }

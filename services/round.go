@@ -29,7 +29,8 @@ type RoundRequest struct {
 }
 
 type DistributionRequest struct {
-	AmongJuriesUsername []models.WikimediaUsernameType `json:"juries"`
+	TargetJuriesUsername []models.WikimediaUsernameType `json:"juries"`
+	SourceJuriesUsername []models.WikimediaUsernameType `json:"sourceJuries"`
 }
 type ImportFromCommonsPayload struct {
 	// Categories from which images will be fetched
@@ -568,14 +569,20 @@ func (r *RoundService) DistributeEvaluations(currentUserID models.IDType, roundI
 	}
 	defer grpcClient.Close() //nolint:errcheck
 	distributorClient := models.NewDistributorClient(grpcClient)
-	juryUsername := make([]string, len(distributionReq.AmongJuriesUsername))
-	for i, username := range distributionReq.AmongJuriesUsername {
+	log.Printf("Distribution request: %+v", distributionReq)
+	juryUsername := make([]string, len(distributionReq.TargetJuriesUsername))
+	for i, username := range distributionReq.TargetJuriesUsername {
 		juryUsername[i] = username.String()
 	}
+	sourceJuryUsername := make([]string, len(distributionReq.SourceJuriesUsername))
+	for i, username := range distributionReq.SourceJuriesUsername {
+		sourceJuryUsername[i] = username.String()
+	}
 	_, err = distributorClient.DistributeWithRoundRobin(context.Background(), &models.DistributeWithRoundRobinRequest{
-		RoundId:       round.RoundID.String(),
-		TaskId:        task.TaskID.String(),
-		JuryUsernames: juryUsername,
+		RoundId:             round.RoundID.String(),
+		TaskId:              task.TaskID.String(),
+		TargetJuryUsernames: juryUsername,
+		SourceJuryUsernames: sourceJuryUsername,
 	})
 	return task, err
 }

@@ -14,9 +14,10 @@ import (
 )
 
 type RoundRobinDistributionStrategy struct {
-	TaskId           models.IDType
-	AssignableJuries []models.WikimediaUsernameType
-	RoundId          models.IDType
+	TaskId       models.IDType
+	SourceJuries []models.WikimediaUsernameType
+	TargetJuries []string
+	RoundId      models.IDType
 }
 type DistributionResultV3 struct {
 	TotalWorkLoad             WorkLoadType                   `json:"totalWorkLoad"`
@@ -56,16 +57,20 @@ func (h *MinimumWorkloadHeap) Pop() any {
 func (d *DistributorServer) DistributeWithRoundRobin(ctx context.Context, req *models.DistributeWithRoundRobinRequest) (*models.DistributeWithRoundRobinResponse, error) {
 	// Implement the round robin distribution logic here
 	taskId := req.TaskId
-	assignableJuries := []models.WikimediaUsernameType{}
-	for _, jury := range req.JuryUsernames {
-		assignableJuries = append(assignableJuries, models.WikimediaUsernameType(jury))
+	sourceJuries := []models.WikimediaUsernameType{}
+	for _, jury := range req.SourceJuryUsernames {
+		sourceJuries = append(sourceJuries, models.WikimediaUsernameType(jury))
 	}
+	log.Printf("Request : %+v", req)
 	strategy := &RoundRobinDistributionStrategy{
-		TaskId:           models.IDType(taskId),
-		AssignableJuries: assignableJuries,
-		RoundId:          models.IDType(req.RoundId),
+		TaskId:       models.IDType(taskId),
+		SourceJuries: sourceJuries,
+		RoundId:      models.IDType(req.RoundId),
+		TargetJuries: req.TargetJuryUsernames,
 	}
-	go strategy.AssignJuries()
+	log.Printf("Distributing task %s with round robin strategy", taskId)
+	log.Printf("Strategy : %+v", strategy)
+	go strategy.AssignJuries2()
 	return &models.DistributeWithRoundRobinResponse{
 		TaskId: req.TaskId,
 	}, nil
@@ -131,7 +136,7 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries() {
 	submission_repo := repository.NewSubmissionRepository()
 	jury_repo := repository.NewRoleRepository()
 	j := models.RoleTypeJury
-	fetchedJuries, err := jury_repo.FindRolesByUsername(conn, strategy.AssignableJuries, &models.RoleFilter{
+	fetchedJuries, err := jury_repo.FindRolesByUsername(conn, strategy.SourceJuries, &models.RoleFilter{
 		Type:       &j,
 		RoundID:    &round.RoundID,
 		CampaignID: &round.CampaignID,
@@ -146,9 +151,9 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries() {
 		task.Status = models.TaskStatusFailed
 		return
 	}
-	assignableJuryRoleIDs := []models.IDType{}
+	targetJuryRoleIDs := []models.IDType{}
 	for _, jury := range fetchedJuries {
-		assignableJuryRoleIDs = append(assignableJuryRoleIDs, jury.RoleID)
+		targetJuryRoleIDs = append(targetJuryRoleIDs, jury.RoleID)
 	}
 	submissions, err := submission_repo.ListAllSubmissions(conn.Where("assignment_count < ?", round.Quorum), &models.SubmissionListFilter{
 		RoundID:    round.RoundID,
@@ -175,7 +180,7 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries() {
 		return
 	}
 
-	workload, err := strategy.calculateWorkloadQuota(taskDB, totalEvaluations, assignableJuryRoleIDs, fetchedJuries)
+	workload, err := strategy.calculateWorkloadQuota(taskDB, totalEvaluations, targetJuryRoleIDs, fetchedJuries)
 	if err != nil {
 		task.Status = models.TaskStatusFailed
 		log.Println("Error: ", err)

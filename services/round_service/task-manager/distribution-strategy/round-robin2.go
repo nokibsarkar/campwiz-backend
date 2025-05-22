@@ -79,7 +79,13 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries2() {
 		log.Println("Error: ", err)
 		return
 	}
-	strategy.createMissingEvaluations(conn, round.Type, round, submissions)
+	createdCount, err := strategy.createMissingEvaluations(conn, round.Type, round, submissions)
+	if err != nil {
+		task.Status = models.TaskStatusFailed
+		log.Println("Error: ", err)
+		return
+	}
+	log.Println("Created missing evaluations: ", createdCount)
 	q := query.Use(conn)
 	Role := q.Role
 	User := q.User

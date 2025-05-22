@@ -11,7 +11,7 @@ lint:
     - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.1.6
     - golangci-lint run --timeout 5m # --out-format code-climate:gl-code-quality-report.json,line-number > report.txt
 
-deploy-server:
+deploy-toolforge:
   stage: deploy
   environment: production
   rules:

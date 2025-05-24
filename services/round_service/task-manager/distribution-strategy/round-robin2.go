@@ -193,36 +193,7 @@ func (strategy *RoundRobinDistributionStrategy) calculateWorkloadV2(conn *gorm.D
 	q := query.Use(conn)
 	Assignment := q.Evaluation
 
-	elligibleAssignmentCount := JurorV3{}
-
-	stmt := Assignment.Select(Assignment.EvaluationID.Count().As("Count")).
-		Where(Assignment.RoundID.Eq(roundId.String())).
-		Where(Assignment.Score.IsNull()).
-		Where(Assignment.EvaluatedAt.IsNull())
-
-	if len(sourceRoleIds) > 0 {
-		stmt = stmt.Where(Assignment.JudgeID.In(sourceRoleIds...))
-	}
-
-	// Get the total number of unevaluated elligible assignments
-	err = stmt.Scan(&elligibleAssignmentCount)
-	if err != gorm.ErrRecordNotFound && err != nil {
-		log.Println("Error: ", err)
-		return nil, err
-	}
-	totalElligibleEvaluations := elligibleAssignmentCount.Count
-	log.Println("Total unevaluated evaluations: ", totalElligibleEvaluations)
-
-	if totalElligibleEvaluations == 0 {
-		log.Println("No elligible evaluations found")
-		return nil, errors.New("noElligibleEvaluationFound")
-	}
-	totalJuryCount := WorkLoadType(len(targetJuryRoleIds))
-	log.Println("Total target jury count: ", totalJuryCount)
-	if totalJuryCount == 0 {
-		log.Println("No jury found")
-		return nil, errors.New("noJuryFound")
-	}
+	elligibleAssignmentCount := []JurorV3{}
 	// Populate the existing workload
 	existingWorkLoadMap := map[models.IDType]WorkLoadType{}
 	// By default it would be zero, because
@@ -230,6 +201,39 @@ func (strategy *RoundRobinDistributionStrategy) calculateWorkloadV2(conn *gorm.D
 	for _, jurId := range targetJuryRoleIds {
 		existingWorkLoadMap[models.IDType(jurId)] = 0
 	}
+	stmt := Assignment.Select(Assignment.EvaluationID.Count().As("Count"), Assignment.JudgeID).
+		Where(Assignment.RoundID.Eq(roundId.String())).
+		Where(Assignment.Score.IsNull()).
+		Where(Assignment.EvaluatedAt.IsNull()).
+		Group(Assignment.JudgeID)
+	if len(sourceRoleIds) > 0 {
+		stmt = stmt.Where(Assignment.JudgeID.In(sourceRoleIds...))
+	}
+	// Get the total number of unevaluated elligible assignments
+	err = stmt.Scan(&elligibleAssignmentCount)
+	if err != gorm.ErrRecordNotFound && err != nil {
+		log.Println("Error: ", err)
+		return nil, err
+	}
+	log.Printf("Eligible assignments count: %+v", elligibleAssignmentCount)
+	totalElligibleEvaluations := WorkLoadType(0)
+	for _, juror := range elligibleAssignmentCount {
+		if juror.Count > 0 {
+			if _, ok := existingWorkLoadMap[juror.JudgeID]; ok {
+				continue // Skip if the juror is in the target jury list
+			}
+			totalElligibleEvaluations += WorkLoadType(juror.Count)
+		}
+	}
+	log.Println("Total unevaluated evaluations: ", totalElligibleEvaluations)
+
+	totalJuryCount := WorkLoadType(len(targetJuryRoleIds))
+	log.Println("Total target jury count: ", totalJuryCount)
+	if totalJuryCount == 0 {
+		log.Println("No jury found")
+		return nil, errors.New("noJuryFound")
+	}
+
 	alreadyAssignedWorkloads := MinimumWorkloadHeap{}
 	err = Assignment.Select(Assignment.JudgeID, Assignment.EvaluationID.Count().As("Count")).
 		// Where(Assignment.Score.IsNotNull()).Where(Assignment.EvaluatedAt.IsNotNull()).
@@ -244,8 +248,11 @@ func (strategy *RoundRobinDistributionStrategy) calculateWorkloadV2(conn *gorm.D
 		existingWorkLoadMap[workload.JudgeID] = WorkLoadType(workload.Count)
 	}
 	log.Printf("Existing workload: %+v", existingWorkLoadMap)
-	totalEvaluationsTobeConsideredForFairDistribution := totalElligibleEvaluations //+ totalEvaluatedCount
-
+	totalEvaluationsTobeConsideredForFairDistribution := totalElligibleEvaluations + totalEvaluatedCount
+	if totalEvaluatedCount == 0 {
+		log.Println("No elligible evaluations found")
+		return nil, errors.New("noElligibleEvaluationFound")
+	}
 	averageWorkload := totalEvaluationsTobeConsideredForFairDistribution / totalJuryCount
 	extraWorkload := totalEvaluationsTobeConsideredForFairDistribution % totalJuryCount
 	log.Println("Existing workload: ", alreadyAssignedWorkloads)

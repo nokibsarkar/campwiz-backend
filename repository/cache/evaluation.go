@@ -30,8 +30,10 @@ type Dirtributor interface {
 	// 	JOIN submissions s ON e2.submission_id = s.submission_id
 	// 	WHERE  e2.judge_id IN (@reassignable_judges)
 	// 	AND s.submitted_by_id <> @my_user_id
+	// AND e2.judge_id <> @judge_id
 	// 	AND e2.round_id = @round_id
 	// 	AND e2.score IS NULL
+	// AND e2.distribution_task_id <> @task_id
 	// 	AND e2.evaluation_id NOT IN (
 	// 		SELECT e3.evaluation_id FROM evaluations e3
 	// 		WHERE e3.judge_id = @judge_id
@@ -44,9 +46,9 @@ type Dirtributor interface {
 	//  SET e1.judge_id = @my_judge_id, e1.distribution_task_id = @task_id WHERE e1.evaluation_id IN (
 	// 	SELECT e2.evaluation_id FROM evaluations e2
 	// 	JOIN submissions s ON e2.submission_id = s.submission_id
-	// 	WHERE e2.judge_id IS NULL
 	// 	AND s.submitted_by_id <> @my_user_id
 	// 	AND e2.round_id = @round_id
+	// AND e2.distribution_task_id <> @task_id
 	// 	AND e2.score IS NULL
 	// 	AND e2.evaluation_id NOT IN (
 	// 		SELECT e3.evaluation_id FROM evaluations e3
@@ -56,6 +58,19 @@ type Dirtributor interface {
 	// 	ORDER BY RAND()
 	// ) LIMIT @N;
 	DistributeAssignmentsIncludingUnassigned(my_judge_id models.IDType, my_user_id models.IDType, round_id string, task_id models.IDType, N int) (gen.RowsAffected, error)
+	// UPDATE `evaluations` e1
+	// SET e1.judge_id = (
+	// 		SELECT role_id FROM roles
+	// 		WHERE role_id NOT IN (SELECT judge_id FROM evaluations WHERE submission_id = e1.submission_id AND round_id = @round_id)
+	// 		AND round_id = @round_id
+	// 		ORDER BY RAND()
+	// 		LIMIT 1
+	// ), e1.distribution_task_id = @task_id
+	// WHERE e1.score IS NULL
+	// AND e1.evaluated_at IS NULL
+	// AND e1.judge_id IS NULL
+	// AND e1.round_id = @round_id;
+	DistributeTheLastRemainingEvaluations(task_id models.IDType, round_id string) (gen.RowsAffected, error)
 }
 
 // update evaluations join (select min(evaluation_id) from evaluations JOIN submissions using(submission_id) where evaluations.score is null and evaluations.evaluated_at is null and evaluations.judge_id in ('r2eayfc854mio','r2au5d42wsb9c','r2audoxx0tatc') and evaluations.round_id = 'r2an2bnorpxc0' and submissions.round_id = 'r2an2bnorpxc0' and submissions.submitted_by_id <> 'u2aspyfke718g' and evaluations.submission_id not in (SELECT submission_id FROM evaluations where round_id = 'r2an2bnorpxc0' and judge_id = 'r2b6za303pcsg') LIMIT 3

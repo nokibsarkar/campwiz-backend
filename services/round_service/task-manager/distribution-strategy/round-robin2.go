@@ -195,11 +195,11 @@ func (strategy *RoundRobinDistributionStrategy) calculateWorkloadV2(conn *gorm.D
 
 	elligibleAssignmentCount := []JurorV3{}
 	// Populate the existing workload
-	existingWorkLoadMap := map[models.IDType]WorkLoadType{}
+	alreadyAssignedWorkflowMap := map[models.IDType]WorkLoadType{}
 	// By default it would be zero, because
 	// we would be assigning the evaluations to the juries
 	for _, jurId := range targetJuryRoleIds {
-		existingWorkLoadMap[models.IDType(jurId)] = 0
+		alreadyAssignedWorkflowMap[models.IDType(jurId)] = 0
 	}
 	stmt := Assignment.Select(Assignment.EvaluationID.Count().As("Count"), Assignment.JudgeID).
 		Where(Assignment.RoundID.Eq(roundId.String())).
@@ -216,16 +216,16 @@ func (strategy *RoundRobinDistributionStrategy) calculateWorkloadV2(conn *gorm.D
 		return nil, err
 	}
 	log.Printf("Eligible assignments count: %+v", elligibleAssignmentCount)
-	totalElligibleEvaluations := WorkLoadType(0)
+	totalElligibleUnevaluatedEvaluations := WorkLoadType(0)
 	for _, juror := range elligibleAssignmentCount {
 		if juror.Count > 0 {
-			if _, ok := existingWorkLoadMap[juror.JudgeID]; ok {
+			if _, ok := alreadyAssignedWorkflowMap[juror.JudgeID]; ok {
 				continue // Skip if the juror is in the target jury list
 			}
-			totalElligibleEvaluations += WorkLoadType(juror.Count)
+			totalElligibleUnevaluatedEvaluations += WorkLoadType(juror.Count)
 		}
 	}
-	log.Println("Total unevaluated evaluations: ", totalElligibleEvaluations)
+	log.Println("Total unevaluated evaluations: ", totalElligibleUnevaluatedEvaluations)
 
 	totalJuryCount := WorkLoadType(len(targetJuryRoleIds))
 	log.Println("Total target jury count: ", totalJuryCount)
@@ -242,14 +242,32 @@ func (strategy *RoundRobinDistributionStrategy) calculateWorkloadV2(conn *gorm.D
 	if err != nil {
 		return nil, err
 	}
-	totalEvaluatedCount := WorkLoadType(0)
+	totalAssignedCount := WorkLoadType(0)
 	for _, workload := range alreadyAssignedWorkloads {
-		totalEvaluatedCount += workload.Count
-		existingWorkLoadMap[workload.JudgeID] = WorkLoadType(workload.Count)
+		totalAssignedCount += workload.Count
+		alreadyAssignedWorkflowMap[workload.JudgeID] = WorkLoadType(workload.Count)
 	}
-	log.Printf("Existing workload: %+v", existingWorkLoadMap)
-	totalEvaluationsTobeConsideredForFairDistribution := totalElligibleEvaluations + totalEvaluatedCount
-	if totalEvaluatedCount == 0 {
+	// Already evaluated workloads
+	alreadyEvaluatedWorkloads := MinimumWorkloadHeap{}
+	err = Assignment.Select(Assignment.JudgeID, Assignment.EvaluationID.Count().As("Count")).
+		Where(Assignment.RoundID.Eq(roundId.String())).
+		Where(Assignment.Score.IsNotNull()).Where(Assignment.EvaluatedAt.IsNotNull()).
+		Where(Assignment.JudgeID.In(targetJuryRoleIds...)).
+		Group(Assignment.JudgeID).Scan(&alreadyEvaluatedWorkloads)
+	if err != nil {
+		log.Println("Error: ", err)
+		return nil, err
+	}
+	alreadyEvaluatedWorkloadMap := map[models.IDType]WorkLoadType{}
+	log.Printf("Already evaluated workloads: %+v", alreadyEvaluatedWorkloads)
+	// Update the existing workload map with the already evaluated workloads
+	for _, workload := range alreadyEvaluatedWorkloads {
+		alreadyEvaluatedWorkloadMap[workload.JudgeID] = workload.Count
+	}
+	log.Println("Existing evaluated workload map: ", alreadyEvaluatedWorkloadMap)
+	log.Printf("Existing assigned workload: %+v", alreadyAssignedWorkflowMap)
+	totalEvaluationsTobeConsideredForFairDistribution := totalElligibleUnevaluatedEvaluations + totalAssignedCount
+	if totalAssignedCount == 0 {
 		log.Println("No elligible evaluations found")
 		return nil, errors.New("noElligibleEvaluationFound")
 	}
@@ -260,19 +278,33 @@ func (strategy *RoundRobinDistributionStrategy) calculateWorkloadV2(conn *gorm.D
 	log.Println("Total jury count: ", totalJuryCount)
 	log.Println("Average workload: ", averageWorkload)
 	log.Println("Extra workload: ", extraWorkload)
+	// 10 13 8
 
 	k := MinimumWorkloadHeap{}
 	// Calculate the new workload for each juror
 	for _, jurId := range targetJuryRoleIds {
-		existingWorkload := existingWorkLoadMap[models.IDType(jurId)]
+		existingWorkload := alreadyAssignedWorkflowMap[models.IDType(jurId)]
 		newWorkload := averageWorkload - existingWorkload
-		if newWorkload > 0 {
-			fairNewWorkload[models.IDType(jurId)] = newWorkload
-			k = append(k, JurorV3{
-				JudgeID: models.IDType(jurId),
-				Count:   newWorkload,
-			})
-		}
+
+		// if newWorkload > 0 {
+		// Under Worked : newWorkload > 0
+		fairNewWorkload[models.IDType(jurId)] = newWorkload
+		k = append(k, JurorV3{
+			JudgeID: models.IDType(jurId),
+			Count:   newWorkload,
+		})
+		// } else if averageWorkload > alreadyEvaluatedWorkloadMap[models.IDType(jurId)] {
+		// 	// Over-assigned, so we need to reduce the workload using negative value
+		// 	// but the value would be the number of assignments should be kept as is
+		// 	// these would be marked as task distribution id as current task distribution id
+		// 	assignmentKeepCount := alreadyEvaluatedWorkloadMap[models.IDType(jurId)] - averageWorkload
+		// 	fairNewWorkload[models.IDType(jurId)] = assignmentKeepCount
+		// 	k = append(k, JurorV3{
+		// 		JudgeID: models.IDType(jurId),
+		// 		Count:   assignmentKeepCount,
+		// 	})
+
+		// }
 	}
 	if extraWorkload > 0 {
 		sort.SliceStable(k, func(i, j int) bool {
@@ -286,6 +318,5 @@ func (strategy *RoundRobinDistributionStrategy) calculateWorkloadV2(conn *gorm.D
 			extraWorkload--
 		}
 	}
-
 	return fairNewWorkload, nil
 }

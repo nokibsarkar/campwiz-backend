@@ -28,8 +28,9 @@ type WorkLoadType int
 
 // Juror represents a juror with workload and ID
 type JurorV3 struct {
-	JudgeID models.IDType
-	Count   WorkLoadType
+	JudgeID         models.IDType
+	Count           WorkLoadType
+	EvaluationCount WorkLoadType // This is the number of evaluations assigned to this juror
 }
 
 type TaskDistributionResultV3 struct {

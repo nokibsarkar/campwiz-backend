@@ -50,6 +50,7 @@ type Dirtributor interface {
 	// 	AND e2.round_id = @round_id
 	// AND e2.distribution_task_id <> @task_id
 	// 	AND e2.score IS NULL
+	// AND e2.evaluated_at IS NULL
 	// 	AND e2.evaluation_id NOT IN (
 	// 		SELECT e3.evaluation_id FROM evaluations e3
 	// 		WHERE e3.judge_id = @my_judge_id

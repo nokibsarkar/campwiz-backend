@@ -121,6 +121,7 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries2() {
 		targetRoleIds[i] = targetRole.RoleID.String()
 	}
 	includeFromSourceOnly := len(sourceRoleIds) > 0
+	log.Println("Include from source only: ", includeFromSourceOnly)
 	// Calculate the workload
 	newWorkload, err := strategy.calculateWorkloadV2(conn, strategy.RoundId, sourceRoleIds, targetRoleIds)
 	if err != nil {
@@ -144,6 +145,30 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries2() {
 		}
 	}()
 	q1 := query.Use(tx)
+	// first lock the negative workloads
+	for judgeId, workload := range newWorkload {
+		if workload < 0 {
+			log.Printf("Locking negative workload for judge %s: %d", judgeId, workload)
+			// Lock the workload in the database
+			Evaluation := q1.Evaluation
+			stmt := Evaluation.Where(Evaluation.JudgeID.Eq(judgeId.String())).
+				Where(Evaluation.RoundID.Eq(strategy.RoundId.String())).
+				Where(Evaluation.Score.IsNull()).
+				Where(Evaluation.EvaluatedAt.IsNull()).
+				Where(Evaluation.Where(Evaluation.DistributionTaskID.Neq(strategy.TaskId.String())).Or(Evaluation.DistributionTaskID.IsNull())).
+				Limit(-int(workload))
+			res, err := stmt.UpdateColumn(Evaluation.DistributionTaskID, strategy.TaskId)
+			if err != nil {
+				log.Println("Error locking workload: ", err)
+				task.Status = models.TaskStatusFailed
+				return
+			}
+			log.Printf("Rows affected by locking negative workload for judge %s: %d", judgeId, res.RowsAffected)
+			delete(newWorkload, judgeId) // Remove the negative workload from the map
+			log.Printf("Removed negative workload for judge %s: %d", judgeId, workload)
+		}
+	}
+
 	for _, targetRole := range targetRoles {
 		targetJudgeId := targetRole.RoleID
 		workload, ok := newWorkload[targetJudgeId]
@@ -267,10 +292,10 @@ func (strategy *RoundRobinDistributionStrategy) calculateWorkloadV2(conn *gorm.D
 	log.Println("Existing evaluated workload map: ", alreadyEvaluatedWorkloadMap)
 	log.Printf("Existing assigned workload: %+v", alreadyAssignedWorkflowMap)
 	totalEvaluationsTobeConsideredForFairDistribution := totalElligibleUnevaluatedEvaluations + totalAssignedCount
-	if totalAssignedCount == 0 {
-		log.Println("No elligible evaluations found")
-		return nil, errors.New("noElligibleEvaluationFound")
-	}
+	// if totalAssignedCount == 0 {
+	// 	log.Println("No elligible evaluations found")
+	// 	return nil, errors.New("noElligibleEvaluationFound")
+	// }
 	averageWorkload := totalEvaluationsTobeConsideredForFairDistribution / totalJuryCount
 	extraWorkload := totalEvaluationsTobeConsideredForFairDistribution % totalJuryCount
 	log.Println("Existing workload: ", alreadyAssignedWorkloads)
@@ -286,25 +311,11 @@ func (strategy *RoundRobinDistributionStrategy) calculateWorkloadV2(conn *gorm.D
 		existingWorkload := alreadyAssignedWorkflowMap[models.IDType(jurId)]
 		newWorkload := averageWorkload - existingWorkload
 
-		// if newWorkload > 0 {
-		// Under Worked : newWorkload > 0
 		fairNewWorkload[models.IDType(jurId)] = newWorkload
 		k = append(k, JurorV3{
 			JudgeID: models.IDType(jurId),
 			Count:   newWorkload,
 		})
-		// } else if averageWorkload > alreadyEvaluatedWorkloadMap[models.IDType(jurId)] {
-		// 	// Over-assigned, so we need to reduce the workload using negative value
-		// 	// but the value would be the number of assignments should be kept as is
-		// 	// these would be marked as task distribution id as current task distribution id
-		// 	assignmentKeepCount := alreadyEvaluatedWorkloadMap[models.IDType(jurId)] - averageWorkload
-		// 	fairNewWorkload[models.IDType(jurId)] = assignmentKeepCount
-		// 	k = append(k, JurorV3{
-		// 		JudgeID: models.IDType(jurId),
-		// 		Count:   assignmentKeepCount,
-		// 	})
-
-		// }
 	}
 	if extraWorkload > 0 {
 		sort.SliceStable(k, func(i, j int) bool {
@@ -318,5 +329,28 @@ func (strategy *RoundRobinDistributionStrategy) calculateWorkloadV2(conn *gorm.D
 			extraWorkload--
 		}
 	}
+	// ঋণাত্মক সংখ্যাগুলোকে একটু বদলে দিতে হচ্ছে
+	// এর মানে কতগুলো বিয়োগ করতে হবে, এর বদলে কতগুলো রাখতে হবে, সেটা
+	// তবে চিহ্ন একই থাকবে
+	// এতে চিহ্ন বিয়োগ থাকায় বোঝা সুবিধা হবে, অন্যদিকে কতগুলো রাখতে হবে,
+	// সেটার ফলে বণ্টন আইডি শুধুমাত্র সেগুলোতেই দেয়া হবে। ফলে বাকিগুলো অন্য কেউ সহজেই দখল করতে পারবে।
+	for jurId, workload := range fairNewWorkload {
+		evaluated := alreadyEvaluatedWorkloadMap[jurId]
+		assigned := alreadyAssignedWorkflowMap[jurId]
+		toBeKept := assigned - 2*evaluated + workload
+
+		if workload < 0 && toBeKept >= 0 {
+			log.Printf("Juror %s: Workload: %d, Evaluated: %d, Assigned: %d, To be kept: %d", jurId, workload, evaluated, assigned, toBeKept)
+
+			// If the workload is negative, it means we need to keep that many assignments
+			fairNewWorkload[jurId] = -toBeKept
+
+		}
+		if fairNewWorkload[jurId] == 0 {
+			// If the workload is zero, we can remove it from the map
+			delete(fairNewWorkload, jurId)
+		}
+	}
+
 	return fairNewWorkload, nil
 }

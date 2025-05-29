@@ -506,23 +506,23 @@ func (strategy *RoundRobinDistributionStrategy) triggerStatisticsUpdateByRoundID
 	if res.Error != nil {
 		return res.Error
 	}
-	jMap, err := q.JuryStatistics.GetJuryStatistics(round.RoundID.String())
+	err = q.JuryStatistics.TriggerByRoundID(round.RoundID.String())
 	if err != nil {
 		return err
 	}
-	log.Println(jMap)
-	for _, stat := range jMap {
-		log.Println("Updating jury statistics: ", stat)
-		res := tx.Unscoped().Where(&models.Role{
-			RoleID: stat.JudgeID,
-		}).Updates(&models.Role{
-			TotalAssigned:  stat.TotalAssigned,
-			TotalEvaluated: stat.TotalEvaluated,
-		})
-		if res.Error != nil {
-			return res.Error
-		}
-	}
+	// log.Println(jMap)
+	// for _, stat := range jMap {
+	// 	log.Println("Updating jury statistics: ", stat)
+	// 	res := tx.Unscoped().Where(&models.Role{
+	// 		RoleID: stat.JudgeID,
+	// 	}).Updates(&models.Role{
+	// 		TotalAssigned:  stat.TotalAssigned,
+	// 		TotalEvaluated: stat.TotalEvaluated,
+	// 	})
+	// 	if res.Error != nil {
+	// 		return res.Error
+	// 	}
+	// }
 	return nil
 
 }

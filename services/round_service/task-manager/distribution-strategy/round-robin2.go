@@ -1,12 +1,14 @@
 package distributionstrategy
 
 import (
+	"context"
 	"errors"
 	"log"
 	"nokib/campwiz/models"
 	"nokib/campwiz/query"
 	"nokib/campwiz/repository"
 	"sort"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -180,10 +182,12 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries2() {
 		log.Println("Judge ID: ", targetJudgeId)
 		log.Println("User ID: ", judgeUserId)
 		reassignment_count := int64(0)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
 		if includeFromSourceOnly {
-			reassignment_count, err = q1.Evaluation.DistributeAssignmentsFromSelectedSource(targetJudgeId, judgeUserId, strategy.RoundId.String(), sourceRoleIds, strategy.TaskId, int(workload))
+			reassignment_count, err = q1.Evaluation.WithContext(ctx).DistributeAssignmentsFromSelectedSource(targetJudgeId, judgeUserId, strategy.RoundId.String(), sourceRoleIds, strategy.TaskId, int(workload))
 		} else {
-			reassignment_count, err = q1.Evaluation.DistributeAssignmentsIncludingUnassigned(targetJudgeId, judgeUserId, strategy.RoundId.String(), strategy.TaskId, int(workload))
+			reassignment_count, err = q1.Evaluation.WithContext(ctx).DistributeAssignmentsIncludingUnassigned(targetJudgeId, judgeUserId, strategy.RoundId.String(), strategy.TaskId, int(workload))
 		}
 		if err != nil {
 			log.Println("Error: ", err)
@@ -192,13 +196,15 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries2() {
 		log.Println("Reassigned: ", reassignment_count)
 		task.SuccessCount += int(reassignment_count)
 	}
-	redistributeLastUnassigned, err := q.Evaluation.DistributeTheLastRemainingEvaluations(strategy.TaskId, strategy.RoundId.String())
-	if err != nil {
-		log.Println("Error: ", err)
-		return
-	}
-	task.SuccessCount += int(redistributeLastUnassigned)
-	log.Println("Redistributed last unassigned evaluations: ", redistributeLastUnassigned)
+	// ctx, cancel := context.WithTimeout(context.Background(), 50*time.Second)
+	// defer cancel()
+	// redistributeLastUnassigned, err := q.WithContext(ctx).Evaluation.DistributeTheLastRemainingEvaluations(strategy.TaskId, strategy.RoundId.String())
+	// if err != nil {
+	// 	log.Println("Error: ", err)
+	// 	return
+	// }
+	// task.SuccessCount += int(redistributeLastUnassigned)
+	// log.Println("Redistributed last unassigned evaluations: ", redistributeLastUnassigned)
 	err = strategy.triggerStatisticsUpdateByRoundID(tx, round)
 	if err != nil {
 		task.Status = models.TaskStatusFailed
@@ -339,16 +345,21 @@ func (strategy *RoundRobinDistributionStrategy) calculateWorkloadV2(conn *gorm.D
 		assigned := alreadyAssignedWorkflowMap[jurId]
 		toBeKept := assigned - 2*evaluated + workload
 
-		if workload < 0 && toBeKept >= 0 {
+		if workload < 0 {
 			log.Printf("Juror %s: Workload: %d, Evaluated: %d, Assigned: %d, To be kept: %d", jurId, workload, evaluated, assigned, toBeKept)
-
-			// If the workload is negative, it means we need to keep that many assignments
-			fairNewWorkload[jurId] = -toBeKept
+			if toBeKept >= 0 {
+				// If the workload is negative, it means we need to keep that many assignments
+				fairNewWorkload[jurId] = -toBeKept
+			} else {
+				// If the workload is negative and toBeKept is negative, we can set it to zero
+				fairNewWorkload[jurId] = 0
+				log.Printf("Juror %s: Workload is negative and toBeKept is negative, setting to zero", jurId)
+			}
 
 		}
 		if fairNewWorkload[jurId] == 0 {
 			// If the workload is zero, we can remove it from the map
-			delete(fairNewWorkload, jurId)
+			fairNewWorkload[jurId] = -assigned
 		}
 	}
 

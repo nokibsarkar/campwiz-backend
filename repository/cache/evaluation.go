@@ -33,7 +33,7 @@ type Dirtributor interface {
 	// AND e2.judge_id <> @judge_id
 	// 	AND e2.round_id = @round_id
 	// 	AND e2.score IS NULL
-	// AND e2.distribution_task_id <> @task_id
+	// AND (e2.distribution_task_id <> @task_id OR e2.distribution_task_id IS NULL)
 	// 	AND e2.evaluation_id NOT IN (
 	// 		SELECT e3.evaluation_id FROM evaluations e3
 	// 		WHERE e3.judge_id = @judge_id
@@ -48,7 +48,7 @@ type Dirtributor interface {
 	// 	JOIN submissions s ON e2.submission_id = s.submission_id
 	// 	AND s.submitted_by_id <> @my_user_id
 	// 	AND e2.round_id = @round_id
-	// AND e2.distribution_task_id <> @task_id
+	// AND (e2.distribution_task_id <> @task_id OR e2.distribution_task_id IS NULL)
 	// 	AND e2.score IS NULL
 	// AND e2.evaluated_at IS NULL
 	// 	AND e2.evaluation_id NOT IN (

@@ -52,6 +52,7 @@ func SetupRouter(testing bool, readOnly bool) *gin.Engine {
 	}
 	r.GET("/api/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 	if consts.Config.Sentry.DSN != "" {
+		log.Printf("Sentry DSN is set, enabling Sentry middleware")
 		r.Use(routes.NewSentryMiddleWare())
 	}
 

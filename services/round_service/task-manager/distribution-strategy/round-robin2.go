@@ -124,14 +124,14 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries2() {
 	}
 	includeFromSourceOnly := len(sourceRoleIds) > 0
 	log.Println("Include from source only: ", includeFromSourceOnly)
-	// Calculate the workload
-	newWorkload, err := strategy.calculateWorkloadV2(conn, strategy.RoundId, sourceRoleIds, targetRoleIds)
-	if err != nil {
-		task.Status = models.TaskStatusFailed
-		log.Println("Error: ", err)
-		return
-	}
-	log.Printf("New workload: %+v", newWorkload)
+	// // Calculate the workload
+	// newWorkload, err := strategy.calculateWorkloadV2(conn, strategy.RoundId, sourceRoleIds, targetRoleIds)
+	// if err != nil {
+	// 	task.Status = models.TaskStatusFailed
+	// 	log.Println("Error: ", err)
+	// 	return
+	// }
+	// log.Printf("New workload: %+v", newWorkload)
 	// Get the total number of evaluations
 	tx := conn.Begin()
 	defer func() {
@@ -147,13 +147,160 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries2() {
 		}
 	}()
 	q1 := query.Use(tx)
-	// first lock the negative workloads
-	for judgeId, workload := range newWorkload {
-		if workload < 0 {
-			log.Printf("Locking negative workload for judge %s: %d", judgeId, workload)
-			// Lock the workload in the database
+	// // first lock the negative workloads
+	// for judgeId, workload := range newWorkload {
+	// 	if workload < 0 {
+	// 		log.Printf("Locking negative workload for judge %s: %d", judgeId, workload)
+	// 		// Lock the workload in the database
+	// 		Evaluation := q1.Evaluation
+	// 		stmt := Evaluation.Where(Evaluation.JudgeID.Eq(judgeId.String())).
+	// 			Where(Evaluation.RoundID.Eq(strategy.RoundId.String())).
+	// 			Where(Evaluation.Score.IsNull()).
+	// 			Where(Evaluation.EvaluatedAt.IsNull()).
+	// 			Where(Evaluation.Where(Evaluation.DistributionTaskID.Neq(strategy.TaskId.String())).Or(Evaluation.DistributionTaskID.IsNull())).
+	// 			Limit(-int(workload))
+	// 		res, err := stmt.UpdateColumn(Evaluation.DistributionTaskID, strategy.TaskId)
+	// 		if err != nil {
+	// 			log.Println("Error locking workload: ", err)
+	// 			task.Status = models.TaskStatusFailed
+	// 			return
+	// 		}
+	// 		log.Printf("Rows affected by locking negative workload for judge %s: %d", judgeId, res.RowsAffected)
+	// 		delete(newWorkload, judgeId) // Remove the negative workload from the map
+	// 		log.Printf("Removed negative workload for judge %s: %d", judgeId, workload)
+	// 	}
+	// }
+
+	// /////////////////////////////////////////////////////////
+	Assignment := q1.Evaluation
+	roundId := strategy.RoundId
+	alreadyAssignedWorkloads := MinimumWorkloadHeap{}
+	alreadyAssignedWorkflowMap := map[models.IDType]WorkLoadType{}
+	err = Assignment.Select(Assignment.JudgeID, Assignment.EvaluationID.Count().As("Count")).
+		// Where(Assignment.Score.IsNotNull()).Where(Assignment.EvaluatedAt.IsNotNull()).
+		Where(Assignment.RoundID.Eq(roundId.String())).Where(Assignment.JudgeID.In(targetRoleIds...)).
+		Group(Assignment.JudgeID).Scan(&alreadyAssignedWorkloads)
+	if err != nil {
+		return
+	}
+	totalAssignedCount := WorkLoadType(0)
+	for _, workload := range alreadyAssignedWorkloads {
+		totalAssignedCount += workload.Count
+		alreadyAssignedWorkflowMap[workload.JudgeID] = WorkLoadType(workload.Count)
+	}
+
+	// get current number of evaluations to be distributed
+	evaluatedAssignmentCount := []JurorV3{}
+	stmt := Assignment.Select(Assignment.EvaluationID.Count().As("Count"), Assignment.JudgeID).
+		Where(Assignment.RoundID.Eq(strategy.RoundId.String())).
+		Where(Assignment.Score.IsNotNull()).
+		Where(Assignment.EvaluatedAt.IsNotNull()).
+		Group(Assignment.JudgeID).
+		Where(Assignment.JudgeID.In(targetRoleIds...))
+
+	evaluatedMap := map[models.IDType]WorkLoadType{}
+	// Get the total number of unevaluated elligible assignments
+	err = stmt.Scan(&evaluatedAssignmentCount)
+	if err != gorm.ErrRecordNotFound && err != nil {
+		log.Println("Error: ", err)
+		return
+	}
+	for _, juror := range evaluatedAssignmentCount {
+		evaluatedMap[juror.JudgeID] = WorkLoadType(juror.Count)
+	}
+	transferableAssignmentCount := JurorV3{}
+	stmt = Assignment.Select(Assignment.EvaluationID.Count().As("Count"), Assignment.JudgeID).
+		Where(Assignment.RoundID.Eq(strategy.RoundId.String())).
+		Where(Assignment.Score.IsNull()).
+		Where(Assignment.EvaluatedAt.IsNull())
+	if len(sourceRoleIds) > 0 {
+		stmt = stmt.Where(Assignment.JudgeID.In(sourceRoleIds...))
+	}
+	// Get the total number of unevaluated elligible assignments
+	err = stmt.Scan(&transferableAssignmentCount)
+	if err != gorm.ErrRecordNotFound && err != nil {
+		log.Println("Error: ", err)
+		return
+	}
+
+	totalTransferableEvaluations := transferableAssignmentCount.Count
+
+	log.Println("Total unevaluated evaluations: ", totalTransferableEvaluations)
+	targetRoleCount := len(targetRoles)
+	log.Println("Total target roles: ", targetRoleCount)
+	log.Printf("Tranferable assignments: %+v", evaluatedMap)
+	// for each of the target roles, we would be distributing the evaluations
+
+	for i := range targetRoleCount {
+		targetRole := targetRoles[i]
+		targetJudgeId := targetRole.RoleID
+		judgeUserId := targetRole.UserID
+		log.Println("Target Judge ID: ", targetJudgeId)
+		// Get the average
+		currentUnAssignedJuryCount := targetRoleCount - i
+		workload := int(totalTransferableEvaluations) / currentUnAssignedJuryCount
+		log.Printf("Average workload for target judge %s: %d", targetJudgeId, workload)
+
+		//// DETERMINE THE WORKLOAD FOR THE JURY
+		alreadyAssigned := alreadyAssignedWorkflowMap[targetJudgeId]
+		nonTransferable := evaluatedMap[targetJudgeId]
+		transferableCount := alreadyAssigned - nonTransferable
+		log.Printf("Already assigned workload for target judge %s: %d", targetJudgeId, alreadyAssigned)
+		log.Printf("Transferable workload for target judge %s: %d", targetJudgeId, transferableCount)
+		log.Printf("Non-transferable for target judge %s: %d", targetJudgeId, nonTransferable)
+		if workload > int(alreadyAssigned) {
+			// If the workload is greater than the already assigned workload,
+			// we need to make the difference to the workload
+			totalTransferableEvaluations -= WorkLoadType(int(alreadyAssigned))
+			workload = workload - int(alreadyAssigned)
+			log.Printf("Workload for target judge %s is greater than already assigned workload, setting workload to %d", targetJudgeId, workload)
+		} else if workload < int(alreadyAssigned) {
+			// If the workload is less than the already assigned workload,
+			// We need to lock the workload, no new assignments would be made
+			log.Printf("Workload for target judge %s is less than already assigned workload :  %d", targetJudgeId, nonTransferable)
+			if workload > int(nonTransferable) {
+				// we should reduce the assignment count
+				// upto the workload, lock upto the workload
+				workload = int(nonTransferable) - workload
+				log.Printf("Locking workload for target judge %s: %d", targetJudgeId, workload)
+			} else {
+				// If the workload is less than the non-transferable workload,
+				// we do not need to lock aanything, we can just skip this role
+				totalTransferableEvaluations -= WorkLoadType(workload)
+
+				workload = 0
+				log.Printf("Workload for target judge %s is less than non-transferable workload, skipping", targetJudgeId)
+
+			}
+		}
+
+		///////////////////////////////////////
+		// remove the current target role from the list
+		// targetRoles = slices.Delete(targetRoles, i, i+1)
+		if workload == 0 {
+			// No workload for this judge, skip
+			log.Printf("No workload for target judge %s, skipping", targetJudgeId)
+			continue
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		reassignment_count := int64(0)
+		if workload > 0 {
+			if includeFromSourceOnly {
+				reassignment_count, err = q1.Evaluation.WithContext(ctx).DistributeAssignmentsFromSelectedSource(targetJudgeId, judgeUserId, strategy.RoundId.String(), sourceRoleIds, strategy.TaskId, int(workload))
+			} else {
+				reassignment_count, err = q1.Evaluation.WithContext(ctx).DistributeAssignmentsIncludingUnassigned(targetJudgeId, judgeUserId, strategy.RoundId.String(), strategy.TaskId, int(workload))
+			}
+			if err != nil {
+				log.Println("Error: ", err)
+				return
+			}
+		} else if workload < 0 {
+			// If the workload is negative, we need to lock the workload
+			log.Printf("Locking negative workload for target judge %s: %d", targetJudgeId, workload)
 			Evaluation := q1.Evaluation
-			stmt := Evaluation.Where(Evaluation.JudgeID.Eq(judgeId.String())).
+			stmt := Evaluation.Where(Evaluation.JudgeID.Eq(targetJudgeId.String())).
 				Where(Evaluation.RoundID.Eq(strategy.RoundId.String())).
 				Where(Evaluation.Score.IsNull()).
 				Where(Evaluation.EvaluatedAt.IsNull()).
@@ -165,37 +312,40 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries2() {
 				task.Status = models.TaskStatusFailed
 				return
 			}
-			log.Printf("Rows affected by locking negative workload for judge %s: %d", judgeId, res.RowsAffected)
-			delete(newWorkload, judgeId) // Remove the negative workload from the map
-			log.Printf("Removed negative workload for judge %s: %d", judgeId, workload)
+			reassignment_count = res.RowsAffected
+			log.Printf("Rows affected by locking negative workload for target judge %s: %d", targetJudgeId, reassignment_count)
 		}
+		log.Printf("Reassigned %d evaluations to target judge %s", reassignment_count, targetJudgeId)
+		totalTransferableEvaluations -= WorkLoadType(reassignment_count)
+		task.SuccessCount += int(reassignment_count)
+		log.Printf("Total unevaluated evaluations left: %d", totalTransferableEvaluations)
 	}
 
-	for _, targetRole := range targetRoles {
-		targetJudgeId := targetRole.RoleID
-		workload, ok := newWorkload[targetJudgeId]
-		if !ok || workload == 0 {
-			log.Println("No workload found for target judge: ", targetJudgeId)
-			continue
-		}
-		judgeUserId := targetRole.UserID
-		log.Println("Judge ID: ", targetJudgeId)
-		log.Println("User ID: ", judgeUserId)
-		reassignment_count := int64(0)
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		if includeFromSourceOnly {
-			reassignment_count, err = q1.Evaluation.WithContext(ctx).DistributeAssignmentsFromSelectedSource(targetJudgeId, judgeUserId, strategy.RoundId.String(), sourceRoleIds, strategy.TaskId, int(workload))
-		} else {
-			reassignment_count, err = q1.Evaluation.WithContext(ctx).DistributeAssignmentsIncludingUnassigned(targetJudgeId, judgeUserId, strategy.RoundId.String(), strategy.TaskId, int(workload))
-		}
-		if err != nil {
-			log.Println("Error: ", err)
-			return
-		}
-		log.Println("Reassigned: ", reassignment_count)
-		task.SuccessCount += int(reassignment_count)
-	}
+	// for _, targetRole := range targetRoles {
+	// 	targetJudgeId := targetRole.RoleID
+	// 	workload, ok := newWorkload[targetJudgeId]
+	// 	if !ok || workload == 0 {
+	// 		log.Println("No workload found for target judge: ", targetJudgeId)
+	// 		continue
+	// 	}
+	// 	judgeUserId := targetRole.UserID
+	// 	log.Println("Judge ID: ", targetJudgeId)
+	// 	log.Println("User ID: ", judgeUserId)
+	// 	reassignment_count := int64(0)
+	// 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	// 	defer cancel()
+	// 	if includeFromSourceOnly {
+	// 		reassignment_count, err = q1.Evaluation.WithContext(ctx).DistributeAssignmentsFromSelectedSource(targetJudgeId, judgeUserId, strategy.RoundId.String(), sourceRoleIds, strategy.TaskId, int(workload))
+	// 	} else {
+	// 		reassignment_count, err = q1.Evaluation.WithContext(ctx).DistributeAssignmentsIncludingUnassigned(targetJudgeId, judgeUserId, strategy.RoundId.String(), strategy.TaskId, int(workload))
+	// 	}
+	// 	if err != nil {
+	// 		log.Println("Error: ", err)
+	// 		return
+	// 	}
+	// 	log.Println("Reassigned: ", reassignment_count)
+	// 	task.SuccessCount += int(reassignment_count)
+	// }
 	// ctx, cancel := context.WithTimeout(context.Background(), 50*time.Second)
 	// defer cancel()
 	// redistributeLastUnassigned, err := q.WithContext(ctx).Evaluation.DistributeTheLastRemainingEvaluations(strategy.TaskId, strategy.RoundId.String())

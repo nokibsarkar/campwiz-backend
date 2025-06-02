@@ -44,6 +44,7 @@ func (t *TaskService) GetTask(taskId models.IDType) (*models.Task, error) {
 	task_repo := repository.NewTaskRepository()
 	conn, close, err := repository.GetDB()
 	if err != nil {
+
 		return nil, err
 	}
 	defer close()

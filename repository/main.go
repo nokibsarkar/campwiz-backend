@@ -7,6 +7,7 @@ import (
 	"nokib/campwiz/query"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/getsentry/sentry-go"
 	"github.com/go-gorm/caches/v4"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -28,9 +29,16 @@ func GetDB() (db *gorm.DB, close func(), err error) {
 		// PrepareStmt:            true,
 		SkipDefaultTransaction: true,
 		// DisableForeignKeyConstraintWhenMigrating: true,
+
 	})
 
 	if err != nil {
+		sentry.WithScope(func(scope *sentry.Scope) {
+			scope.SetLevel(sentry.LevelFatal)
+			// will be tagged with my-tag="my value"
+			sentry.CaptureException(err)
+			scope.GetSpan().Description = "Failed to connect to Main Database"
+		})
 		panic("failed to connect database")
 	}
 	cachesPlugin := &caches.Caches{Conf: &caches.Config{
@@ -40,14 +48,29 @@ func GetDB() (db *gorm.DB, close func(), err error) {
 	// Use caches plugin
 	if err := db.Use(cachesPlugin); err != nil {
 		log.Printf("failed to use caches plugin %s", err.Error())
+		sentry.WithScope(func(scope *sentry.Scope) {
+			scope.SetLevel(sentry.LevelFatal)
+			scope.GetSpan().Description = "Failed to use caches plugin"
+			sentry.CaptureException(err)
+		})
 		return nil, nil, err
 	}
 	return db, func() {
 		raw_db, err := db.DB()
 		if err != nil {
+			sentry.WithScope(func(scope *sentry.Scope) {
+				scope.SetLevel(sentry.LevelFatal)
+				// will be tagged with my-tag="my value"
+				sentry.CaptureException(err)
+			})
 			panic("failed to connect database")
 		}
 		if err := raw_db.Close(); err != nil {
+			sentry.WithScope(func(scope *sentry.Scope) {
+				scope.SetLevel(sentry.LevelFatal)
+				// will be tagged with my-tag="my value"
+				sentry.CaptureException(err)
+			})
 			log.Printf("failed to close database %s", err.Error())
 		}
 	}, nil
@@ -120,15 +143,35 @@ func GetCommonsReplicaWithGen() (q *query.Query, close func()) {
 		Logger: logger.Default.LogMode(getLogMode(consts.Config.Database.Cache.Debug || consts.Config.Server.Mode == "debug")),
 	})
 	if err != nil {
+		sentry.WithScope(func(scope *sentry.Scope) {
+			scope.SetLevel(sentry.LevelError)
+			scope.GetSpan().Description = "Failed to connect to Commons Replica Database"
+			// will be tagged with my-tag="my value"
+			sentry.CaptureException(err)
+		})
 		panic("failed to connect database")
 	}
 	q = query.Use(db)
 	return q, func() {
 		raw_db, err := db.DB()
 		if err != nil {
+			sentry.WithScope(func(scope *sentry.Scope) {
+				scope.SetLevel(sentry.LevelError)
+				scope.GetSpan().Description = "Failed to connect to Commons Replica Database"
+				// will be tagged with my-tag="my value"
+				sentry.CaptureException(err)
+			})
 			panic("failed to connect database")
 		}
-		raw_db.Close() //nolint:errcheck
+		if err := raw_db.Close(); err != nil {
+			sentry.WithScope(func(scope *sentry.Scope) {
+				scope.SetLevel(sentry.LevelError)
+				scope.GetSpan().Description = "Failed to close Commons Replica Database"
+				// will be tagged with my-tag="my value"
+				sentry.CaptureException(err)
+			})
+			log.Printf("failed to close database %s", err.Error())
+		}
 	}
 }
 

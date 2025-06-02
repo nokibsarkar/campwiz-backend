@@ -14,8 +14,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"gorm.io/gorm"
+
+	sentrygin "github.com/getsentry/sentry-go/gin"
 )
 
 var RSAPrivateKey *ecdsa.PrivateKey
@@ -197,17 +200,35 @@ func (a *AuthenticationService) decodeToken(tokenString string) (*SessionClaims,
 	}
 	return claims, nil
 }
-func (auth_service *AuthenticationService) Authenticate(token string) (string, *cache.Session, error, bool) {
+func (auth_service *AuthenticationService) Authenticate(ctx *gin.Context, token string) (string, *cache.Session, error, bool) {
 	tokenMap, err := auth_service.decodeToken(token)
 	cache_db, close := cache.GetCacheDB()
+	hub := sentrygin.GetHubFromContext(ctx)
+	if hub != nil {
+		hub.Scope().SetExtra("AuthTokenSessionID", tokenMap.ID)
+		hub.Scope().SetExtra("AuthTokenUserID", tokenMap.Subject)
+		hub.Scope().SetExtra("AuthTokenPermission", tokenMap.Permission)
+		hub.Scope().SetExtra("AuthTokenName", tokenMap.Name)
+		hub.Scope().SetExtra("AuthTokenExpiresAt", tokenMap.ExpiresAt)
+	}
 	defer close()
 	if err != nil {
+		if hub != nil {
+			hub.Scope().SetExtra("AuthorizationTokenCache", "MISS")
+			hub.Scope().SetExtra("AuthorizationTokenMissError", err.Error())
+		}
 		if strings.Contains(err.Error(), "token is expired") {
 			// Token is expired
 			newAccessToken, session, err := auth_service.RefreshSession(cache_db, tokenMap)
 			if err != nil {
+				if hub != nil {
+					hub.Scope().SetExtra("AuthorizationTokenRefreshError", err.Error())
+				}
 				return "", nil, errors.New("token expired and could not be refreshed"), false
 			} else {
+				if hub != nil {
+					hub.Scope().SetExtra("AuthorizationTokenRefreshNewSessionID", session.ID)
+				}
 				return newAccessToken, session, nil, true
 			}
 		} else {
@@ -216,7 +237,14 @@ func (auth_service *AuthenticationService) Authenticate(token string) (string, *
 	} else {
 		session, err := auth_service.VerifyToken(cache_db, tokenMap)
 		if err != nil {
+			if hub != nil {
+				hub.Scope().SetExtra("AuthorizationTokenVerifyError", err.Error())
+			}
 			return "", nil, errors.New("invalid token"), false
+		}
+		if hub != nil {
+			hub.Scope().SetExtra("AuthorizationTokenCache", "HIT")
+			hub.Scope().SetExtra("AuthorizationTokenHitSessionID", session.ID)
 		}
 		return token, session, nil, false
 	}

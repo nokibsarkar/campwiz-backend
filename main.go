@@ -39,6 +39,10 @@ func afterSetupRouter(testing bool) {
 func SetupRouter(testing bool, readOnly bool) *gin.Engine {
 	beforeSetupRouter(testing)
 	r := gin.Default()
+	if consts.Config.Sentry.DSN != "" {
+		log.Printf("Sentry DSN is set, enabling Sentry middleware")
+		r.Use(routes.NewSentryMiddleWare())
+	}
 	Mode := consts.Config.Server.Mode
 	switch Mode {
 	case "debug":
@@ -51,10 +55,6 @@ func SetupRouter(testing bool, readOnly bool) *gin.Engine {
 		log.Panicf("Invalid mode %s", Mode)
 	}
 	r.GET("/api/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
-	if consts.Config.Sentry.DSN != "" {
-		log.Printf("Sentry DSN is set, enabling Sentry middleware")
-		r.Use(routes.NewSentryMiddleWare())
-	}
 
 	if readOnly {
 		log.Println("Creating Routes for ReadOnly Mode")

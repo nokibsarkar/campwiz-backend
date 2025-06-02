@@ -18,6 +18,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"gorm.io/gorm"
 
+	"github.com/getsentry/sentry-go"
 	sentrygin "github.com/getsentry/sentry-go/gin"
 )
 
@@ -123,7 +124,7 @@ func (a *AuthenticationService) NewRefreshToken(tokenMap *SessionClaims) (string
 	}
 	return refreshToken, nil
 }
-func (a *AuthenticationService) RefreshSession(cacheDB *gorm.DB, tokenMap *SessionClaims) (accessToken string, session *cache.Session, err error) {
+func (a *AuthenticationService) RefreshSession(ctx *gin.Context, cacheDB *gorm.DB, tokenMap *SessionClaims) (accessToken string, session *cache.Session, err error) {
 	log.Println("Refreshing session")
 	sessionIDString := tokenMap.ID
 	if sessionIDString == "" {
@@ -136,12 +137,23 @@ func (a *AuthenticationService) RefreshSession(cacheDB *gorm.DB, tokenMap *Sessi
 		Permission: tokenMap.Permission,
 		ExpiresAt:  tokenMap.ExpiresAt.Time,
 	}
+	var parentSpan *sentry.Span
+	hub := sentrygin.GetHubFromContext(ctx)
+	if hub != nil {
+		parentSpan = hub.Scope().GetSpan()
+	}
+	var result *gorm.DB
 	tx := cacheDB.Begin()
-	result := tx.First(session, &cache.Session{ID: models.IDType(sessionIDString)})
-	if result.Error != nil {
-		log.Println("Error: ", result.Error)
-		tx.Rollback()
-		return "", nil, result.Error
+	if parentSpan != nil {
+		childSpan := parentSpan.StartChild("cache.get")
+		defer childSpan.Finish()
+		result = tx.First(session, &cache.Session{ID: models.IDType(sessionIDString)})
+		if result.Error != nil {
+			log.Println("Error: ", result.Error)
+			tx.Rollback()
+			childSpan.SetData("error", result.Error.Error())
+			return "", nil, result.Error
+		}
 	}
 	session.ExpiresAt = time.Now().UTC().Add(time.Second * time.Duration(a.Config.Expiry))
 	log.Println("Session expires at: ", session.ExpiresAt)
@@ -219,7 +231,7 @@ func (auth_service *AuthenticationService) Authenticate(ctx *gin.Context, token 
 		}
 		if strings.Contains(err.Error(), "token is expired") {
 			// Token is expired
-			newAccessToken, session, err := auth_service.RefreshSession(cache_db, tokenMap)
+			newAccessToken, session, err := auth_service.RefreshSession(ctx, cache_db, tokenMap)
 			if err != nil {
 				if hub != nil {
 					hub.Scope().SetExtra("AuthorizationTokenRefreshError", err.Error())

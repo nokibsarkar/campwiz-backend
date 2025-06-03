@@ -38,19 +38,16 @@ func (s *SentryGinLogger) Trace(ctx context.Context, begin time.Time, fc func() 
 		parentSpan := sentrygin.GetHubFromContext(ctxGin).Scope().GetSpan()
 		wrapFc := func() (string, int64) {
 			sql, rowsAffected := fc()
-			span := parentSpan.StartChild("db.sql.execute", sentry.WithDescription(sql))
-			defer span.Finish()
-			tx := span.GetTransaction()
-			defer tx.Finish()
-			tx.Description = sql
-			tx.Name = sql[:min(len(sql), 100)]
-
-			tx.StartTime = begin
-			tx.EndTime = time.Now()
-			tx.SetData("db.name", "campwiz")
-			tx.SetData("db.system", "mariadb")
-			tx.SetData("db.error", err)
-			tx.SetData("db.active_record", rowsAffected)
+			span1 := parentSpan.StartChild("db.sql.execute", sentry.WithDescription(sql))
+			defer span1.Finish()
+			span1.Description = sql
+			span1.Name = sql[:min(len(sql), 100)]
+			span1.StartTime = begin
+			span1.EndTime = time.Now()
+			span1.SetData("db.name", "campwiz")
+			span1.SetData("db.system", "mariadb")
+			span1.SetData("db.error", err.Error())
+			span1.SetData("db.active_record", rowsAffected)
 			return sql, rowsAffected
 		}
 		s.Logger.Trace(ctx, begin, wrapFc, err)

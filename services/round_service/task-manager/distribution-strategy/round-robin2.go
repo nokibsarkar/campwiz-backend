@@ -15,10 +15,10 @@ import (
 
 // Prevent Self evaluation SQL: update evaluations u1 join (select judge_id, evaluation_id, name from evaluations join submissions join roles on evaluations.submission_id = submissions.submission_id and evaluations.judge_id = roles.role_id  where submitted_by_id=roles.user_id and evaluations.round_id='r2eczdvrjl2ps') u2 using(evaluation_id) set u1.judge_id = (select role_id from roles where role_id <> u2.judge_id and round_id='r2eczdvrjl2ps' and role_id not in (select judge_id from evaluations where submission_id = u1.submission_id) order by rand() limit 1) where round_id='r2eczdvrjl2ps' and score is null;
 // This method would distribute all the evaluations to the juries in round robin fashion
-func (strategy *RoundRobinDistributionStrategy) AssignJuries2() {
+func (strategy *RoundRobinDistributionStrategy) AssignJuries2(ctx context.Context) {
 	taskRepo := repository.NewTaskRepository()
 	submission_repo := repository.NewSubmissionRepository()
-	conn, close, err := repository.GetDB()
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		log.Println(err)
 		return

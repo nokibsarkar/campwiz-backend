@@ -28,7 +28,7 @@ func GetTaskById(c *gin.Context, sess *cache.Session) {
 		return
 	}
 	task_service := services.NewTaskService()
-	task, err := task_service.GetTask(models.IDType(taskId))
+	task, err := task_service.GetTask(c, models.IDType(taskId))
 	if err != nil {
 		c.JSON(400, models.ResponseError{Detail: "Error getting task : " + err.Error()})
 		return
@@ -58,7 +58,7 @@ func GetTaskByIDStream(c *gin.Context, sess *cache.Session) {
 	}
 	task_service := services.NewTaskService()
 	c.Stream(func(w io.Writer) bool {
-		task, err := task_service.GetTask(models.IDType(taskId))
+		task, err := task_service.GetTask(c, models.IDType(taskId))
 		if err != nil {
 			c.SSEvent("error", err.Error())
 			return false

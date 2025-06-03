@@ -22,7 +22,7 @@ type CSVListSource struct {
 func (t *ImporterServer) ImportFromCSV(ctx context.Context, req *models.ImportFromCSVRequest) (*models.ImportResponse, error) {
 	source := NewCSVListSource(req.FilePath, req.SubmissionIdColumn, req.PageIdColumn, req.FileNameColumn)
 	log.Printf("ImportFromCSV %v", req)
-	go t.importFrom(source, req.TaskId, req.RoundId)
+	go t.importFrom(ctx, source, req.TaskId, req.RoundId)
 	return &models.ImportResponse{}, nil
 }
 func NewCSVListSource(csvFilePath string, submissionIDColumn string, pageIDColumn string, fileNameColumn string) *CSVListSource {
@@ -49,7 +49,7 @@ func NewCSVListSource(csvFilePath string, submissionIDColumn string, pageIDColum
 // data from wikimedia commons this time it is bad because
 // it would be painfully slower because we have to search by
 // file name which is not indexed
-func (c *CSVListSource) ImportImageResults(currentRound *models.Round, failedImageReason *map[string]string) ([]models.MediaResult, *map[string]string) {
+func (c *CSVListSource) ImportImageResults(ctx context.Context, currentRound *models.Round, failedImageReason *map[string]string) ([]models.MediaResult, *map[string]string) {
 	// Open the CSV file
 	fp, err := os.Open(c.CSVFilePath)
 	if err != nil {
@@ -63,7 +63,7 @@ func (c *CSVListSource) ImportImageResults(currentRound *models.Round, failedIma
 	// Read the CSV file
 	reader := csv.NewReader(fp)
 	if c.SubmissionIDColumn != nil {
-		return c.importUsingSubmissionId(reader, failedImageReason)
+		return c.importUsingSubmissionId(ctx, reader, failedImageReason)
 	}
 	return nil, failedImageReason
 }
@@ -76,7 +76,7 @@ func removeBOMFromString(s string) string {
 	}
 	return s
 }
-func (c *CSVListSource) importUsingSubmissionId(reader *csv.Reader, failedImageReason *map[string]string) ([]models.MediaResult, *map[string]string) {
+func (c *CSVListSource) importUsingSubmissionId(ctx context.Context, reader *csv.Reader, failedImageReason *map[string]string) ([]models.MediaResult, *map[string]string) {
 	headers, err := reader.Read()
 	if err != nil {
 		(*failedImageReason)["*"] = err.Error()
@@ -123,7 +123,7 @@ func (c *CSVListSource) importUsingSubmissionId(reader *csv.Reader, failedImageR
 		// Process the submissionID as needed
 		submissionIds = append(submissionIds, submissionID)
 	}
-	q, close := repository.GetDBWithGen()
+	q, close := repository.GetDBWithGen(ctx)
 	// if err != nil {
 	// 	(*failedImageReason)["*"] = err.Error()
 	// 	log.Printf("Error getting DB connection: %s", err)

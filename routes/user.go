@@ -17,7 +17,7 @@ func GetMe(c *gin.Context, session *cache.Session) {
 	// ...
 	userID := session.UserID
 	user_services := services.NewUserService()
-	user, err := user_services.GetExtendedDetails(userID)
+	user, err := user_services.GetExtendedDetails(c, userID)
 	if err != nil {
 		c.JSON(403, models.ResponseError{
 			Detail: err.Error(),

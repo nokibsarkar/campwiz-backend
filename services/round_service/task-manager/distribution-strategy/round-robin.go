@@ -65,15 +65,15 @@ func (d *DistributorServer) DistributeWithRoundRobin(ctx context.Context, req *m
 		AssignableJuries: assignableJuries,
 		RoundId:          models.IDType(req.RoundId),
 	}
-	go strategy.AssignJuries()
+	go strategy.AssignJuries(ctx)
 	return &models.DistributeWithRoundRobinResponse{
 		TaskId: req.TaskId,
 	}, nil
 }
 
-func (strategy *RoundRobinDistributionStrategy) AssignJuries() {
+func (strategy *RoundRobinDistributionStrategy) AssignJuries(ctx context.Context) {
 	taskRepo := repository.NewTaskRepository()
-	conn, close, err := repository.GetDB()
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		log.Println(err)
 		return
@@ -214,7 +214,7 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries() {
 		log.Println("Error: ", err)
 		return
 	}
-	go randomize(strategy.RoundId) //nolint:errcheck
+	go randomize(ctx, strategy.RoundId) //nolint:errcheck
 }
 func (strategy *RoundRobinDistributionStrategy) createMissingEvaluations(tx *gorm.DB, evtype models.EvaluationType, round *models.Round, req []models.Submission) (int, error) {
 	evaluations := []models.Evaluation{}

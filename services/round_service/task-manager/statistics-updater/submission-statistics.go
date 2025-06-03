@@ -16,7 +16,7 @@ func (s *StatisticsUpdaterServer) TriggerEvaluationScoreCount(ctx context.Contex
 			defer func() {
 				updatingSubmissionStatistics = false
 			}()
-			conn, close, err := repository.GetDB()
+			conn, close, err := repository.GetDB(ctx)
 			if err != nil {
 				return
 			}

@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"fmt"
 	"log"
 	"nokib/campwiz/consts"
 	"nokib/campwiz/models"
@@ -11,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"gorm.io/gorm"
@@ -65,7 +67,7 @@ func HandleOAuth2Callback(c *gin.Context) {
 		})
 		return
 	}
-	conn, close, err := repository.GetDB()
+	conn, close, err := repository.GetDB(c)
 	if err != nil {
 		c.JSON(500, models.ResponseError{
 			Detail: err.Error(),
@@ -144,7 +146,10 @@ func HandleOAuth2Callback(c *gin.Context) {
 }
 
 func WithSession(callback func(*gin.Context, *cache.Session)) gin.HandlerFunc {
+
 	return func(c *gin.Context) {
+		span := sentrygin.GetHubFromContext(c)
+		fmt.Printf("Span -1: %v", span)
 		session := GetSession(c)
 		if session == nil {
 			c.JSON(401, models.ResponseError{
@@ -178,7 +183,7 @@ func GetCurrentUser(c *gin.Context) *models.User {
 		return nil
 	}
 	user_service := services.NewUserService()
-	user, err := user_service.GetUserByID(session.UserID)
+	user, err := user_service.GetUserByID(c, session.UserID)
 	if err != nil {
 		return nil
 	}

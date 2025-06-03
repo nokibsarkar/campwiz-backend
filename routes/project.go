@@ -37,7 +37,7 @@ func CreateProject(c *gin.Context, sess *cache.Session) {
 	}
 	projectRequest.CreatedByID = sess.UserID
 	project_service := services.NewProjectService()
-	project, err := project_service.CreateProject(projectRequest, q.IncludeProjectLeads)
+	project, err := project_service.CreateProject(c, projectRequest, q.IncludeProjectLeads)
 	if err != nil {
 		c.JSON(400, models.ResponseError{Detail: "Error creating project : " + err.Error()})
 		return
@@ -73,7 +73,7 @@ func UpdateProject(c *gin.Context, sess *cache.Session) {
 	projectRequest.ProjectID = models.IDType(projectId)
 	// projectRequest.CreatedByID = sess.UserID
 	project_service := services.NewProjectService()
-	project, err := project_service.UpdateProject(projectRequest)
+	project, err := project_service.UpdateProject(c, projectRequest)
 	if err != nil {
 		c.JSON(400, models.ResponseError{Detail: "Error updating project : " + err.Error()})
 		return
@@ -123,7 +123,7 @@ func GetSingleProject(c *gin.Context, sess *cache.Session) {
 		return
 	}
 	project_service := services.NewProjectService()
-	project, err := project_service.GetProjectByID(models.IDType(projectId), q.IncludeProjectLeads)
+	project, err := project_service.GetProjectByID(c, models.IDType(projectId), q.IncludeProjectLeads)
 	if err != nil {
 		c.JSON(400, models.ResponseError{Detail: "Error getting project : " + err.Error()})
 		return
@@ -175,7 +175,7 @@ func ListProjects(c *gin.Context, sess *cache.Session) {
 	}
 
 	project_service := services.NewProjectService()
-	projects, err := project_service.ListProjects(&u.UserID, q)
+	projects, err := project_service.ListProjects(c, &u.UserID, q)
 	if err != nil {
 		c.JSON(400, models.ResponseError{Detail: "Error getting projects : " + err.Error()})
 		return

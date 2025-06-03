@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"log"
 	"nokib/campwiz/models"
 	"nokib/campwiz/models/types"
 	"nokib/campwiz/repository/cache"
@@ -28,7 +27,7 @@ func ListEvaluations(c *gin.Context, sess *cache.Session) {
 		return
 	}
 	evaluation_service := services.NewEvaluationService()
-	evaluations, totalAssigned, totalEvaluated, err := evaluation_service.GetNextEvaluations(sess.UserID, filter)
+	evaluations, totalAssigned, totalEvaluated, err := evaluation_service.GetNextEvaluations(c, sess.UserID, filter)
 	if err != nil {
 		c.JSON(400, models.ResponseError{Detail: "Error listing evaluations : " + err.Error()})
 		return
@@ -74,9 +73,8 @@ func UpdateEvaluation(c *gin.Context, sess *cache.Session) {
 		c.JSON(400, models.ResponseError{Detail: "Invalid request : " + err.Error()})
 		return
 	}
-	log.Println("Requested evaluation : ", requestedEvaluation)
 	evaluation_service := services.NewEvaluationService()
-	evaluation, err := evaluation_service.Evaluate(sess.UserID, models.IDType(evaluationId), &requestedEvaluation)
+	evaluation, err := evaluation_service.Evaluate(c, sess.UserID, models.IDType(evaluationId), &requestedEvaluation)
 	if err != nil {
 		c.JSON(400, models.ResponseError{Detail: "Error updating evaluation : " + err.Error()})
 		return
@@ -103,9 +101,8 @@ func BulkEvaluate(c *gin.Context, sess *cache.Session) {
 		c.JSON(400, models.ResponseError{Detail: "Invalid request : " + err.Error()})
 		return
 	}
-	log.Println("Requested evaluations : ", requestedEvaluations)
 	evaluation_service := services.NewEvaluationService()
-	result, err := evaluation_service.BulkEvaluate(sess.UserID, requestedEvaluations)
+	result, err := evaluation_service.BulkEvaluate(c, sess.UserID, requestedEvaluations)
 	if err != nil {
 		c.JSON(400, models.ResponseError{Detail: "Error updating evaluations : " + err.Error()})
 		return
@@ -141,7 +138,7 @@ func SubmitNewPublicEvaluation(c *gin.Context, sess *cache.Session) {
 		return
 	}
 	evaluation_service := services.NewEvaluationService()
-	evaluation, err := evaluation_service.PublicEvaluate(sess.UserID, types.SubmissionIDType(submissionId), &requestedEvaluation)
+	evaluation, err := evaluation_service.PublicEvaluate(c, sess.UserID, types.SubmissionIDType(submissionId), &requestedEvaluation)
 	if err != nil {
 		c.JSON(400, models.ResponseError{Detail: "Error updating evaluation : " + err.Error()})
 		return
@@ -175,7 +172,7 @@ func SubmitNewBulkPublicEvaluation(c *gin.Context, sess *cache.Session) {
 		return
 	}
 	evaluation_service := services.NewEvaluationService()
-	evaluations, assignmentCount, evaluationCount, err := evaluation_service.PublicBulkEvaluate(sess.UserID, requestedEvaluation)
+	evaluations, assignmentCount, evaluationCount, err := evaluation_service.PublicBulkEvaluate(c, sess.UserID, requestedEvaluation)
 	if err != nil {
 		c.JSON(400, models.ResponseError{Detail: "Error updating evaluation : " + err.Error()})
 		return
@@ -211,7 +208,7 @@ func GetEvaluation(c *gin.Context, sess *cache.Session) {
 		return
 	}
 	evaluation_service := services.NewEvaluationService()
-	evaluation, err := evaluation_service.GetEvaluationById(sess.UserID, models.IDType(evaluationId))
+	evaluation, err := evaluation_service.GetEvaluationById(c, sess.UserID, models.IDType(evaluationId))
 	if err != nil {
 		c.JSON(400, models.ResponseError{Detail: "Error getting evaluation : " + err.Error()})
 		return

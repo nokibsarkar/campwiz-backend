@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"nokib/campwiz/consts"
@@ -28,7 +29,7 @@ func NewCampaignService() *CampaignService {
 	return &CampaignService{}
 }
 
-func (service *CampaignService) CreateCampaign(campaignRequest *CampaignCreateRequest) (*models.Campaign, error) {
+func (service *CampaignService) CreateCampaign(ctx context.Context, campaignRequest *CampaignCreateRequest) (*models.Campaign, error) {
 	// if endDate.Before(time.Now()) {
 	// 	return nil, fmt.Errorf("End date should be in the future")
 	// }
@@ -42,7 +43,7 @@ func (service *CampaignService) CreateCampaign(campaignRequest *CampaignCreateRe
 	campaign_repo := repository.NewCampaignRepository()
 	// user_repo := repository.NewUserRepository()
 	role_service := NewRoleService()
-	conn, close, err := repository.GetDB()
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -115,8 +116,8 @@ func (service *CampaignService) CreateCampaign(campaignRequest *CampaignCreateRe
 	tx.Commit()
 	return campaign, nil
 }
-func (service *CampaignService) GetAllCampaigns(query *models.CampaignFilter) []models.Campaign {
-	conn, close, err := repository.GetDB()
+func (service *CampaignService) GetAllCampaigns(ctx context.Context, query *models.CampaignFilter) []models.Campaign {
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		log.Println("Error: ", err)
 		return []models.Campaign{}
@@ -131,8 +132,8 @@ func (service *CampaignService) GetAllCampaigns(query *models.CampaignFilter) []
 	}
 	return campaigns
 }
-func (service *CampaignService) ListPrivateCampaigns(sess *cache.Session, qry *models.CampaignFilter) []models.Campaign {
-	conn, close, err := repository.GetDB()
+func (service *CampaignService) ListPrivateCampaigns(ctx context.Context, sess *cache.Session, qry *models.CampaignFilter) []models.Campaign {
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		log.Println("Error: ", err)
 		return []models.Campaign{}
@@ -176,8 +177,8 @@ type SingleCampaignQuery struct {
 	IncludeRoundRoles bool `form:"includeRoundRoles"`
 }
 
-func (service *CampaignService) GetCampaignByID(id models.IDType, query *SingleCampaignQuery) (*models.Campaign, error) {
-	conn, close, err := repository.GetDB()
+func (service *CampaignService) GetCampaignByID(ctx context.Context, id models.IDType, query *SingleCampaignQuery) (*models.Campaign, error) {
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		log.Println("Error: ", err)
 		return nil, err
@@ -207,8 +208,8 @@ func (service *CampaignService) GetCampaignByID(id models.IDType, query *SingleC
 	return campaign, nil
 }
 
-func (service *CampaignService) UpdateCampaign(ID models.IDType, campaignRequest *CampaignUpdateRequest) (*models.Campaign, error) {
-	conn, close, err := repository.GetDB()
+func (service *CampaignService) UpdateCampaign(ctx context.Context, ID models.IDType, campaignRequest *CampaignUpdateRequest) (*models.Campaign, error) {
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		log.Println("Error: ", err)
 		return nil, err
@@ -246,8 +247,8 @@ func (service *CampaignService) UpdateCampaign(ID models.IDType, campaignRequest
 	tx.Commit()
 	return campaign, nil
 }
-func (service *CampaignService) UpdateCampaignStatus(usrId models.IDType, ID models.IDType, IsArchived bool) (*models.Campaign, error) {
-	conn, close, err := repository.GetDB()
+func (service *CampaignService) UpdateCampaignStatus(ctx context.Context, usrId models.IDType, ID models.IDType, IsArchived bool) (*models.Campaign, error) {
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		log.Println("Error: ", err)
 		return nil, err

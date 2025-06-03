@@ -15,7 +15,7 @@ import (
 func GetCacheDB() (db *gorm.DB, close func()) {
 	dsn := consts.Config.Database.Cache.DSN
 	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Warn),
+		Logger: NewSentryGinLogger(logger.Default.LogMode(logger.Warn)),
 	})
 	if err != nil {
 		log.Fatal("failed to connect cache database")
@@ -37,7 +37,7 @@ func GetTaskCacheDB(taskID models.IDType) (db *gorm.DB, close func()) {
 		logMode = logger.Info
 	}
 	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logMode),
+		Logger: NewSentryGinLogger(logger.Default.LogMode(logMode)),
 	})
 	if err != nil {
 		log.Fatal("failed to connect cache database")
@@ -61,7 +61,7 @@ func GetTaskCacheDB(taskID models.IDType) (db *gorm.DB, close func()) {
 func GetTestCacheDB() (db *gorm.DB, close func()) {
 	dsn := consts.Config.Database.Cache.TestDSN
 	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
+		Logger: NewSentryGinLogger(logger.Default.LogMode(logger.Warn)),
 	})
 	if err != nil {
 		log.Fatal("failed to connect cache database")

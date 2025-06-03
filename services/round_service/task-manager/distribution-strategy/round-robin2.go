@@ -6,7 +6,6 @@ import (
 	"nokib/campwiz/models"
 	"nokib/campwiz/query"
 	"nokib/campwiz/repository"
-	"time"
 
 	"gorm.io/gorm"
 )
@@ -14,6 +13,17 @@ import (
 // Prevent Self evaluation SQL: update evaluations u1 join (select judge_id, evaluation_id, name from evaluations join submissions join roles on evaluations.submission_id = submissions.submission_id and evaluations.judge_id = roles.role_id  where submitted_by_id=roles.user_id and evaluations.round_id='r2eczdvrjl2ps') u2 using(evaluation_id) set u1.judge_id = (select role_id from roles where role_id <> u2.judge_id and round_id='r2eczdvrjl2ps' and role_id not in (select judge_id from evaluations where submission_id = u1.submission_id) order by rand() limit 1) where round_id='r2eczdvrjl2ps' and score is null;
 // This method would distribute all the evaluations to the juries in round robin fashion
 func (strategy *RoundRobinDistributionStrategy) AssignJuries2(ctx context.Context) {
+	log.Println("Assigning juries in round robin fashion version 2")
+	// parentSpan := sentry.StartSpan(ctx, "grpc.start", func(s *sentry.Span) {
+	// 	s.SetTag("round_id", strategy.RoundId.String())
+	// 	s.SetTag("task_id", strategy.TaskId.String())
+	// 	s.SetData("source_juries", strategy.SourceJuries)
+	// 	s.SetData("target_juries", strategy.TargetJuries)
+	// 	s.Description = "Assigning juries in round robin fashion version 2"
+	// 	s.SetData("strategy", "round-robin-v2")
+	// })
+	// defer parentSpan.Finish()
+
 	taskRepo := repository.NewTaskRepository()
 	submission_repo := repository.NewSubmissionRepository()
 	conn, close, err := repository.GetDB(ctx)
@@ -79,12 +89,14 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries2(ctx context.Contex
 		log.Println("Error: ", err)
 		return
 	}
+	// parentSpan.SetData("submission_count_missing_evaluations", len(submissions))
 	createdCount, err := strategy.createMissingEvaluations(conn, round.Type, round, submissions)
 	if err != nil {
 		task.Status = models.TaskStatusFailed
 		log.Println("Error: ", err)
 		return
 	}
+	// parentSpan.SetData("submission_count_created_missing_evaluations", createdCount)
 	log.Println("Created missing evaluations: ", createdCount)
 	q := query.Use(conn)
 	Role := q.Role
@@ -121,6 +133,7 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries2(ctx context.Contex
 		targetRoleIds[i] = targetRole.RoleID.String()
 	}
 	includeFromSourceOnly := len(sourceRoleIds) > 0
+	// parentSpan.SetData("whether_include_from_source_only", includeFromSourceOnly)
 	log.Println("Include from source only: ", includeFromSourceOnly)
 	// // Calculate the workload
 	// newWorkload, err := strategy.calculateWorkloadV2(conn, strategy.RoundId, sourceRoleIds, targetRoleIds)
@@ -186,6 +199,7 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries2(ctx context.Contex
 		totalAssignedCount += workload.Count
 		alreadyAssignedWorkflowMap[workload.JudgeID] = WorkLoadType(workload.Count)
 	}
+	// parentSpan.SetData("total_assigned_count", totalAssignedCount)
 
 	// get current number of evaluations to be distributed
 	evaluatedAssignmentCount := []JurorV3{}
@@ -203,6 +217,7 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries2(ctx context.Contex
 		log.Println("Error: ", err)
 		return
 	}
+	// parentSpan.SetData("evaluated_assignment_count", len(evaluatedAssignmentCount))
 	for _, juror := range evaluatedAssignmentCount {
 		evaluatedMap[juror.JudgeID] = WorkLoadType(juror.Count)
 	}
@@ -222,36 +237,61 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries2(ctx context.Contex
 	}
 
 	totalTransferableEvaluations := transferableAssignmentCount.Count
-
+	// parentSpan.SetData("total_transferable_evaluations", totalTransferableEvaluations)
 	log.Println("Total unevaluated evaluations: ", totalTransferableEvaluations)
 	targetRoleCount := len(targetRoles)
 	log.Println("Total target roles: ", targetRoleCount)
 	log.Printf("Tranferable assignments: %+v", evaluatedMap)
+	// parentSpan.SetData("target_role_count", targetRoleCount)
+	// parentSpan.SetData("already_assigned_workflow_map", alreadyAssignedWorkflowMap)
 	// for each of the target roles, we would be distributing the evaluations
 
 	for i := range targetRoleCount {
+		// childSpan := parentSpan.StartChild("assignment.distribution.round-robin-v2.target-role", func(s *sentry.Span) {
+		// 	s.SetTag("target_role_index", fmt.Sprint(i))
+		// 	s.SetTag("target_role_id", targetRoles[i].RoleID.String())
+		// 	s.SetTag("target_role_user_id", targetRoles[i].UserID.String())
+		// 	s.SetData("target_role_total_assigned", targetRoles[i].TotalAssigned)
+		// })
+		// defer childSpan.Finish()
 		targetRole := targetRoles[i]
 		targetJudgeId := targetRole.RoleID
 		judgeUserId := targetRole.UserID
 		log.Println("Target Judge ID: ", targetJudgeId)
+		// childSpan.SetData("target_judge_id", targetJudgeId.String())
 		// Get the average
 		currentUnAssignedJuryCount := targetRoleCount - i
+		// childSpan.SetData("current_unassigned_jury_count", currentUnAssignedJuryCount)
 		workload := int(totalTransferableEvaluations) / currentUnAssignedJuryCount
 		log.Printf("Average workload for target judge %s: %d", targetJudgeId, workload)
+		// childSpan.SetData("average_workload", workload)
 
 		//// DETERMINE THE WORKLOAD FOR THE JURY
 		alreadyAssigned := alreadyAssignedWorkflowMap[targetJudgeId]
 		nonTransferable := evaluatedMap[targetJudgeId]
 		transferableCount := alreadyAssigned - nonTransferable
+		// childSpan.SetData("already_assigned", alreadyAssigned)
+		// childSpan.SetData("non_transferable", nonTransferable)
+		// childSpan.SetData("transferable_count", transferableCount)
 		log.Printf("Already assigned workload for target judge %s: %d", targetJudgeId, alreadyAssigned)
 		log.Printf("Transferable workload for target judge %s: %d", targetJudgeId, transferableCount)
 		log.Printf("Non-transferable for target judge %s: %d", targetJudgeId, nonTransferable)
+		reassignment_count := int64(0)
 		if workload > int(alreadyAssigned) {
 			// If the workload is greater than the already assigned workload,
 			// we need to make the difference to the workload
 			totalTransferableEvaluations -= WorkLoadType(int(alreadyAssigned))
 			workload = workload - int(alreadyAssigned)
 			log.Printf("Workload for target judge %s is greater than already assigned workload, setting workload to %d", targetJudgeId, workload)
+			if includeFromSourceOnly {
+				reassignment_count, err = q1.Evaluation.WithContext(ctx).DistributeAssignmentsFromSelectedSource(targetJudgeId, judgeUserId, strategy.RoundId.String(), sourceRoleIds, strategy.TaskId, int(workload))
+			} else {
+				reassignment_count, err = q1.Evaluation.WithContext(ctx).DistributeAssignmentsIncludingUnassigned(targetJudgeId, judgeUserId, strategy.RoundId.String(), strategy.TaskId, int(workload))
+			}
+			if err != nil {
+				log.Println("Error: ", err)
+				return
+			}
 		} else if workload < int(alreadyAssigned) {
 			// If the workload is less than the already assigned workload,
 			// We need to lock the workload, no new assignments would be made
@@ -280,21 +320,8 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries2(ctx context.Contex
 			log.Printf("No workload for target judge %s, skipping", targetJudgeId)
 			continue
 		}
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
 
-		reassignment_count := int64(0)
-		if workload > 0 {
-			if includeFromSourceOnly {
-				reassignment_count, err = q1.Evaluation.WithContext(ctx).DistributeAssignmentsFromSelectedSource(targetJudgeId, judgeUserId, strategy.RoundId.String(), sourceRoleIds, strategy.TaskId, int(workload))
-			} else {
-				reassignment_count, err = q1.Evaluation.WithContext(ctx).DistributeAssignmentsIncludingUnassigned(targetJudgeId, judgeUserId, strategy.RoundId.String(), strategy.TaskId, int(workload))
-			}
-			if err != nil {
-				log.Println("Error: ", err)
-				return
-			}
-		} else if workload < 0 {
+		if workload < 0 {
 			// If the workload is negative, we need to lock the workload
 			log.Printf("Locking negative workload for target judge %s: %d", targetJudgeId, workload)
 			Evaluation := q1.Evaluation

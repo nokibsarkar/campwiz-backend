@@ -2075,6 +2075,8 @@ produces:
 - application/json
 securityDefinitions:
   ApiKeyAuth:
+    description: Authentication cookie for the API. It would be set by the server
+      when the user logs in.
     in: cookie
     name: c-auth
     type: apiKey

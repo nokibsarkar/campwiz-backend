@@ -85,6 +85,8 @@ func init() {
 // @securityDefinitions.apikey ApiKeyAuth
 // @in cookie
 // @name c-auth
+// @description Authentication cookie for the API. It would be set by the server when the user logs in.
+// @security cookieAuth
 // @license.name GPL-3.0
 // @license.url https://www.gnu.org/licenses/gpl-3.0.html
 // @contact.name Nokib Sarkar

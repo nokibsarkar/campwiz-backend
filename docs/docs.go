@@ -3050,6 +3050,7 @@ const docTemplate = `{
     },
     "securityDefinitions": {
         "ApiKeyAuth": {
+            "description": "Authentication cookie for the API. It would be set by the server when the user logs in.",
             "type": "apiKey",
             "name": "c-auth",
             "in": "cookie"

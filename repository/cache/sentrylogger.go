@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/getsentry/sentry-go"
@@ -38,7 +39,10 @@ func (s *SentryGinLogger) Trace(ctx context.Context, begin time.Time, fc func() 
 		parentSpan := sentrygin.GetHubFromContext(ctxGin).Scope().GetSpan()
 		wrapFc := func() (string, int64) {
 			sql, rowsAffected := fc()
-			span1 := parentSpan.StartChild("db.sql.execute", sentry.WithDescription(sql))
+			span1 := s.getChildSpan(parentSpan, sql)
+			if span1 == nil {
+				return sql, rowsAffected
+			}
 			defer span1.Finish()
 			span1.Description = sql
 			span1.Name = sql[:min(len(sql), 100)]
@@ -57,4 +61,21 @@ func (s *SentryGinLogger) Trace(ctx context.Context, begin time.Time, fc func() 
 		s.Logger.Trace(ctx, begin, fc, err)
 	}
 
+}
+
+func (s *SentryGinLogger) getChildSpan(parentSpan *sentry.Span, sql string) *sentry.Span {
+	if parentSpan == nil {
+		return nil
+	}
+	op := "db.sql.execute"
+	if strings.HasPrefix("SELECT ", strings.ToUpper(sql)) {
+		op = "db.sql.query"
+	}
+	name := sql[:min(len(sql), 100)]
+	childSpan := parentSpan.StartChild(op, sentry.WithDescription(sql))
+	childSpan.Description = sql
+	childSpan.Name = name
+	childSpan.SetData("db.name", "campwiz")
+	childSpan.SetData("db.system", "mariadb")
+	return childSpan
 }

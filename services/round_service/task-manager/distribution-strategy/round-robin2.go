@@ -2,12 +2,10 @@ package distributionstrategy
 
 import (
 	"context"
-	"errors"
 	"log"
 	"nokib/campwiz/models"
 	"nokib/campwiz/query"
 	"nokib/campwiz/repository"
-	"sort"
 	"time"
 
 	"gorm.io/gorm"
@@ -363,155 +361,156 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries2(ctx context.Contex
 		return
 	}
 }
-func (strategy *RoundRobinDistributionStrategy) calculateWorkloadV2(conn *gorm.DB, roundId models.IDType, sourceRoleIds, targetJuryRoleIds []string) (fairNewWorkload map[models.IDType]WorkLoadType, err error) {
-	// The Calculation is based on the following:
-	// 1. Let the number of evaluated evaluation by Jury_i be E_i
-	// 2. Total Number of evaluated Evaluations, E_total = E_1 + E_2 + ... + E_n
-	// 3. Now, the number of reassignable evaluations (coming from th unevaluated assignments from source juries) is E_reassignable
 
-	// This map would only have the juries that are in assignable jurors
-	fairNewWorkload = map[models.IDType]WorkLoadType{}
-	q := query.Use(conn)
-	Assignment := q.Evaluation
+// func (strategy *RoundRobinDistributionStrategy) calculateWorkloadV2(conn *gorm.DB, roundId models.IDType, sourceRoleIds, targetJuryRoleIds []string) (fairNewWorkload map[models.IDType]WorkLoadType, err error) {
+// 	// The Calculation is based on the following:
+// 	// 1. Let the number of evaluated evaluation by Jury_i be E_i
+// 	// 2. Total Number of evaluated Evaluations, E_total = E_1 + E_2 + ... + E_n
+// 	// 3. Now, the number of reassignable evaluations (coming from th unevaluated assignments from source juries) is E_reassignable
 
-	elligibleAssignmentCount := []JurorV3{}
-	// Populate the existing workload
-	alreadyAssignedWorkflowMap := map[models.IDType]WorkLoadType{}
-	// By default it would be zero, because
-	// we would be assigning the evaluations to the juries
-	for _, jurId := range targetJuryRoleIds {
-		alreadyAssignedWorkflowMap[models.IDType(jurId)] = 0
-	}
-	stmt := Assignment.Select(Assignment.EvaluationID.Count().As("Count"), Assignment.JudgeID).
-		Where(Assignment.RoundID.Eq(roundId.String())).
-		Where(Assignment.Score.IsNull()).
-		Where(Assignment.EvaluatedAt.IsNull()).
-		Group(Assignment.JudgeID)
-	if len(sourceRoleIds) > 0 {
-		stmt = stmt.Where(Assignment.JudgeID.In(sourceRoleIds...))
-	}
-	// Get the total number of unevaluated elligible assignments
-	err = stmt.Scan(&elligibleAssignmentCount)
-	if err != gorm.ErrRecordNotFound && err != nil {
-		log.Println("Error: ", err)
-		return nil, err
-	}
-	log.Printf("Eligible assignments count: %+v", elligibleAssignmentCount)
-	totalElligibleUnevaluatedEvaluations := WorkLoadType(0)
-	for _, juror := range elligibleAssignmentCount {
-		if juror.Count > 0 {
-			if _, ok := alreadyAssignedWorkflowMap[juror.JudgeID]; ok {
-				continue // Skip if the juror is in the target jury list
-			}
-			totalElligibleUnevaluatedEvaluations += WorkLoadType(juror.Count)
-		}
-	}
-	log.Println("Total unevaluated evaluations: ", totalElligibleUnevaluatedEvaluations)
+// 	// This map would only have the juries that are in assignable jurors
+// 	fairNewWorkload = map[models.IDType]WorkLoadType{}
+// 	q := query.Use(conn)
+// 	Assignment := q.Evaluation
 
-	totalJuryCount := WorkLoadType(len(targetJuryRoleIds))
-	log.Println("Total target jury count: ", totalJuryCount)
-	if totalJuryCount == 0 {
-		log.Println("No jury found")
-		return nil, errors.New("noJuryFound")
-	}
+// 	elligibleAssignmentCount := []JurorV3{}
+// 	// Populate the existing workload
+// 	alreadyAssignedWorkflowMap := map[models.IDType]WorkLoadType{}
+// 	// By default it would be zero, because
+// 	// we would be assigning the evaluations to the juries
+// 	for _, jurId := range targetJuryRoleIds {
+// 		alreadyAssignedWorkflowMap[models.IDType(jurId)] = 0
+// 	}
+// 	stmt := Assignment.Select(Assignment.EvaluationID.Count().As("Count"), Assignment.JudgeID).
+// 		Where(Assignment.RoundID.Eq(roundId.String())).
+// 		Where(Assignment.Score.IsNull()).
+// 		Where(Assignment.EvaluatedAt.IsNull()).
+// 		Group(Assignment.JudgeID)
+// 	if len(sourceRoleIds) > 0 {
+// 		stmt = stmt.Where(Assignment.JudgeID.In(sourceRoleIds...))
+// 	}
+// 	// Get the total number of unevaluated elligible assignments
+// 	err = stmt.Scan(&elligibleAssignmentCount)
+// 	if err != gorm.ErrRecordNotFound && err != nil {
+// 		log.Println("Error: ", err)
+// 		return nil, err
+// 	}
+// 	log.Printf("Eligible assignments count: %+v", elligibleAssignmentCount)
+// 	totalElligibleUnevaluatedEvaluations := WorkLoadType(0)
+// 	for _, juror := range elligibleAssignmentCount {
+// 		if juror.Count > 0 {
+// 			if _, ok := alreadyAssignedWorkflowMap[juror.JudgeID]; ok {
+// 				continue // Skip if the juror is in the target jury list
+// 			}
+// 			totalElligibleUnevaluatedEvaluations += WorkLoadType(juror.Count)
+// 		}
+// 	}
+// 	log.Println("Total unevaluated evaluations: ", totalElligibleUnevaluatedEvaluations)
 
-	alreadyAssignedWorkloads := MinimumWorkloadHeap{}
-	err = Assignment.Select(Assignment.JudgeID, Assignment.EvaluationID.Count().As("Count")).
-		// Where(Assignment.Score.IsNotNull()).Where(Assignment.EvaluatedAt.IsNotNull()).
-		Where(Assignment.RoundID.Eq(roundId.String())).Where(Assignment.JudgeID.In(targetJuryRoleIds...)).
-		Group(Assignment.JudgeID).Scan(&alreadyAssignedWorkloads)
-	if err != nil {
-		return nil, err
-	}
-	totalAssignedCount := WorkLoadType(0)
-	for _, workload := range alreadyAssignedWorkloads {
-		totalAssignedCount += workload.Count
-		alreadyAssignedWorkflowMap[workload.JudgeID] = WorkLoadType(workload.Count)
-	}
-	// Already evaluated workloads
-	alreadyEvaluatedWorkloads := MinimumWorkloadHeap{}
-	err = Assignment.Select(Assignment.JudgeID, Assignment.EvaluationID.Count().As("Count")).
-		Where(Assignment.RoundID.Eq(roundId.String())).
-		Where(Assignment.Score.IsNotNull()).Where(Assignment.EvaluatedAt.IsNotNull()).
-		Where(Assignment.JudgeID.In(targetJuryRoleIds...)).
-		Group(Assignment.JudgeID).Scan(&alreadyEvaluatedWorkloads)
-	if err != nil {
-		log.Println("Error: ", err)
-		return nil, err
-	}
-	alreadyEvaluatedWorkloadMap := map[models.IDType]WorkLoadType{}
-	log.Printf("Already evaluated workloads: %+v", alreadyEvaluatedWorkloads)
-	// Update the existing workload map with the already evaluated workloads
-	for _, workload := range alreadyEvaluatedWorkloads {
-		alreadyEvaluatedWorkloadMap[workload.JudgeID] = workload.Count
-	}
-	log.Println("Existing evaluated workload map: ", alreadyEvaluatedWorkloadMap)
-	log.Printf("Existing assigned workload: %+v", alreadyAssignedWorkflowMap)
-	totalEvaluationsTobeConsideredForFairDistribution := totalElligibleUnevaluatedEvaluations + totalAssignedCount
-	// if totalAssignedCount == 0 {
-	// 	log.Println("No elligible evaluations found")
-	// 	return nil, errors.New("noElligibleEvaluationFound")
-	// }
-	averageWorkload := totalEvaluationsTobeConsideredForFairDistribution / totalJuryCount
-	extraWorkload := totalEvaluationsTobeConsideredForFairDistribution % totalJuryCount
-	log.Println("Existing workload: ", alreadyAssignedWorkloads)
-	log.Println("Total evaluations: ", totalEvaluationsTobeConsideredForFairDistribution)
-	log.Println("Total jury count: ", totalJuryCount)
-	log.Println("Average workload: ", averageWorkload)
-	log.Println("Extra workload: ", extraWorkload)
-	// 10 13 8
+// 	totalJuryCount := WorkLoadType(len(targetJuryRoleIds))
+// 	log.Println("Total target jury count: ", totalJuryCount)
+// 	if totalJuryCount == 0 {
+// 		log.Println("No jury found")
+// 		return nil, errors.New("noJuryFound")
+// 	}
 
-	k := MinimumWorkloadHeap{}
-	// Calculate the new workload for each juror
-	for _, jurId := range targetJuryRoleIds {
-		existingWorkload := alreadyAssignedWorkflowMap[models.IDType(jurId)]
-		newWorkload := averageWorkload - existingWorkload
+// 	alreadyAssignedWorkloads := MinimumWorkloadHeap{}
+// 	err = Assignment.Select(Assignment.JudgeID, Assignment.EvaluationID.Count().As("Count")).
+// 		// Where(Assignment.Score.IsNotNull()).Where(Assignment.EvaluatedAt.IsNotNull()).
+// 		Where(Assignment.RoundID.Eq(roundId.String())).Where(Assignment.JudgeID.In(targetJuryRoleIds...)).
+// 		Group(Assignment.JudgeID).Scan(&alreadyAssignedWorkloads)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	totalAssignedCount := WorkLoadType(0)
+// 	for _, workload := range alreadyAssignedWorkloads {
+// 		totalAssignedCount += workload.Count
+// 		alreadyAssignedWorkflowMap[workload.JudgeID] = WorkLoadType(workload.Count)
+// 	}
+// 	// Already evaluated workloads
+// 	alreadyEvaluatedWorkloads := MinimumWorkloadHeap{}
+// 	err = Assignment.Select(Assignment.JudgeID, Assignment.EvaluationID.Count().As("Count")).
+// 		Where(Assignment.RoundID.Eq(roundId.String())).
+// 		Where(Assignment.Score.IsNotNull()).Where(Assignment.EvaluatedAt.IsNotNull()).
+// 		Where(Assignment.JudgeID.In(targetJuryRoleIds...)).
+// 		Group(Assignment.JudgeID).Scan(&alreadyEvaluatedWorkloads)
+// 	if err != nil {
+// 		log.Println("Error: ", err)
+// 		return nil, err
+// 	}
+// 	alreadyEvaluatedWorkloadMap := map[models.IDType]WorkLoadType{}
+// 	log.Printf("Already evaluated workloads: %+v", alreadyEvaluatedWorkloads)
+// 	// Update the existing workload map with the already evaluated workloads
+// 	for _, workload := range alreadyEvaluatedWorkloads {
+// 		alreadyEvaluatedWorkloadMap[workload.JudgeID] = workload.Count
+// 	}
+// 	log.Println("Existing evaluated workload map: ", alreadyEvaluatedWorkloadMap)
+// 	log.Printf("Existing assigned workload: %+v", alreadyAssignedWorkflowMap)
+// 	totalEvaluationsTobeConsideredForFairDistribution := totalElligibleUnevaluatedEvaluations + totalAssignedCount
+// 	// if totalAssignedCount == 0 {
+// 	// 	log.Println("No elligible evaluations found")
+// 	// 	return nil, errors.New("noElligibleEvaluationFound")
+// 	// }
+// 	averageWorkload := totalEvaluationsTobeConsideredForFairDistribution / totalJuryCount
+// 	extraWorkload := totalEvaluationsTobeConsideredForFairDistribution % totalJuryCount
+// 	log.Println("Existing workload: ", alreadyAssignedWorkloads)
+// 	log.Println("Total evaluations: ", totalEvaluationsTobeConsideredForFairDistribution)
+// 	log.Println("Total jury count: ", totalJuryCount)
+// 	log.Println("Average workload: ", averageWorkload)
+// 	log.Println("Extra workload: ", extraWorkload)
+// 	// 10 13 8
 
-		fairNewWorkload[models.IDType(jurId)] = newWorkload
-		k = append(k, JurorV3{
-			JudgeID: models.IDType(jurId),
-			Count:   newWorkload,
-		})
-	}
-	if extraWorkload > 0 {
-		sort.SliceStable(k, func(i, j int) bool {
-			return k[i].Count < k[j].Count
-		})
-		for _, workload := range k {
-			if extraWorkload == 0 {
-				break
-			}
-			fairNewWorkload[workload.JudgeID]++
-			extraWorkload--
-		}
-	}
-	// ঋণাত্মক সংখ্যাগুলোকে একটু বদলে দিতে হচ্ছে
-	// এর মানে কতগুলো বিয়োগ করতে হবে, এর বদলে কতগুলো রাখতে হবে, সেটা
-	// তবে চিহ্ন একই থাকবে
-	// এতে চিহ্ন বিয়োগ থাকায় বোঝা সুবিধা হবে, অন্যদিকে কতগুলো রাখতে হবে,
-	// সেটার ফলে বণ্টন আইডি শুধুমাত্র সেগুলোতেই দেয়া হবে। ফলে বাকিগুলো অন্য কেউ সহজেই দখল করতে পারবে।
-	for jurId, workload := range fairNewWorkload {
-		evaluated := alreadyEvaluatedWorkloadMap[jurId]
-		assigned := alreadyAssignedWorkflowMap[jurId]
-		toBeKept := assigned - 2*evaluated + workload
+// 	k := MinimumWorkloadHeap{}
+// 	// Calculate the new workload for each juror
+// 	for _, jurId := range targetJuryRoleIds {
+// 		existingWorkload := alreadyAssignedWorkflowMap[models.IDType(jurId)]
+// 		newWorkload := averageWorkload - existingWorkload
 
-		if workload < 0 {
-			log.Printf("Juror %s: Workload: %d, Evaluated: %d, Assigned: %d, To be kept: %d", jurId, workload, evaluated, assigned, toBeKept)
-			if toBeKept >= 0 {
-				// If the workload is negative, it means we need to keep that many assignments
-				fairNewWorkload[jurId] = -toBeKept
-			} else {
-				// If the workload is negative and toBeKept is negative, we can set it to zero
-				fairNewWorkload[jurId] = 0
-				log.Printf("Juror %s: Workload is negative and toBeKept is negative, setting to zero", jurId)
-			}
+// 		fairNewWorkload[models.IDType(jurId)] = newWorkload
+// 		k = append(k, JurorV3{
+// 			JudgeID: models.IDType(jurId),
+// 			Count:   newWorkload,
+// 		})
+// 	}
+// 	if extraWorkload > 0 {
+// 		sort.SliceStable(k, func(i, j int) bool {
+// 			return k[i].Count < k[j].Count
+// 		})
+// 		for _, workload := range k {
+// 			if extraWorkload == 0 {
+// 				break
+// 			}
+// 			fairNewWorkload[workload.JudgeID]++
+// 			extraWorkload--
+// 		}
+// 	}
+// 	// ঋণাত্মক সংখ্যাগুলোকে একটু বদলে দিতে হচ্ছে
+// 	// এর মানে কতগুলো বিয়োগ করতে হবে, এর বদলে কতগুলো রাখতে হবে, সেটা
+// 	// তবে চিহ্ন একই থাকবে
+// 	// এতে চিহ্ন বিয়োগ থাকায় বোঝা সুবিধা হবে, অন্যদিকে কতগুলো রাখতে হবে,
+// 	// সেটার ফলে বণ্টন আইডি শুধুমাত্র সেগুলোতেই দেয়া হবে। ফলে বাকিগুলো অন্য কেউ সহজেই দখল করতে পারবে।
+// 	for jurId, workload := range fairNewWorkload {
+// 		evaluated := alreadyEvaluatedWorkloadMap[jurId]
+// 		assigned := alreadyAssignedWorkflowMap[jurId]
+// 		toBeKept := assigned - 2*evaluated + workload
 
-		}
-		if fairNewWorkload[jurId] == 0 {
-			// If the workload is zero, we can remove it from the map
-			fairNewWorkload[jurId] = -assigned
-		}
-	}
+// 		if workload < 0 {
+// 			log.Printf("Juror %s: Workload: %d, Evaluated: %d, Assigned: %d, To be kept: %d", jurId, workload, evaluated, assigned, toBeKept)
+// 			if toBeKept >= 0 {
+// 				// If the workload is negative, it means we need to keep that many assignments
+// 				fairNewWorkload[jurId] = -toBeKept
+// 			} else {
+// 				// If the workload is negative and toBeKept is negative, we can set it to zero
+// 				fairNewWorkload[jurId] = 0
+// 				log.Printf("Juror %s: Workload is negative and toBeKept is negative, setting to zero", jurId)
+// 			}
 
-	return fairNewWorkload, nil
-}
+// 		}
+// 		if fairNewWorkload[jurId] == 0 {
+// 			// If the workload is zero, we can remove it from the map
+// 			fairNewWorkload[jurId] = -assigned
+// 		}
+// 	}
+
+// 	return fairNewWorkload, nil
+// }

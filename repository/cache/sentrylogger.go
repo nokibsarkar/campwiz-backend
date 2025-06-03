@@ -46,7 +46,9 @@ func (s *SentryGinLogger) Trace(ctx context.Context, begin time.Time, fc func() 
 			span1.EndTime = time.Now()
 			span1.SetData("db.name", "campwiz")
 			span1.SetData("db.system", "mariadb")
-			span1.SetData("db.error", err.Error())
+			if err != nil {
+				span1.SetData("db.error", err.Error())
+			}
 			span1.SetData("db.active_record", rowsAffected)
 			return sql, rowsAffected
 		}

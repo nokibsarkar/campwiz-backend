@@ -166,7 +166,7 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries(ctx context.Context
 		return
 	}
 	log.Printf("Created %d missing evaluations", created)
-	taskDB, closeTaskDB := cache.GetTaskCacheDB(strategy.TaskId)
+	taskDB, closeTaskDB := cache.GetTaskCacheDB(ctx, strategy.TaskId)
 	defer closeTaskDB()
 	totalEvaluations, err := strategy.importToCache(conn, taskDB, round)
 	if err != nil {

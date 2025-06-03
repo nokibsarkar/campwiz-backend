@@ -2,6 +2,7 @@ package services
 
 import (
 	"bytes"
+	"context"
 	"crypto/ecdsa"
 	"errors"
 	"fmt"
@@ -180,8 +181,8 @@ func (a *AuthenticationService) RemoveSession(cacheDB *gorm.DB, ID models.IDType
 	}
 	return nil
 }
-func (a *AuthenticationService) Logout(session *cache.Session) error {
-	conn, close := cache.GetCacheDB()
+func (a *AuthenticationService) Logout(ctx context.Context, session *cache.Session) error {
+	conn, close := cache.GetCacheDB(ctx)
 	defer close()
 	// Remove the session
 	return a.RemoveSession(conn, session.ID)
@@ -214,7 +215,7 @@ func (a *AuthenticationService) decodeToken(tokenString string) (*SessionClaims,
 }
 func (auth_service *AuthenticationService) Authenticate(ctx *gin.Context, token string) (string, *cache.Session, error, bool) {
 	tokenMap, err := auth_service.decodeToken(token)
-	cache_db, close := cache.GetCacheDB()
+	cache_db, close := cache.GetCacheDB(ctx)
 	hub := sentrygin.GetHubFromContext(ctx)
 	if hub != nil {
 		hub.Scope().SetExtra("AuthTokenSessionID", tokenMap.ID)

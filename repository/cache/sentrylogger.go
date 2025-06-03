@@ -33,17 +33,12 @@ func (s *SentryGinLogger) Error(ctx context.Context, msg string, data ...any) {
 	s.Logger.Error(ctx, msg, data...)
 }
 func (s *SentryGinLogger) Trace(ctx context.Context, begin time.Time, fc func() (string, int64), err error) {
-	// Use pointer type assertion if you need gin.Context, otherwise remove this line if unused
-	// ctx1, ok := ctx.(*gin.Context)
-	// if !ok {
-	// 	log.Printf("context is not *gin.Context")
-	// }
 	ctxGin, ok := ctx.(*gin.Context)
 	if ok {
-		parentSpan := sentrygin.GetHubFromContext(ctxGin)
+		parentSpan := sentrygin.GetHubFromContext(ctxGin).Scope().GetSpan()
 		wrapFc := func() (string, int64) {
 			sql, rowsAffected := fc()
-			span := parentSpan.Scope().GetSpan().StartChild("db.sql.execute", sentry.WithDescription(sql))
+			span := parentSpan.StartChild("db.sql.execute", sentry.WithDescription(sql))
 			defer span.Finish()
 			tx := span.GetTransaction()
 			defer tx.Finish()

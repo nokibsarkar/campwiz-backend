@@ -32,7 +32,7 @@ func postRun() {
 }
 func beforeSetupRouter(ctx context.Context, testing bool) {
 	repository.InitDB(ctx, testing)
-	cache.InitCacheDB(testing)
+	cache.InitCacheDB(ctx, testing)
 
 }
 func afterSetupRouter(ctx context.Context, testing bool) {

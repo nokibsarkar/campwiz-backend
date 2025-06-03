@@ -50,7 +50,7 @@ func Logout(c *gin.Context) {
 	session := GetSession(c)
 	if session != nil {
 		auth_service := services.NewAuthenticationService()
-		err := auth_service.Logout(session)
+		err := auth_service.Logout(c, session)
 		if err != nil {
 			c.JSON(500, models.ResponseError{
 				Detail: err.Error(),

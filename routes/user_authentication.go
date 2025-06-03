@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"fmt"
 	"log"
 	"nokib/campwiz/consts"
 	"nokib/campwiz/models"
@@ -12,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"gorm.io/gorm"
@@ -106,7 +104,7 @@ func HandleOAuth2Callback(c *gin.Context) {
 	// we can assume that the user is created
 	// we can now create the session
 	auth_service := services.NewAuthenticationService()
-	cacheDB, close := cache.GetCacheDB()
+	cacheDB, close := cache.GetCacheDB(c)
 	defer close()
 	nextExpiry := time.Now().UTC().Add(time.Minute * time.Duration(consts.Config.Auth.Expiry))
 	log.Println("Session expire at : ", nextExpiry, "Now :", time.Now().UTC())
@@ -148,8 +146,6 @@ func HandleOAuth2Callback(c *gin.Context) {
 func WithSession(callback func(*gin.Context, *cache.Session)) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
-		span := sentrygin.GetHubFromContext(c)
-		fmt.Printf("Span -1: %v", span)
 		session := GetSession(c)
 		if session == nil {
 			c.JSON(401, models.ResponseError{

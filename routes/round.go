@@ -22,6 +22,7 @@ type RoundDeletedResponse struct {
 // @Produce  json
 // @Success 200 {object} models.ResponseSingle[models.Round]
 // @Router /round/ [post]
+// @Security ApiKeyAuth
 // @Param roundRequest body services.RoundRequest true "The round request"
 // @Tags Round
 // @Error 400 {object} models.ResponseError
@@ -56,6 +57,7 @@ func CreateRound(c *gin.Context, sess *cache.Session) {
 // @Router /round/ [get]
 // @param RoundFilter query models.RoundFilter false "Filter the rounds"
 // @Tags Round
+// @Security ApiKeyAuth
 // @Error 400 {object} models.ResponseError
 func ListAllRounds(c *gin.Context, sess *cache.Session) {
 	defer HandleError("ListAllRounds")
@@ -83,6 +85,7 @@ func ListAllRounds(c *gin.Context, sess *cache.Session) {
 // @Param roundId path string true "The round ID"
 // @Param ImportFromCommons body services.ImportFromCommonsPayload true "The import from commons request"
 // @Tags Round
+// @Security ApiKeyAuth
 // @Error 400 {object} models.ResponseError
 func ImportFromCommons(c *gin.Context, sess *cache.Session) {
 	roundId := c.Param("roundId")
@@ -117,6 +120,7 @@ func ImportFromCommons(c *gin.Context, sess *cache.Session) {
 // @Param targetRoundId path string true "The target round ID, where the images will be imported"
 // @Param ImportFromPreviousRoundPayload body services.ImportFromPreviousRoundPayload true "The import from previous round request"
 // @Tags Round
+// @Security ApiKeyAuth
 // @Error 400 {object} models.ResponseError
 func ImportFromPreviousRound(c *gin.Context, sess *cache.Session) {
 	roundId := c.Param("roundId")
@@ -161,6 +165,7 @@ func ImportFromPreviousRound(c *gin.Context, sess *cache.Session) {
 // @Param ImportFromCSVRequest formData services.ImportFromCSVRequest true "The import from CSV request"
 // @Param file formData file true "The CSV file (upto 10MB CSV)"
 // @Tags Round
+// @Security ApiKeyAuth
 // @Error 400 {object} models.ResponseError
 func ImportFromCSV(c *gin.Context, sess *cache.Session) {
 	roundId := c.Param("roundId")
@@ -203,6 +208,7 @@ func ImportFromCSV(c *gin.Context, sess *cache.Session) {
 // @Param roundId path string true "The round ID"
 // @Param roundRequest body services.RoundRequest true "The round request"
 // @Tags Round
+// @Security ApiKeyAuth
 // @Error 400 {object} models.ResponseError
 func UpdateRoundDetails(c *gin.Context, sess *cache.Session) {
 	roundId := c.Param("roundId")
@@ -247,6 +253,7 @@ type UpdateStatusRequest struct {
 // @Param roundId path string true "The round ID"
 // @Param UpdateStatusRequest body UpdateStatusRequest true "The status request"
 // @Tags Round
+// @Security ApiKeyAuth
 // @Error 400 {object} models.ResponseError
 // @Security ApiKeyAuth
 func UpdateStatus(c *gin.Context, sess *cache.Session) {
@@ -279,6 +286,7 @@ func UpdateStatus(c *gin.Context, sess *cache.Session) {
 // @Param roundId path string true "The round ID"
 // @Param DistributionRequest body services.DistributionRequest true "The distribution request"
 // @Tags Round
+// @Security ApiKeyAuth
 // @Error 400 {object} models.ResponseError
 func DistributeEvaluations(c *gin.Context, sess *cache.Session) {
 	roundId := c.Param("roundId")
@@ -308,6 +316,7 @@ func DistributeEvaluations(c *gin.Context, sess *cache.Session) {
 // @Router /round/{roundId} [get]
 // @Param roundId path string true "The round ID"
 // @Tags Round
+// @Security ApiKeyAuth
 // @Error 400 {object} models.ResponseError
 func GetRound(c *gin.Context) {
 	roundId := c.Param("roundId")
@@ -331,6 +340,7 @@ func GetRound(c *gin.Context) {
 // @Router /round/{roundId}/results/summary [get]
 // @Param roundId path string true "The round ID"
 // @Tags Round
+// @Security ApiKeyAuth
 // @Error 400 {object} models.ResponseError
 func GetResultSummary(c *gin.Context, sess *cache.Session) {
 	roundId := c.Param("roundId")
@@ -429,6 +439,7 @@ func GetResults(c *gin.Context, sess *cache.Session) {
 // @Router /round/{roundId}/next/public [get]
 // @Param roundId path string true "The round ID"
 // @Tags Round
+// @Security ApiKeyAuth
 // @Error 400 {object} models.ResponseError
 func NextPublicSubmission(c *gin.Context, sess *cache.Session) {
 	roundID := c.Param("roundId")
@@ -481,6 +492,17 @@ func NextPublicSubmission(c *gin.Context, sess *cache.Session) {
 	}
 	c.JSON(200, result)
 }
+
+// NextSubmissionEvaluation godoc
+// @Summary Get the next submission evaluation
+// @Description Get the next submission evaluation for a jury
+// @Produce  json
+// @Success 200 {object} models.ResponseList[models.Evaluation]
+// @Router /round/{roundId}/next/evaluation [get]
+// @Param roundId path string true "The round ID"
+// @Tags Round
+// @Security ApiKeyAuth
+// @Error 400 {object} models.ResponseError
 func NextSubmissionEvaluation(c *gin.Context, sess *cache.Session) {
 	roundID := c.Param("roundId")
 	if roundID == "" {
@@ -503,6 +525,7 @@ func NextSubmissionEvaluation(c *gin.Context, sess *cache.Session) {
 // @Router /round/{roundId} [delete]
 // @Param roundId path string true "The round ID"
 // @Tags Round
+// @Security ApiKeyAuth
 // @Error 400 {object} models.ResponseError
 func DeleteRound(c *gin.Context, sess *cache.Session) {
 	roundID := c.Param("roundId")
@@ -517,6 +540,18 @@ func DeleteRound(c *gin.Context, sess *cache.Session) {
 	}
 	c.JSON(200, models.ResponseSingle[RoundDeletedResponse]{Data: RoundDeletedResponse{RoundID: models.IDType(roundID)}})
 }
+
+// AddMySelfAsJury godoc
+// @Summary Add myself as a jury
+// @Description Add the current user as a jury for the round
+// @Router /round/{roundId}/jury [post]
+// @Param roundId path string true "The round ID"
+// @Tags Round
+// @Security ApiKeyAuth
+// @Success 200 {object} models.ResponseSingle[models.Role]
+// @Param roundId path string true "The round ID"
+// @Error 400 {object} models.ResponseError
+// @Produce  json
 func addMySelfAsJury(c *gin.Context, sess *cache.Session) {
 	roundID := c.Param("roundId")
 	if roundID == "" {

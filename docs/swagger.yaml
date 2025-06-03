@@ -104,6 +104,49 @@ definitions:
     - Xhosa
     - Yoruba
     - Zulu
+  consts.Permission:
+    enum:
+    - 1
+    - 2
+    - 4
+    - 8
+    - 16
+    - 32
+    - 64
+    - 128
+    - 256
+    - 512
+    - 1024
+    - 2048
+    - 4096
+    - 8192
+    - 16384
+    - 32768
+    - 65536
+    - 131072
+    - 262144
+    - 524288
+    - 1048576
+    - 0
+    - 1
+    - 327681
+    - 1306753
+    - 1310593
+    - 1310713
+    type: integer
+    x-enum-comments:
+      PermissionGroupADMIN: access other projects
+      PermissionGroupCoordinator: randomize the submissions
+      PermissionGroupJury: see the evaluation results of the evaluations they have
+        done
+      PermissionGroupLead: delete a campaign
+    x-enum-varnames:
+    - PermissionGroupBanned
+    - PermissionGroupUSER
+    - PermissionGroupJury
+    - PermissionGroupCoordinator
+    - PermissionGroupLead
+    - PermissionGroupADMIN
   consts.PermissionGroup:
     enum:
     - 1
@@ -147,6 +190,10 @@ definitions:
     - PermissionGroupCoordinator
     - PermissionGroupLead
     - PermissionGroupADMIN
+  consts.PermissionMap:
+    additionalProperties:
+      $ref: '#/definitions/consts.Permission'
+    type: object
   gorm.DeletedAt:
     properties:
       time:
@@ -453,6 +500,11 @@ definitions:
       prev:
         type: string
     type: object
+  models.ResponseSingle-consts_PermissionMap:
+    properties:
+      data:
+        $ref: '#/definitions/consts.PermissionMap'
+    type: object
   models.ResponseSingle-models_Campaign:
     properties:
       data:
@@ -472,6 +524,11 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/models.Project'
+    type: object
+  models.ResponseSingle-models_Role:
+    properties:
+      data:
+        $ref: '#/definitions/models.Role'
     type: object
   models.ResponseSingle-models_Round:
     properties:
@@ -1109,6 +1166,19 @@ info:
   title: Campwiz API
   version: "1"
 paths:
+  /api/v2/permisssions/:
+    get:
+      description: Get the permission map
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ResponseSingle-consts_PermissionMap'
+      summary: Get the permission map
+      tags:
+      - Permissions
   /campaign/:
     get:
       description: get all campaigns
@@ -1179,6 +1249,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.Campaign'
+      security:
+      - ApiKeyAuth: []
       summary: Create a new campaign
       tags:
       - Campaign
@@ -1210,6 +1282,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.ResponseSingle-models_CampaignExtended'
+      security:
+      - ApiKeyAuth: []
       summary: Get a single campaign
       tags:
       - Campaign
@@ -1262,6 +1336,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.ResponseSingle-models_Campaign'
+      security:
+      - ApiKeyAuth: []
       summary: Update a campaign
       tags:
       - Campaign
@@ -1605,6 +1681,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.ResponseList-models_Round'
+      security:
+      - ApiKeyAuth: []
       summary: List all rounds
       tags:
       - Round
@@ -1624,6 +1702,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.ResponseSingle-models_Round'
+      security:
+      - ApiKeyAuth: []
       summary: Create a new round
       tags:
       - Round
@@ -1643,6 +1723,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.ResponseSingle-routes_RoundDeletedResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Delete a round
       tags:
       - Round
@@ -1661,6 +1743,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.ResponseSingle-models_Round'
+      security:
+      - ApiKeyAuth: []
       summary: Get a round
       tags:
       - Round
@@ -1685,7 +1769,56 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.ResponseSingle-models_Round'
+      security:
+      - ApiKeyAuth: []
       summary: Update the details of a round
+      tags:
+      - Round
+  /round/{roundId}/jury:
+    post:
+      description: Add the current user as a jury for the round
+      parameters:
+      - description: The round ID
+        in: path
+        name: roundId
+        required: true
+        type: string
+      - description: The round ID
+        in: path
+        name: roundId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ResponseSingle-models_Role'
+      security:
+      - ApiKeyAuth: []
+      summary: Add myself as a jury
+      tags:
+      - Round
+  /round/{roundId}/next/evaluation:
+    get:
+      description: Get the next submission evaluation for a jury
+      parameters:
+      - description: The round ID
+        in: path
+        name: roundId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ResponseList-models_Evaluation'
+      security:
+      - ApiKeyAuth: []
+      summary: Get the next submission evaluation
       tags:
       - Round
   /round/{roundId}/next/public:
@@ -1704,6 +1837,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.ResponseSingle-models_Submission'
+      security:
+      - ApiKeyAuth: []
       summary: Get the next public submission
       tags:
       - Round
@@ -1793,6 +1928,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.ResponseList-models_EvaluationResult'
+      security:
+      - ApiKeyAuth: []
       summary: Get results of a round
       tags:
       - Round
@@ -1820,6 +1957,7 @@ paths:
             $ref: '#/definitions/models.ResponseSingle-models_Round'
       security:
       - ApiKeyAuth: []
+      - ApiKeyAuth: []
       summary: Update the status of a round
       tags:
       - Round
@@ -1845,6 +1983,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.ResponseSingle-models_Task'
+      security:
+      - ApiKeyAuth: []
       summary: Distribute evaluations to juries
       tags:
       - Round
@@ -1871,6 +2011,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.ResponseSingle-models_Task'
+      security:
+      - ApiKeyAuth: []
       summary: Import images from commons
       tags:
       - Round
@@ -1911,6 +2053,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.ResponseSingle-models_Task'
+      security:
+      - ApiKeyAuth: []
       summary: Import images from CSV
       tags:
       - Round
@@ -1937,6 +2081,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.ResponseSingle-models_Task'
+      security:
+      - ApiKeyAuth: []
       summary: Import images from previous round
       tags:
       - Round

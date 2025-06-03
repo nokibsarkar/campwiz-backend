@@ -18,6 +18,26 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/v2/permisssions/": {
+            "get": {
+                "description": "Get the permission map",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Permissions"
+                ],
+                "summary": "Get the permission map",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResponseSingle-consts_PermissionMap"
+                        }
+                    }
+                }
+            }
+        },
         "/campaign/": {
             "get": {
                 "description": "get all campaigns",
@@ -95,6 +115,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Create a new campaign",
                 "produces": [
                     "application/json"
@@ -126,6 +151,11 @@ const docTemplate = `{
         },
         "/campaign/{campaignId}": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Get a single campaign",
                 "produces": [
                     "application/json"
@@ -218,6 +248,11 @@ const docTemplate = `{
         },
         "/campaign/{id}": {
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Update a campaign",
                 "produces": [
                     "application/json"
@@ -721,6 +756,11 @@ const docTemplate = `{
         },
         "/round/": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "get all rounds",
                 "produces": [
                     "application/json"
@@ -790,6 +830,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Create a new round for a campaign",
                 "produces": [
                     "application/json"
@@ -821,6 +866,11 @@ const docTemplate = `{
         },
         "/round/distribute/{roundId}": {
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Distribute evaluations to juries",
                 "produces": [
                     "application/json"
@@ -859,6 +909,11 @@ const docTemplate = `{
         },
         "/round/import/{roundId}/commons": {
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "The user would provide a round ID and a list of commons categories and the system would import images from those categories",
                 "produces": [
                     "application/json"
@@ -897,6 +952,11 @@ const docTemplate = `{
         },
         "/round/import/{roundId}/csv": {
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "The user would provide a round ID and a CSV file path and the system would import images from that CSV file",
                 "produces": [
                     "application/json"
@@ -951,6 +1011,11 @@ const docTemplate = `{
         },
         "/round/import/{targetRoundId}/previous": {
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "The user would provide a round ID and a list of scores and the system would import images from the previous round with those scores",
                 "produces": [
                     "application/json"
@@ -989,6 +1054,11 @@ const docTemplate = `{
         },
         "/round/{roundId}": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Get a round",
                 "produces": [
                     "application/json"
@@ -1016,6 +1086,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Update the details of a round",
                 "produces": [
                     "application/json"
@@ -1052,6 +1127,11 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Delete a round",
                 "produces": [
                     "application/json"
@@ -1079,8 +1159,88 @@ const docTemplate = `{
                 }
             }
         },
+        "/round/{roundId}/jury": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Add the current user as a jury for the round",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Round"
+                ],
+                "summary": "Add myself as a jury",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The round ID",
+                        "name": "roundId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "The round ID",
+                        "name": "roundId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResponseSingle-models_Role"
+                        }
+                    }
+                }
+            }
+        },
+        "/round/{roundId}/next/evaluation": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get the next submission evaluation for a jury",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Round"
+                ],
+                "summary": "Get the next submission evaluation",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The round ID",
+                        "name": "roundId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResponseList-models_Evaluation"
+                        }
+                    }
+                }
+            }
+        },
         "/round/{roundId}/next/public": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Get the next public submission for a jury",
                 "produces": [
                     "application/json"
@@ -1139,6 +1299,11 @@ const docTemplate = `{
         },
         "/round/{roundId}/results/summary": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Get results of a round",
                 "produces": [
                     "application/json"
@@ -1246,6 +1411,9 @@ const docTemplate = `{
         "/round/{roundId}/status": {
             "post": {
                 "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
                     {
                         "ApiKeyAuth": []
                     }
@@ -1596,6 +1764,52 @@ const docTemplate = `{
                 "Zulu"
             ]
         },
+        "consts.Permission": {
+            "type": "integer",
+            "enum": [
+                1,
+                2,
+                4,
+                8,
+                16,
+                32,
+                64,
+                128,
+                256,
+                512,
+                1024,
+                2048,
+                4096,
+                8192,
+                16384,
+                32768,
+                65536,
+                131072,
+                262144,
+                524288,
+                1048576,
+                0,
+                1,
+                327681,
+                1306753,
+                1310593,
+                1310713
+            ],
+            "x-enum-comments": {
+                "PermissionGroupADMIN": "access other projects",
+                "PermissionGroupCoordinator": "randomize the submissions",
+                "PermissionGroupJury": "see the evaluation results of the evaluations they have done",
+                "PermissionGroupLead": "delete a campaign"
+            },
+            "x-enum-varnames": [
+                "PermissionGroupBanned",
+                "PermissionGroupUSER",
+                "PermissionGroupJury",
+                "PermissionGroupCoordinator",
+                "PermissionGroupLead",
+                "PermissionGroupADMIN"
+            ]
+        },
         "consts.PermissionGroup": {
             "type": "integer",
             "enum": [
@@ -1641,6 +1855,12 @@ const docTemplate = `{
                 "PermissionGroupLead",
                 "PermissionGroupADMIN"
             ]
+        },
+        "consts.PermissionMap": {
+            "type": "object",
+            "additionalProperties": {
+                "$ref": "#/definitions/consts.Permission"
+            }
         },
         "gorm.DeletedAt": {
             "type": "object",
@@ -2094,6 +2314,14 @@ const docTemplate = `{
                 }
             }
         },
+        "models.ResponseSingle-consts_PermissionMap": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/consts.PermissionMap"
+                }
+            }
+        },
         "models.ResponseSingle-models_Campaign": {
             "type": "object",
             "properties": {
@@ -2123,6 +2351,14 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/models.Project"
+                }
+            }
+        },
+        "models.ResponseSingle-models_Role": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/models.Role"
                 }
             }
         },

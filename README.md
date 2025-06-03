@@ -1,5 +1,6 @@
 # campwiz-backend
 [![codecov](https://codecov.io/github/nokibsarkar/campwiz-backend/graph/badge.svg?token=E3NPCJRDG3)](https://codecov.io/github/nokibsarkar/campwiz-backend)
+[![Gitlab Build Status](https://gitlab.wikimedia.org/nokibsarkar/campwiz-backend/badges/main/pipeline.svg)](https://gitlab.wikimedia.org/nokibsarkar/campwiz-backend/-/commits/main)
 
 # Milestones
 ## 15-04-2025: Reduce Import Time from 1 hour to 1 minute

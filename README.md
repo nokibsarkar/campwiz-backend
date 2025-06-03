@@ -8,7 +8,7 @@ I used GRPC to make the import more distributed. Also, switched from API to Wiki
 ## 16-05-2025: Deployed to Toolforge (almost)
 After a lot of effort, I managed to
 - Create another tool named `campwiz-backend` for backend hosting
-- Added build service for golang project using `1.24.1` version (Thanks to @dcaro and @dhinus)
+- Added build service for golang project using `1.24.1` version (Thanks to @dcaro and @fnegri)
 - Access all the configuration file by adding `/data/project/campwiz-backend` into viper path (Thanks to @dcaro)
 - Get response by binding to `0.0.0.0` instead of `localhost` (Thanks to @jeremy_b)
 My new issue is

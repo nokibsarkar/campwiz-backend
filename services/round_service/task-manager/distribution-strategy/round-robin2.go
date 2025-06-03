@@ -7,6 +7,9 @@ import (
 	"nokib/campwiz/query"
 	"nokib/campwiz/repository"
 
+	"fmt"
+
+	"github.com/getsentry/sentry-go"
 	"gorm.io/gorm"
 )
 
@@ -14,15 +17,15 @@ import (
 // This method would distribute all the evaluations to the juries in round robin fashion
 func (strategy *RoundRobinDistributionStrategy) AssignJuries2(ctx context.Context) {
 	log.Println("Assigning juries in round robin fashion version 2")
-	// parentSpan := sentry.StartSpan(ctx, "grpc.start", func(s *sentry.Span) {
-	// 	s.SetTag("round_id", strategy.RoundId.String())
-	// 	s.SetTag("task_id", strategy.TaskId.String())
-	// 	s.SetData("source_juries", strategy.SourceJuries)
-	// 	s.SetData("target_juries", strategy.TargetJuries)
-	// 	s.Description = "Assigning juries in round robin fashion version 2"
-	// 	s.SetData("strategy", "round-robin-v2")
-	// })
-	// defer parentSpan.Finish()
+	parentSpan := sentry.StartSpan(ctx, "grpc.start", func(s *sentry.Span) {
+		s.SetTag("round_id", strategy.RoundId.String())
+		s.SetTag("task_id", strategy.TaskId.String())
+		s.SetData("source_juries", strategy.SourceJuries)
+		s.SetData("target_juries", strategy.TargetJuries)
+		s.Description = "Assigning juries in round robin fashion version 2"
+		s.SetData("strategy", "round-robin-v2")
+	})
+	defer parentSpan.Finish()
 
 	taskRepo := repository.NewTaskRepository()
 	submission_repo := repository.NewSubmissionRepository()
@@ -89,14 +92,14 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries2(ctx context.Contex
 		log.Println("Error: ", err)
 		return
 	}
-	// parentSpan.SetData("submission_count_missing_evaluations", len(submissions))
+	parentSpan.SetData("submission_count_missing_evaluations", len(submissions))
 	createdCount, err := strategy.createMissingEvaluations(conn, round.Type, round, submissions)
 	if err != nil {
 		task.Status = models.TaskStatusFailed
 		log.Println("Error: ", err)
 		return
 	}
-	// parentSpan.SetData("submission_count_created_missing_evaluations", createdCount)
+	parentSpan.SetData("submission_count_created_missing_evaluations", createdCount)
 	log.Println("Created missing evaluations: ", createdCount)
 	q := query.Use(conn)
 	Role := q.Role
@@ -133,7 +136,7 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries2(ctx context.Contex
 		targetRoleIds[i] = targetRole.RoleID.String()
 	}
 	includeFromSourceOnly := len(sourceRoleIds) > 0
-	// parentSpan.SetData("whether_include_from_source_only", includeFromSourceOnly)
+	parentSpan.SetData("whether_include_from_source_only", includeFromSourceOnly)
 	log.Println("Include from source only: ", includeFromSourceOnly)
 	// // Calculate the workload
 	// newWorkload, err := strategy.calculateWorkloadV2(conn, strategy.RoundId, sourceRoleIds, targetRoleIds)
@@ -199,7 +202,7 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries2(ctx context.Contex
 		totalAssignedCount += workload.Count
 		alreadyAssignedWorkflowMap[workload.JudgeID] = WorkLoadType(workload.Count)
 	}
-	// parentSpan.SetData("total_assigned_count", totalAssignedCount)
+	parentSpan.SetData("total_assigned_count", totalAssignedCount)
 
 	// get current number of evaluations to be distributed
 	evaluatedAssignmentCount := []JurorV3{}
@@ -217,7 +220,7 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries2(ctx context.Contex
 		log.Println("Error: ", err)
 		return
 	}
-	// parentSpan.SetData("evaluated_assignment_count", len(evaluatedAssignmentCount))
+	parentSpan.SetData("evaluated_assignment_count", len(evaluatedAssignmentCount))
 	for _, juror := range evaluatedAssignmentCount {
 		evaluatedMap[juror.JudgeID] = WorkLoadType(juror.Count)
 	}
@@ -237,42 +240,42 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries2(ctx context.Contex
 	}
 
 	totalTransferableEvaluations := transferableAssignmentCount.Count
-	// parentSpan.SetData("total_transferable_evaluations", totalTransferableEvaluations)
+	parentSpan.SetData("total_transferable_evaluations", totalTransferableEvaluations)
 	log.Println("Total unevaluated evaluations: ", totalTransferableEvaluations)
 	targetRoleCount := len(targetRoles)
 	log.Println("Total target roles: ", targetRoleCount)
 	log.Printf("Tranferable assignments: %+v", evaluatedMap)
-	// parentSpan.SetData("target_role_count", targetRoleCount)
-	// parentSpan.SetData("already_assigned_workflow_map", alreadyAssignedWorkflowMap)
+	parentSpan.SetData("target_role_count", targetRoleCount)
+	parentSpan.SetData("already_assigned_workflow_map", alreadyAssignedWorkflowMap)
 	// for each of the target roles, we would be distributing the evaluations
 
 	for i := range targetRoleCount {
-		// childSpan := parentSpan.StartChild("assignment.distribution.round-robin-v2.target-role", func(s *sentry.Span) {
-		// 	s.SetTag("target_role_index", fmt.Sprint(i))
-		// 	s.SetTag("target_role_id", targetRoles[i].RoleID.String())
-		// 	s.SetTag("target_role_user_id", targetRoles[i].UserID.String())
-		// 	s.SetData("target_role_total_assigned", targetRoles[i].TotalAssigned)
-		// })
-		// defer childSpan.Finish()
+		childSpan := parentSpan.StartChild("assignment.distribution.round-robin-v2.target-role", func(s *sentry.Span) {
+			s.SetTag("target_role_index", fmt.Sprint(i))
+			s.SetTag("target_role_id", targetRoles[i].RoleID.String())
+			s.SetTag("target_role_user_id", targetRoles[i].UserID.String())
+			s.SetData("target_role_total_assigned", targetRoles[i].TotalAssigned)
+		})
+		defer childSpan.Finish()
 		targetRole := targetRoles[i]
 		targetJudgeId := targetRole.RoleID
 		judgeUserId := targetRole.UserID
 		log.Println("Target Judge ID: ", targetJudgeId)
-		// childSpan.SetData("target_judge_id", targetJudgeId.String())
+		childSpan.SetData("target_judge_id", targetJudgeId.String())
 		// Get the average
 		currentUnAssignedJuryCount := targetRoleCount - i
-		// childSpan.SetData("current_unassigned_jury_count", currentUnAssignedJuryCount)
+		childSpan.SetData("current_unassigned_jury_count", currentUnAssignedJuryCount)
 		workload := int(totalTransferableEvaluations) / currentUnAssignedJuryCount
 		log.Printf("Average workload for target judge %s: %d", targetJudgeId, workload)
-		// childSpan.SetData("average_workload", workload)
+		childSpan.SetData("average_workload", workload)
 
 		//// DETERMINE THE WORKLOAD FOR THE JURY
 		alreadyAssigned := alreadyAssignedWorkflowMap[targetJudgeId]
 		nonTransferable := evaluatedMap[targetJudgeId]
 		transferableCount := alreadyAssigned - nonTransferable
-		// childSpan.SetData("already_assigned", alreadyAssigned)
-		// childSpan.SetData("non_transferable", nonTransferable)
-		// childSpan.SetData("transferable_count", transferableCount)
+		childSpan.SetData("already_assigned", alreadyAssigned)
+		childSpan.SetData("non_transferable", nonTransferable)
+		childSpan.SetData("transferable_count", transferableCount)
 		log.Printf("Already assigned workload for target judge %s: %d", targetJudgeId, alreadyAssigned)
 		log.Printf("Transferable workload for target judge %s: %d", targetJudgeId, transferableCount)
 		log.Printf("Non-transferable for target judge %s: %d", targetJudgeId, nonTransferable)

@@ -10,16 +10,12 @@ import (
 )
 
 func NewSentryMiddleWare() gin.HandlerFunc {
-	isDebug := consts.Config.Server.Mode == "debug"
-	environment := "development"
-	if !isDebug {
-		environment = "production"
-	}
+	isDebug := gin.IsDebugging()
 	// To initialize Sentry's handler, you need to initialize Sentry itself beforehand
 	if err := sentry.Init(sentry.ClientOptions{
 		Dsn:         consts.Config.Sentry.DSN,
 		Debug:       isDebug,
-		Environment: environment,
+		Environment: consts.Config.Server.Environment,
 		Tags: map[string]string{
 			"base-url":    consts.Config.Server.BaseURL,
 			"Build-Time":  consts.BuildTime,

@@ -48,10 +48,11 @@ type DatabaseConfiguration struct {
 	Commons CommonsReplicaDatabaseConfiguration `mapstructure:"Commons"`
 }
 type ServerConfiguration struct {
-	Port    string `mapstructure:"Port"`
-	Host    string `mapstructure:"Host"`
-	BaseURL string `mapstructure:"BaseURL"`
-	Mode    string `mapstructure:"Mode"`
+	Port        string `mapstructure:"Port"`
+	Host        string `mapstructure:"Host"`
+	BaseURL     string `mapstructure:"BaseURL"`
+	Mode        string `mapstructure:"Mode"`
+	Environment string `mapstructure:"Environment"`
 }
 type OAuth2Configuration struct {
 	ClientID     string `mapstructure:"ClientID"`

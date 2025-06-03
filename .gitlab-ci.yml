@@ -12,19 +12,6 @@ variables:
 stages:
 - lint
 - deploy
-- build
-- test
-- review
-- dast
-- staging
-- canary
-- production
-- incremental rollout 10%
-- incremental rollout 25%
-- incremental rollout 50%
-- incremental rollout 100%
-- performance
-- cleanup
 lint:
   stage: lint
   script:
@@ -48,7 +35,4 @@ deploy-server:
   - rsync -Pav --no-perms --omit-dir-times -e "ssh -i ~/.ssh/$PRIVATE_KEY_NAME" jobs.yaml  "$SSH_USER@$SSH_HOST:$SSH_REMOTE_PATH"
   - echo "Success"
   - ssh -i "~/.ssh/$PRIVATE_KEY_NAME" "$SSH_USER@$SSH_HOST" 'bash -s' < ./deploy.sh
-sast:
-  stage: test
-include:
-- template: Auto-DevOps.gitlab-ci.yml
+

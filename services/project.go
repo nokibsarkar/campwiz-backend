@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"nokib/campwiz/models"
@@ -19,9 +20,9 @@ type ProjectService struct{}
 func NewProjectService() *ProjectService {
 	return &ProjectService{}
 }
-func (p *ProjectService) GetProjectByID(id models.IDType, includeProjectLeads bool) (*models.ProjectExtended, error) {
+func (p *ProjectService) GetProjectByID(ctx context.Context, id models.IDType, includeProjectLeads bool) (*models.ProjectExtended, error) {
 	project_repo := repository.NewProjectRepository()
-	conn, close, err := repository.GetDB()
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -44,9 +45,9 @@ func (p *ProjectService) GetProjectByID(id models.IDType, includeProjectLeads bo
 	}
 	return px, nil
 }
-func (p *ProjectService) CreateProject(projectReq *models.ProjectRequest, includeProjectLeads bool) (*models.ProjectExtended, error) {
+func (p *ProjectService) CreateProject(ctx context.Context, projectReq *models.ProjectRequest, includeProjectLeads bool) (*models.ProjectExtended, error) {
 	project_repo := repository.NewProjectRepository()
-	conn, close, err := repository.GetDB()
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -135,10 +136,10 @@ func (p *ProjectService) AssignProjectLead(tx *gorm.DB, projectReq *models.Proje
 	}
 	return currentLeads, nil
 }
-func (p *ProjectService) UpdateProject(projectReq *models.ProjectRequest) (*models.ProjectExtended, error) {
+func (p *ProjectService) UpdateProject(ctx context.Context, projectReq *models.ProjectRequest) (*models.ProjectExtended, error) {
 	log.Printf("Updating project %v\n", projectReq)
 	project_repo := repository.NewProjectRepository()
-	conn, close, err := repository.GetDB()
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -173,9 +174,9 @@ func (p *ProjectService) UpdateProject(projectReq *models.ProjectRequest) (*mode
 	}
 	return px, nil
 }
-func (p *ProjectService) ListProjects(currentUserProjectID *models.IDType, qrt *models.ProjectFilter) ([]models.ProjectExtended, error) {
+func (p *ProjectService) ListProjects(ctx context.Context, currentUserProjectID *models.IDType, qrt *models.ProjectFilter) ([]models.ProjectExtended, error) {
 	project_repo := repository.NewProjectRepository()
-	conn, close, err := repository.GetDB()
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		return nil, err
 	}

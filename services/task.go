@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"nokib/campwiz/models"
 	"nokib/campwiz/repository"
 )
@@ -40,15 +41,16 @@ func (t *TaskService) CreateTask(TaskRequest, handlerFunc func(c ...any)) (*Task
 
 	return nil, nil
 }
-func (t *TaskService) GetTask(taskId models.IDType) (*models.Task, error) {
+func (t *TaskService) GetTask(ctx context.Context, taskId models.IDType) (*models.Task, error) {
 	task_repo := repository.NewTaskRepository()
-	conn, close, err := repository.GetDB()
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
+
 		return nil, err
 	}
 	defer close()
 	return task_repo.FindByID(conn, taskId)
 }
-func (t *TaskService) ListTasks(filter *TaskFilter) ([]models.Task, error) {
+func (t *TaskService) ListTasks(ctx context.Context, filter *TaskFilter) ([]models.Task, error) {
 	return nil, nil
 }

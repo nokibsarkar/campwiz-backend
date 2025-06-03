@@ -20,7 +20,7 @@ func (t *ImporterServer) ImportFromCommonsCategory(ctx context.Context, req *mod
 	log.Printf("ImportFromCommonsCategory %v", req)
 
 	commonsCategoryLister := NewCommonsCategoryListSource(req.CommonsCategory)
-	go t.importFrom(commonsCategoryLister, req.TaskId, req.RoundId)
+	go t.importFrom(ctx, commonsCategoryLister, req.TaskId, req.RoundId)
 	return &models.ImportResponse{
 		TaskId:  req.TaskId,
 		RoundId: req.RoundId,
@@ -33,11 +33,11 @@ func (t *ImporterServer) ImportFromCommonsCategory(ctx context.Context, req *mod
 // If there are no images in the category it will return nil
 // If there are images in the category it will return the images
 // If there are failed images in the category it will return the reason as value of the map
-func (c *CommonsCategoryListSource) ImportImageResults(currentRound *models.Round, failedImageReason *map[string]string) ([]models.MediaResult, *map[string]string) {
+func (c *CommonsCategoryListSource) ImportImageResults(ctx context.Context, currentRound *models.Round, failedImageReason *map[string]string) ([]models.MediaResult, *map[string]string) {
 	if c.currentCategoryIndex < len(c.Categories) {
 		category := c.Categories[c.currentCategoryIndex]
 		campaign := currentRound.Campaign
-		successMedia, currentfailedImages, lastPageID := c.commons_repo.GetImagesFromCommonsCategories2(category, c.lastPageID, currentRound, campaign.StartDate, campaign.EndDate)
+		successMedia, currentfailedImages, lastPageID := c.commons_repo.GetImagesFromCommonsCategories2(ctx, category, c.lastPageID, currentRound, campaign.StartDate, campaign.EndDate)
 		if lastPageID == 0 {
 			c.currentCategoryIndex++
 		}

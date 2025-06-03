@@ -2,6 +2,7 @@ package services
 
 import (
 	"bytes"
+	"context"
 	"crypto/ecdsa"
 	"errors"
 	"fmt"
@@ -14,8 +15,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"gorm.io/gorm"
+
+	"github.com/getsentry/sentry-go"
+	sentrygin "github.com/getsentry/sentry-go/gin"
 )
 
 var RSAPrivateKey *ecdsa.PrivateKey
@@ -120,7 +125,7 @@ func (a *AuthenticationService) NewRefreshToken(tokenMap *SessionClaims) (string
 	}
 	return refreshToken, nil
 }
-func (a *AuthenticationService) RefreshSession(cacheDB *gorm.DB, tokenMap *SessionClaims) (accessToken string, session *cache.Session, err error) {
+func (a *AuthenticationService) RefreshSession(ctx *gin.Context, cacheDB *gorm.DB, tokenMap *SessionClaims) (accessToken string, session *cache.Session, err error) {
 	log.Println("Refreshing session")
 	sessionIDString := tokenMap.ID
 	if sessionIDString == "" {
@@ -133,12 +138,23 @@ func (a *AuthenticationService) RefreshSession(cacheDB *gorm.DB, tokenMap *Sessi
 		Permission: tokenMap.Permission,
 		ExpiresAt:  tokenMap.ExpiresAt.Time,
 	}
+	var parentSpan *sentry.Span
+	hub := sentrygin.GetHubFromContext(ctx)
+	if hub != nil {
+		parentSpan = hub.Scope().GetSpan()
+	}
+	var result *gorm.DB
 	tx := cacheDB.Begin()
-	result := tx.First(session, &cache.Session{ID: models.IDType(sessionIDString)})
-	if result.Error != nil {
-		log.Println("Error: ", result.Error)
-		tx.Rollback()
-		return "", nil, result.Error
+	if parentSpan != nil {
+		childSpan := parentSpan.StartChild("cache.get")
+		defer childSpan.Finish()
+		result = tx.First(session, &cache.Session{ID: models.IDType(sessionIDString)})
+		if result.Error != nil {
+			log.Println("Error: ", result.Error)
+			tx.Rollback()
+			childSpan.SetData("error", result.Error.Error())
+			return "", nil, result.Error
+		}
 	}
 	session.ExpiresAt = time.Now().UTC().Add(time.Second * time.Duration(a.Config.Expiry))
 	log.Println("Session expires at: ", session.ExpiresAt)
@@ -165,8 +181,8 @@ func (a *AuthenticationService) RemoveSession(cacheDB *gorm.DB, ID models.IDType
 	}
 	return nil
 }
-func (a *AuthenticationService) Logout(session *cache.Session) error {
-	conn, close := cache.GetCacheDB()
+func (a *AuthenticationService) Logout(ctx context.Context, session *cache.Session) error {
+	conn, close := cache.GetCacheDB(ctx)
 	defer close()
 	// Remove the session
 	return a.RemoveSession(conn, session.ID)
@@ -197,17 +213,35 @@ func (a *AuthenticationService) decodeToken(tokenString string) (*SessionClaims,
 	}
 	return claims, nil
 }
-func (auth_service *AuthenticationService) Authenticate(token string) (string, *cache.Session, error, bool) {
+func (auth_service *AuthenticationService) Authenticate(ctx *gin.Context, token string) (string, *cache.Session, error, bool) {
 	tokenMap, err := auth_service.decodeToken(token)
-	cache_db, close := cache.GetCacheDB()
+	cache_db, close := cache.GetCacheDB(ctx)
+	hub := sentrygin.GetHubFromContext(ctx)
+	if hub != nil {
+		hub.Scope().SetExtra("AuthTokenSessionID", tokenMap.ID)
+		hub.Scope().SetExtra("AuthTokenUserID", tokenMap.Subject)
+		hub.Scope().SetExtra("AuthTokenPermission", tokenMap.Permission)
+		hub.Scope().SetExtra("AuthTokenName", tokenMap.Name)
+		hub.Scope().SetExtra("AuthTokenExpiresAt", tokenMap.ExpiresAt)
+	}
 	defer close()
 	if err != nil {
+		if hub != nil {
+			hub.Scope().SetExtra("AuthorizationTokenCache", "MISS")
+			hub.Scope().SetExtra("AuthorizationTokenMissError", err.Error())
+		}
 		if strings.Contains(err.Error(), "token is expired") {
 			// Token is expired
-			newAccessToken, session, err := auth_service.RefreshSession(cache_db, tokenMap)
+			newAccessToken, session, err := auth_service.RefreshSession(ctx, cache_db, tokenMap)
 			if err != nil {
+				if hub != nil {
+					hub.Scope().SetExtra("AuthorizationTokenRefreshError", err.Error())
+				}
 				return "", nil, errors.New("token expired and could not be refreshed"), false
 			} else {
+				if hub != nil {
+					hub.Scope().SetExtra("AuthorizationTokenRefreshNewSessionID", session.ID)
+				}
 				return newAccessToken, session, nil, true
 			}
 		} else {
@@ -216,7 +250,14 @@ func (auth_service *AuthenticationService) Authenticate(token string) (string, *
 	} else {
 		session, err := auth_service.VerifyToken(cache_db, tokenMap)
 		if err != nil {
+			if hub != nil {
+				hub.Scope().SetExtra("AuthorizationTokenVerifyError", err.Error())
+			}
 			return "", nil, errors.New("invalid token"), false
+		}
+		if hub != nil {
+			hub.Scope().SetExtra("AuthorizationTokenCache", "HIT")
+			hub.Scope().SetExtra("AuthorizationTokenHitSessionID", session.ID)
 		}
 		return token, session, nil, false
 	}

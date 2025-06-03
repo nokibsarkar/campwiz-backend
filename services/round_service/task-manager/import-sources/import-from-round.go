@@ -40,7 +40,7 @@ func (t *ImporterServer) ImportFromPreviousRound(ctx context.Context, req *model
 		round_repo:    repository.NewRoundRepository(),
 		limit:         100,
 	}
-	go t.importFrom(&source, taskId, currentRoundId)
+	go t.importFrom(ctx, &source, taskId, currentRoundId)
 
 	return &models.ImportResponse{
 		TaskId:  taskId,
@@ -52,9 +52,9 @@ func (t *ImporterServer) ImportFromPreviousRound(ctx context.Context, req *model
 // ImportImageResults imports images from previous rounds
 // For Each invocation it will import images from a single round
 // If all rounds are imported it will return nil
-func (c *RoundPreviousRound) ImportImageResults(currentRound *models.Round, failedImageReason *map[string]string) ([]models.MediaResult, *map[string]string) {
+func (c *RoundPreviousRound) ImportImageResults(ctx context.Context, currentRound *models.Round, failedImageReason *map[string]string) ([]models.MediaResult, *map[string]string) {
 	imageResults := []models.MediaResult{}
-	q, close := repository.GetDBWithGen()
+	q, close := repository.GetDBWithGen(ctx)
 	defer close()
 	Submission := q.Submission
 	err := Submission.

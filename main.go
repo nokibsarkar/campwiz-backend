@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -29,16 +30,21 @@ func preRun() {
 }
 func postRun() {
 }
-func beforeSetupRouter(testing bool) {
-	repository.InitDB(testing)
-	cache.InitCacheDB(testing)
+func beforeSetupRouter(ctx context.Context, testing bool) {
+	repository.InitDB(ctx, testing)
+	cache.InitCacheDB(ctx, testing)
 
 }
-func afterSetupRouter(testing bool) {
+func afterSetupRouter(ctx context.Context, testing bool) {
 }
-func SetupRouter(testing bool, readOnly bool) *gin.Engine {
-	beforeSetupRouter(testing)
+func SetupRouter(ctx context.Context, testing bool, readOnly bool) *gin.Engine {
+	beforeSetupRouter(ctx, testing)
 	r := gin.Default()
+	r.Use(routes.NewSentryMiddleWare())
+	if consts.Config.Sentry.DSN != "" {
+		log.Printf("Sentry DSN is set, enabling Sentry middleware")
+
+	}
 	Mode := consts.Config.Server.Mode
 	switch Mode {
 	case "debug":
@@ -51,10 +57,6 @@ func SetupRouter(testing bool, readOnly bool) *gin.Engine {
 		log.Panicf("Invalid mode %s", Mode)
 	}
 	r.GET("/api/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
-	if consts.Config.Sentry.DSN != "" {
-		log.Printf("Sentry DSN is set, enabling Sentry middleware")
-		r.Use(routes.NewSentryMiddleWare())
-	}
 
 	if readOnly {
 		log.Println("Creating Routes for ReadOnly Mode")
@@ -63,7 +65,7 @@ func SetupRouter(testing bool, readOnly bool) *gin.Engine {
 		log.Println("Creating Routes for ReadWrite Mode")
 		routes.NewRoutes(r.Group("/"))
 	}
-	afterSetupRouter(testing)
+	afterSetupRouter(ctx, testing)
 	return r
 }
 func init() {
@@ -88,6 +90,8 @@ func init() {
 // @contact.url https://github.com/nokibsarkar
 // @query.collection.format multi
 func main() {
+
+	ctx := context.Background()
 	preRun()
 	portVal := 8081 // default port fallback
 	if _, err := fmt.Sscanf(consts.Config.Server.Port, "%d", &portVal); err != nil {
@@ -96,10 +100,12 @@ func main() {
 	port := flag.Int("port", portVal, "Port to run the server on")
 	readOnly := flag.Bool("readonly", false, "Run the server in read-only mode")
 	flag.Parse()
-	r := SetupRouter(false, *readOnly)
+	r := SetupRouter(ctx, false, *readOnly)
+	fmt.Printf("Version: %s\n", consts.Version)
 	if err := r.Run(fmt.Sprintf("0.0.0.0:%d", *port)); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
+
 	postRun()
 
 }

@@ -71,15 +71,15 @@ func (d *DistributorServer) DistributeWithRoundRobin(ctx context.Context, req *m
 	}
 	log.Printf("Distributing task %s with round robin strategy", taskId)
 	log.Printf("Strategy : %+v", strategy)
-	go strategy.AssignJuries2()
+	go strategy.AssignJuries2(ctx)
 	return &models.DistributeWithRoundRobinResponse{
 		TaskId: req.TaskId,
 	}, nil
 }
 
-func (strategy *RoundRobinDistributionStrategy) AssignJuries() {
+func (strategy *RoundRobinDistributionStrategy) AssignJuries(ctx context.Context) {
 	taskRepo := repository.NewTaskRepository()
-	conn, close, err := repository.GetDB()
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		log.Println(err)
 		return
@@ -172,7 +172,7 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries() {
 		return
 	}
 	log.Printf("Created %d missing evaluations", created)
-	taskDB, closeTaskDB := cache.GetTaskCacheDB(strategy.TaskId)
+	taskDB, closeTaskDB := cache.GetTaskCacheDB(ctx, strategy.TaskId)
 	defer closeTaskDB()
 	totalEvaluations, err := strategy.importToCache(conn, taskDB, round)
 	if err != nil {
@@ -220,7 +220,7 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries() {
 		log.Println("Error: ", err)
 		return
 	}
-	go randomize(strategy.RoundId) //nolint:errcheck
+	go randomize(ctx, strategy.RoundId) //nolint:errcheck
 }
 func (strategy *RoundRobinDistributionStrategy) createMissingEvaluations(tx *gorm.DB, evtype models.EvaluationType, round *models.Round, req []models.Submission) (int, error) {
 	evaluations := []models.Evaluation{}

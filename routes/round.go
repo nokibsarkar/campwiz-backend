@@ -40,7 +40,7 @@ func CreateRound(c *gin.Context, sess *cache.Session) {
 		return
 	}
 	round_service := services.NewRoundService()
-	round, err := round_service.CreateRound(&requestedRounds)
+	round, err := round_service.CreateRound(c, &requestedRounds)
 	if err != nil {
 		c.JSON(400, models.ResponseError{Detail: "Error creating round : " + err.Error()})
 		return
@@ -66,7 +66,7 @@ func ListAllRounds(c *gin.Context, sess *cache.Session) {
 		return
 	}
 	round_service := services.NewRoundService()
-	rounds, err := round_service.ListAllRounds(filter)
+	rounds, err := round_service.ListAllRounds(c, filter)
 	if err != nil {
 		c.JSON(400, models.ResponseError{Detail: "Error listing rounds : " + err.Error()})
 		return
@@ -100,7 +100,7 @@ func ImportFromCommons(c *gin.Context, sess *cache.Session) {
 		c.JSON(400, models.ResponseError{Detail: "Invalid request : No categories provided"})
 		return
 	}
-	task, err := round_service.ImportFromCommons(models.IDType(roundId), req.Categories)
+	task, err := round_service.ImportFromCommons(c, models.IDType(roundId), req.Categories)
 	if err != nil {
 		c.JSON(400, models.ResponseError{Detail: "Failed to import images : " + err.Error()})
 		return
@@ -142,7 +142,7 @@ func ImportFromPreviousRound(c *gin.Context, sess *cache.Session) {
 		c.JSON(400, models.ResponseError{Detail: "Invalid request : No scores provided"})
 		return
 	}
-	task, err := round_service.ImportFromPreviousRound(sess.UserID, models.IDType(roundId), req)
+	task, err := round_service.ImportFromPreviousRound(c, sess.UserID, models.IDType(roundId), req)
 	if err != nil {
 		c.JSON(400, models.ResponseError{Detail: "Failed to import images : " + err.Error()})
 		return
@@ -186,7 +186,7 @@ func ImportFromCSV(c *gin.Context, sess *cache.Session) {
 	}
 
 	round_service := services.NewRoundService()
-	task, err := round_service.ImportFromCSV(models.IDType(roundId), req)
+	task, err := round_service.ImportFromCSV(c, models.IDType(roundId), req)
 	if err != nil {
 		c.JSON(400, models.ResponseError{Detail: "Failed to import images : " + err.Error()})
 		return
@@ -226,7 +226,7 @@ func UpdateRoundDetails(c *gin.Context, sess *cache.Session) {
 	}
 	log.Printf("Request : %+v", req)
 	round_service := services.NewRoundService()
-	round, err := round_service.UpdateRoundDetails(models.IDType(roundId), req, q)
+	round, err := round_service.UpdateRoundDetails(c, models.IDType(roundId), req, q)
 	if err != nil {
 		c.JSON(400, models.ResponseError{Detail: "Failed to update round : " + err.Error()})
 		return
@@ -261,7 +261,7 @@ func UpdateStatus(c *gin.Context, sess *cache.Session) {
 		return
 	}
 	round_service := services.NewRoundService()
-	round, err := round_service.UpdateStatus(sess.UserID, models.IDType(roundId), req.Status)
+	round, err := round_service.UpdateStatus(c, sess.UserID, models.IDType(roundId), req.Status)
 	if err != nil {
 		c.JSON(400, models.ResponseError{Detail: "Failed to update round : " + err.Error()})
 		return
@@ -292,7 +292,7 @@ func DistributeEvaluations(c *gin.Context, sess *cache.Session) {
 		return
 	}
 	round_service := services.NewRoundService()
-	task, err := round_service.DistributeEvaluations(sess.UserID, models.IDType(roundId), distributionReq)
+	task, err := round_service.DistributeEvaluations(c, sess.UserID, models.IDType(roundId), distributionReq)
 	if err != nil {
 		c.JSON(400, models.ResponseError{Detail: "Failed to distribute evaluations : " + err.Error()})
 		return
@@ -315,7 +315,7 @@ func GetRound(c *gin.Context) {
 		c.JSON(400, models.ResponseError{Detail: "Invalid request : Round ID is required"})
 	}
 	round_service := services.NewRoundService()
-	round, err := round_service.GetById(models.IDType(roundId))
+	round, err := round_service.GetById(c, models.IDType(roundId))
 	if err != nil {
 		c.JSON(400, models.ResponseError{Detail: "Failed to get round : " + err.Error()})
 		return
@@ -338,7 +338,7 @@ func GetResultSummary(c *gin.Context, sess *cache.Session) {
 		c.JSON(400, models.ResponseError{Detail: "Invalid request : Round ID is required"})
 	}
 	round_service := services.NewRoundService()
-	results, err := round_service.GetResultSummary(models.IDType(roundId))
+	results, err := round_service.GetResultSummary(c, models.IDType(roundId))
 	if err != nil {
 		c.JSON(400, models.ResponseError{Detail: "Failed to get round results : " + err.Error()})
 		return
@@ -377,7 +377,7 @@ func GetResults(c *gin.Context, sess *cache.Session) {
 	}
 
 	round_service := services.NewRoundService()
-	results, err := round_service.GetResults(sess.UserID, models.IDType(roundId), q)
+	results, err := round_service.GetResults(c, sess.UserID, models.IDType(roundId), q)
 	if err != nil {
 		c.JSON(404, models.ResponseError{Detail: "Failed to get round results : " + err.Error()})
 		return
@@ -444,7 +444,7 @@ func NextPublicSubmission(c *gin.Context, sess *cache.Session) {
 	u := GetCurrentUser(c)
 	qry.RoundID = models.IDType(roundID)
 	round_service := services.NewRoundService()
-	round, err := round_service.GetById(models.IDType(roundID))
+	round, err := round_service.GetById(c, models.IDType(roundID))
 	if err != nil {
 		c.JSON(400, models.ResponseError{Detail: "Failed to get round : " + err.Error()})
 		return
@@ -453,7 +453,7 @@ func NextPublicSubmission(c *gin.Context, sess *cache.Session) {
 		c.JSON(400, models.ResponseError{Detail: "Invalid request : Round is not public jury"})
 		return
 	}
-	submissions, role, err := round_service.GetNextUnevaluatedSubmissionForPublicJury(u.UserID, qry)
+	submissions, role, err := round_service.GetNextUnevaluatedSubmissionForPublicJury(c, u.UserID, qry)
 	if err != nil {
 		c.JSON(400, models.ResponseError{Detail: "Failed to get next submission : " + err.Error()})
 		return
@@ -510,7 +510,7 @@ func DeleteRound(c *gin.Context, sess *cache.Session) {
 		c.JSON(400, models.ResponseError{Detail: "Invalid request : Round ID is required"})
 	}
 	round_service := services.NewRoundService()
-	err := round_service.DeleteRound(sess, models.IDType(roundID))
+	err := round_service.DeleteRound(c, sess, models.IDType(roundID))
 	if err != nil {
 		c.JSON(400, models.ResponseError{Detail: "Failed to delete round : " + err.Error()})
 		return
@@ -523,7 +523,7 @@ func addMySelfAsJury(c *gin.Context, sess *cache.Session) {
 		c.JSON(400, models.ResponseError{Detail: "Invalid request : Round ID is required"})
 	}
 	round_service := services.NewRoundService()
-	role, err := round_service.AddMyselfAsJury(sess.UserID, models.IDType(roundID))
+	role, err := round_service.AddMyselfAsJury(c, sess.UserID, models.IDType(roundID))
 	if err != nil {
 		c.JSON(400, models.ResponseError{Detail: "Failed to add myself as jury : " + err.Error()})
 		return
@@ -547,7 +547,7 @@ func Randomize(c *gin.Context, sess *cache.Session) {
 		return
 	}
 	round_service := services.NewRoundService()
-	task, err := round_service.Randomize(sess.UserID, models.IDType(roundId))
+	task, err := round_service.Randomize(c, sess.UserID, models.IDType(roundId))
 	if err != nil {
 		c.JSON(400, models.ResponseError{Detail: "Failed to randomize evaluations : " + err.Error()})
 		return

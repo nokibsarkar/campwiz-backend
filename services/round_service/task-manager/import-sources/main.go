@@ -1,6 +1,7 @@
 package importsources
 
 import (
+	"context"
 	"log"
 	"nokib/campwiz/models"
 	"nokib/campwiz/models/types"
@@ -26,7 +27,7 @@ type IImportSource interface {
 	// It should return the images that were successfully imported and the images that failed to import
 	// If there are no images to import it should return nil
 	// If there are failed images it should return the reason as a map
-	ImportImageResults(round *models.Round, failedImageReason *map[string]string) ([]models.MediaResult, *map[string]string)
+	ImportImageResults(ctx context.Context, round *models.Round, failedImageReason *map[string]string) ([]models.MediaResult, *map[string]string)
 }
 type IDistributionStrategy interface {
 	AssignJuries(tx *gorm.DB, round *models.Round, juries []models.Role) (success int, fail int, err error)
@@ -55,9 +56,9 @@ func (imp *ImporterServer) updateStatistics(tx *gorm.DB, round *models.Round, su
 func NewImporterServer() *ImporterServer {
 	return &ImporterServer{}
 }
-func (t *ImporterServer) importFrom(source IImportSource, taskId string, currentRoundId string) {
+func (t *ImporterServer) importFrom(ctx context.Context, source IImportSource, taskId string, currentRoundId string) {
 	/** Open Database Connection */
-	conn, close, err := repository.GetDB()
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		log.Println("Error getting DB: ", err)
 		return
@@ -143,7 +144,7 @@ func (t *ImporterServer) importFrom(source IImportSource, taskId string, current
 	}
 	user_repo := repository.NewUserRepository()
 	for {
-		successBatch, failedBatch := source.ImportImageResults(currentRound, FailedImages)
+		successBatch, failedBatch := source.ImportImageResults(ctx, currentRound, FailedImages)
 		if failedBatch != nil {
 			task.FailedCount = len(*failedBatch)
 			*task.FailedIds = datatypes.NewJSONType(*failedBatch)
@@ -275,7 +276,7 @@ func (t *ImporterServer) importFrom(source IImportSource, taskId string, current
 	// 	}
 	// }
 	// tx.Commit()
-	go t.importDescriptions(currentRound)
+	go t.importDescriptions(ctx, currentRound)
 	{
 		task.Status = models.TaskStatusSuccess
 		currentRound.LatestDistributionTaskID = nil // Reset the latest task id
@@ -286,8 +287,8 @@ func (t *ImporterServer) importFrom(source IImportSource, taskId string, current
 	}
 	log.Printf("Round %s imported successfully\n", currentRound.RoundID)
 }
-func (t *ImporterServer) importDescriptions(round *models.Round) {
-	conn, close, err := repository.GetDB()
+func (t *ImporterServer) importDescriptions(ctx context.Context, round *models.Round) {
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		log.Println("Error getting DB: ", err)
 		return

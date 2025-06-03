@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"nokib/campwiz/consts"
@@ -12,15 +13,15 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-func GetCacheDB() (db *gorm.DB, close func()) {
+func GetCacheDB(ctx context.Context) (db *gorm.DB, close func()) {
 	dsn := consts.Config.Database.Cache.DSN
 	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Warn),
+		Logger: NewSentryGinLogger(logger.Default.LogMode(logger.Warn)),
 	})
 	if err != nil {
 		log.Fatal("failed to connect cache database")
 	}
-	return db, func() {
+	return db.WithContext(ctx), func() {
 		raw_db, err := db.DB()
 		if err != nil {
 			log.Fatal("failed to get cache database on close")
@@ -30,14 +31,14 @@ func GetCacheDB() (db *gorm.DB, close func()) {
 		}
 	}
 }
-func GetTaskCacheDB(taskID models.IDType) (db *gorm.DB, close func()) {
+func GetTaskCacheDB(ctx context.Context, taskID models.IDType) (db *gorm.DB, close func()) {
 	dsn := fmt.Sprintf(consts.Config.Database.Task.DSN, taskID)
 	logMode := logger.Warn
 	if consts.Config.Database.Task.Debug {
 		logMode = logger.Info
 	}
 	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logMode),
+		Logger: NewSentryGinLogger(logger.Default.LogMode(logMode)),
 	})
 	if err != nil {
 		log.Fatal("failed to connect cache database")
@@ -45,7 +46,7 @@ func GetTaskCacheDB(taskID models.IDType) (db *gorm.DB, close func()) {
 	if err := db.AutoMigrate(&Evaluation{}); err != nil {
 		log.Fatal("failed to migrate cache database")
 	}
-	return db, func() {
+	return db.WithContext(ctx), func() {
 		raw_db, err := db.DB()
 		if err != nil {
 			log.Fatal("failed to get cache database on close")
@@ -61,7 +62,7 @@ func GetTaskCacheDB(taskID models.IDType) (db *gorm.DB, close func()) {
 func GetTestCacheDB() (db *gorm.DB, close func()) {
 	dsn := consts.Config.Database.Cache.TestDSN
 	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
+		Logger: NewSentryGinLogger(logger.Default.LogMode(logger.Warn)),
 	})
 	if err != nil {
 		log.Fatal("failed to connect cache database")
@@ -76,8 +77,8 @@ func GetTestCacheDB() (db *gorm.DB, close func()) {
 		}
 	}
 }
-func InitCacheDB(testing bool) {
-	db, close := GetCacheDB()
+func InitCacheDB(ctx context.Context, testing bool) {
+	db, close := GetCacheDB(ctx)
 	if testing {
 		db, close = GetTestCacheDB()
 	}

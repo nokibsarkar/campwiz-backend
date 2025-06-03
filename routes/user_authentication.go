@@ -65,7 +65,7 @@ func HandleOAuth2Callback(c *gin.Context) {
 		})
 		return
 	}
-	conn, close, err := repository.GetDB()
+	conn, close, err := repository.GetDB(c)
 	if err != nil {
 		c.JSON(500, models.ResponseError{
 			Detail: err.Error(),
@@ -104,7 +104,7 @@ func HandleOAuth2Callback(c *gin.Context) {
 	// we can assume that the user is created
 	// we can now create the session
 	auth_service := services.NewAuthenticationService()
-	cacheDB, close := cache.GetCacheDB()
+	cacheDB, close := cache.GetCacheDB(c)
 	defer close()
 	nextExpiry := time.Now().UTC().Add(time.Minute * time.Duration(consts.Config.Auth.Expiry))
 	log.Println("Session expire at : ", nextExpiry, "Now :", time.Now().UTC())
@@ -144,6 +144,7 @@ func HandleOAuth2Callback(c *gin.Context) {
 }
 
 func WithSession(callback func(*gin.Context, *cache.Session)) gin.HandlerFunc {
+
 	return func(c *gin.Context) {
 		session := GetSession(c)
 		if session == nil {
@@ -178,7 +179,7 @@ func GetCurrentUser(c *gin.Context) *models.User {
 		return nil
 	}
 	user_service := services.NewUserService()
-	user, err := user_service.GetUserByID(session.UserID)
+	user, err := user_service.GetUserByID(c, session.UserID)
 	if err != nil {
 		return nil
 	}

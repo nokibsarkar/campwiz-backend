@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -110,8 +111,8 @@ func (c *CommonsRepository) GetImagesFromCommonsCategories(category string) ([]m
 	}
 	return result, map[string]string{}
 }
-func (c *CommonsRepository) GetImagesFromCommonsCategories2(category string, lastPageID uint64, round *models.Round, startDate time.Time, endDate time.Time) (result []models.MediaResult, currentfailedImages map[string]string, lastPageIDOut uint64) {
-	q, close := GetCommonsReplicaWithGen()
+func (c *CommonsRepository) GetImagesFromCommonsCategories2(ctx context.Context, category string, lastPageID uint64, round *models.Round, startDate time.Time, endDate time.Time) (result []models.MediaResult, currentfailedImages map[string]string, lastPageIDOut uint64) {
+	q, close := GetCommonsReplicaWithGen(ctx)
 	defer close()
 	log.Printf("1 Getting images from commons category: %s", category)
 	result = []models.MediaResult{}

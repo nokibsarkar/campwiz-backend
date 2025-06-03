@@ -79,9 +79,9 @@ func ListAllCampaigns(c *gin.Context, sess *cache.Session) {
 		// 		}
 		// 	}
 		// }
-		campaignList = campaignService.ListPrivateCampaigns(sess, qry)
+		campaignList = campaignService.ListPrivateCampaigns(c, sess, qry)
 	} else {
-		campaignList = campaignService.GetAllCampaigns(qry)
+		campaignList = campaignService.GetAllCampaigns(c, qry)
 	}
 	if len(campaignList) == 0 {
 		c.JSON(200, models.ResponseList[models.Campaign]{Data: []models.Campaign{}})
@@ -120,7 +120,7 @@ func GetSingleCampaign(c *gin.Context, sess *cache.Session) {
 		return
 	}
 	campaign_service := services.NewCampaignService()
-	campaign, err := campaign_service.GetCampaignByID(models.IDType(campaignId), q)
+	campaign, err := campaign_service.GetCampaignByID(c, models.IDType(campaignId), q)
 	if err != nil {
 		c.JSON(404, models.ResponseError{Detail: "Failed to get campaign : " + err.Error()})
 		return
@@ -187,7 +187,7 @@ func CreateCampaign(c *gin.Context, sess *cache.Session) {
 
 	camapign_service := services.NewCampaignService()
 	createRequest.Status = models.RoundStatusActive
-	campaign, err := camapign_service.CreateCampaign(createRequest)
+	campaign, err := camapign_service.CreateCampaign(c, createRequest)
 	if err != nil {
 		c.JSON(400, models.ResponseError{Detail: "Failed to create campaign : " + err.Error()})
 		return
@@ -216,7 +216,7 @@ func UpdateCampaign(c *gin.Context, sess *cache.Session) {
 		return
 	}
 	campaign_service := services.NewCampaignService()
-	campaign, err := campaign_service.UpdateCampaign(models.IDType(campaignId), updateRequest)
+	campaign, err := campaign_service.UpdateCampaign(c, models.IDType(campaignId), updateRequest)
 	if err != nil {
 		c.JSON(400, models.ResponseError{Detail: "Failed to update campaign : " + err.Error()})
 		return
@@ -282,7 +282,7 @@ func UpdateCampaignStatus(c *gin.Context, sess *cache.Session) {
 		return
 	}
 	campaign_service := services.NewCampaignService()
-	campaign, err := campaign_service.UpdateCampaignStatus(sess.UserID, models.IDType(campaignId), updateRequest.IsArchived)
+	campaign, err := campaign_service.UpdateCampaignStatus(c, sess.UserID, models.IDType(campaignId), updateRequest.IsArchived)
 	if err != nil {
 		c.JSON(400, models.ResponseError{Detail: "Failed to update campaign : " + err.Error()})
 		return

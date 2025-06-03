@@ -16,12 +16,12 @@ require (
 	github.com/swaggo/swag v1.16.4
 	golang.org/x/net v0.40.0
 	golang.org/x/oauth2 v0.30.0
-	google.golang.org/grpc v1.72.1
+	google.golang.org/grpc v1.72.2
 	gorm.io/datatypes v1.2.5
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/driver/sqlite v1.5.7
 	gorm.io/gen v0.3.27
-	gorm.io/gorm v1.26.1
+	gorm.io/gorm v1.30.0
 	gorm.io/plugin/dbresolver v1.6.0
 	k8s.io/apimachinery v0.33.1
 )

@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"log"
 	"nokib/campwiz/consts"
 	"nokib/campwiz/models"
@@ -28,18 +29,18 @@ func (u *UserService) GetUserByID_(conn *gorm.DB, id models.IDType) (*models.Use
 	return user, nil
 
 }
-func (u *UserService) GetUserByID(id models.IDType) (*models.User, error) {
+func (u *UserService) GetUserByID(ctx context.Context, id models.IDType) (*models.User, error) {
 	user_repo := repository.NewUserRepository()
-	conn, close, err := repository.GetDB()
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer close()
 	return user_repo.FindByID(conn, id)
 }
-func (u *UserService) GetExtendedDetails(id models.IDType) (*models.ExtendedUserDetails, error) {
+func (u *UserService) GetExtendedDetails(ctx context.Context, id models.IDType) (*models.ExtendedUserDetails, error) {
 	user_repo := repository.NewUserRepository()
-	conn, close, err := repository.GetDB()
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		return nil, err
 	}

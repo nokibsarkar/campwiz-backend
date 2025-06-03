@@ -98,7 +98,7 @@ func (a *AuthenticationMiddleWare) Authenticate(c *gin.Context) {
 			return
 		} else {
 			auth_service := services.NewAuthenticationService()
-			accessToken, session, err, setCookie := auth_service.Authenticate(token)
+			accessToken, session, err, setCookie := auth_service.Authenticate(c, token)
 			if err != nil {
 				log.Println("Error", err)
 				c.Set("error", err)
@@ -127,7 +127,7 @@ func (a *AuthenticationMiddleWare) Authenticate2(c *gin.Context) {
 	} else {
 
 		auth_service := services.NewAuthenticationService()
-		accessToken, session, err, setCookie := auth_service.Authenticate(token)
+		accessToken, session, err, setCookie := auth_service.Authenticate(c, token)
 		if err != nil {
 			if !a.checkIfUnauthenticatedAllowed(c) {
 				log.Println("Error", err)
@@ -149,9 +149,12 @@ func (a *AuthenticationMiddleWare) Authenticate2(c *gin.Context) {
 				// IPAddress: c.ClientIP(),
 				Name: string(session.Username),
 				Data: map[string]string{
-					"sessionId":  session.ID.String(),
-					"permission": fmt.Sprintf("%d", session.Permission),
-					"expiresAt":  session.ExpiresAt.String(),
+					"sessionId":         session.ID.String(),
+					"permission":        fmt.Sprintf("%d", session.Permission),
+					"expiresAt":         session.ExpiresAt.String(),
+					"sessionCookieName": AuthenticationCookieName,
+					"refreshCookieName": RefreshCookieName,
+					"baseURL":           consts.Config.Server.BaseURL,
 				},
 			})
 		}

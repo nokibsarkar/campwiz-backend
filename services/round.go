@@ -71,11 +71,11 @@ func (a ByAssigned) Less(i, j int) bool { return a[i].totalAssigned < a[j].total
 func NewRoundService() *RoundService {
 	return &RoundService{}
 }
-func (s *RoundService) CreateRound(request *RoundRequest) (*models.Round, error) {
+func (s *RoundService) CreateRound(ctx context.Context, request *RoundRequest) (*models.Round, error) {
 	round_repo := repository.NewRoundRepository()
 	campaign_repo := repository.NewCampaignRepository()
 	role_service := NewRoleService()
-	conn, close, err := repository.GetDB()
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -154,9 +154,9 @@ func (s *RoundService) CreateRound(request *RoundRequest) (*models.Round, error)
 	log.Println("Roles: ", currentRoles)
 	return round, nil
 }
-func (s *RoundService) ListAllRounds(filter *models.RoundFilter) ([]models.Round, error) {
+func (s *RoundService) ListAllRounds(ctx context.Context, filter *models.RoundFilter) ([]models.Round, error) {
 	round_repo := repository.NewRoundRepository()
-	conn, close, err := repository.GetDB()
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -168,10 +168,10 @@ func (s *RoundService) ListAllRounds(filter *models.RoundFilter) ([]models.Round
 	return rounds, nil
 }
 
-func (b *RoundService) ImportFromCommons(roundId models.IDType, categories []string) (*models.Task, error) {
+func (b *RoundService) ImportFromCommons(ctx context.Context, roundId models.IDType, categories []string) (*models.Task, error) {
 	round_repo := repository.NewRoundRepository()
 	task_repo := repository.NewTaskRepository()
-	conn, close, err := repository.GetDB()
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -216,7 +216,7 @@ func (b *RoundService) ImportFromCommons(roundId models.IDType, categories []str
 	}
 	defer grpcConn.Close() //nolint:errcheck
 	importer := models.NewImporterClient(grpcConn)
-	importResponse, err := importer.ImportFromCommonsCategory(context.Background(), &models.ImportFromCommonsCategoryRequest{
+	importResponse, err := importer.ImportFromCommonsCategory(ctx, &models.ImportFromCommonsCategoryRequest{
 		CommonsCategory: categories,
 		RoundId:         round.RoundID.String(),
 		TaskId:          task.TaskID.String(),
@@ -227,10 +227,10 @@ func (b *RoundService) ImportFromCommons(roundId models.IDType, categories []str
 	log.Printf("Import response: %v", importResponse)
 	return task, nil
 }
-func (b *RoundService) ImportFromPreviousRound(currentUserId models.IDType, targetRoundId models.IDType, filter *ImportFromPreviousRoundPayload) (*models.Task, error) {
+func (b *RoundService) ImportFromPreviousRound(ctx context.Context, currentUserId models.IDType, targetRoundId models.IDType, filter *ImportFromPreviousRoundPayload) (*models.Task, error) {
 	round_repo := repository.NewRoundRepository()
 	task_repo := repository.NewTaskRepository()
-	conn, close, err := repository.GetDB()
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -303,7 +303,7 @@ func (b *RoundService) ImportFromPreviousRound(currentUserId models.IDType, targ
 	log.Println("GRPC client created")
 	defer grpcClient.Close() //nolint:errcheck
 	importClient := models.NewImporterClient(grpcClient)
-	_, err = importClient.ImportFromPreviousRound(context.Background(), &models.ImportFromPreviousRoundRequest{
+	_, err = importClient.ImportFromPreviousRound(ctx, &models.ImportFromPreviousRoundRequest{
 		RoundId:       targetRound.RoundID.String(),
 		SourceRoundId: sourceRound.RoundID.String(),
 		TaskId:        task.TaskID.String(),
@@ -312,11 +312,11 @@ func (b *RoundService) ImportFromPreviousRound(currentUserId models.IDType, targ
 	return task, err
 }
 
-func (b *RoundService) ImportFromCSV(roundId models.IDType, req *ImportFromCSVRequest) (*models.Task, error) {
+func (b *RoundService) ImportFromCSV(ctx context.Context, roundId models.IDType, req *ImportFromCSVRequest) (*models.Task, error) {
 
 	round_repo := repository.NewRoundRepository()
 	task_repo := repository.NewTaskRepository()
-	conn, close, err := repository.GetDB()
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -373,7 +373,7 @@ func (b *RoundService) ImportFromCSV(roundId models.IDType, req *ImportFromCSVRe
 	log.Println("GRPC client created")
 	defer grpcClient.Close() //nolint:errcheck
 	importClient := models.NewImporterClient(grpcClient)
-	_, err = importClient.ImportFromCSV(context.Background(), &models.ImportFromCSVRequest{
+	_, err = importClient.ImportFromCSV(ctx, &models.ImportFromCSVRequest{
 		FilePath:           tempFile.Name(),
 		SubmissionIdColumn: req.SubmissionIDColumn,
 		PageIdColumn:       req.PageIDColumn,
@@ -384,9 +384,9 @@ func (b *RoundService) ImportFromCSV(roundId models.IDType, req *ImportFromCSVRe
 	return task, err
 }
 
-func (b *RoundService) GetById(roundId models.IDType) (*models.Round, error) {
+func (b *RoundService) GetById(ctx context.Context, roundId models.IDType) (*models.Round, error) {
 	round_repo := repository.NewRoundRepository()
-	conn, close, err := repository.GetDB()
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -394,10 +394,10 @@ func (b *RoundService) GetById(roundId models.IDType) (*models.Round, error) {
 	return round_repo.FindByID(conn, roundId)
 }
 
-func (r *RoundService) UpdateRoundDetails(roundID models.IDType, req *RoundRequest, qry *models.SingleCampaignFilter) (*models.Round, error) {
+func (r *RoundService) UpdateRoundDetails(ctx context.Context, roundID models.IDType, req *RoundRequest, qry *models.SingleCampaignFilter) (*models.Round, error) {
 	round_repo := repository.NewRoundRepository()
 	role_service := NewRoleService()
-	conn, close, err := repository.GetDB()
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -523,10 +523,10 @@ func (r *RoundService) UpdateRoundDetails(roundID models.IDType, req *RoundReque
 	tx.Commit()
 	return round, nil
 }
-func (r *RoundService) DistributeEvaluations(currentUserID models.IDType, roundId models.IDType, distributionReq *DistributionRequest) (*models.Task, error) {
+func (r *RoundService) DistributeEvaluations(ctx context.Context, currentUserID models.IDType, roundId models.IDType, distributionReq *DistributionRequest) (*models.Task, error) {
 	round_repo := repository.NewRoundRepository()
 	task_repo := repository.NewTaskRepository()
-	conn, close, err := repository.GetDB()
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -586,9 +586,9 @@ func (r *RoundService) DistributeEvaluations(currentUserID models.IDType, roundI
 	})
 	return task, err
 }
-func (r *RoundService) GetResultSummary(roundID models.IDType) (results []models.EvaluationResult, err error) {
+func (r *RoundService) GetResultSummary(ctx context.Context, roundID models.IDType) (results []models.EvaluationResult, err error) {
 	round_repo := repository.NewRoundRepository()
-	conn, close, err := repository.GetDB()
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -599,8 +599,8 @@ func (r *RoundService) GetResultSummary(roundID models.IDType) (results []models
 	}
 	return
 }
-func (e *RoundService) GetNextUnevaluatedSubmissionForPublicJury(userID models.IDType, filter *models.EvaluationFilter) (submissions []*models.Submission, role *models.Role, err error) {
-	conn, close, err := repository.GetDB()
+func (e *RoundService) GetNextUnevaluatedSubmissionForPublicJury(ctx context.Context, userID models.IDType, filter *models.EvaluationFilter) (submissions []*models.Submission, role *models.Role, err error) {
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		return
 	}
@@ -632,10 +632,10 @@ func (e *RoundService) GetNextUnevaluatedSubmissionForPublicJury(userID models.I
 	}
 	return
 }
-func (e *RoundService) UpdateStatus(currenUserID models.IDType, roundID models.IDType, status models.RoundStatus) (*models.Round, error) {
+func (e *RoundService) UpdateStatus(ctx context.Context, currentUserID models.IDType, roundID models.IDType, status models.RoundStatus) (*models.Round, error) {
 	round_repo := repository.NewRoundRepository()
 	role_repo := repository.NewRoleRepository()
-	conn, close, err := repository.GetDB()
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -666,7 +666,7 @@ func (e *RoundService) UpdateStatus(currenUserID models.IDType, roundID models.I
 	// }
 	coordinatorType := models.RoleTypeCoordinator
 	coordinatorRoles, err := role_repo.ListAllRoles(tx, &models.RoleFilter{
-		UserID:     &currenUserID,
+		UserID:     &currentUserID,
 		Type:       &coordinatorType,
 		ProjectID:  round.ProjectID,
 		CampaignID: &round.CampaignID,
@@ -749,9 +749,9 @@ func (e *RoundService) UpdateStatus(currenUserID models.IDType, roundID models.I
 	return round, nil
 }
 
-func (e *RoundService) GetResults(currentUserID models.IDType, roundID models.IDType, q *models.SubmissionResultQuery) ([]models.SubmissionResult, error) {
+func (e *RoundService) GetResults(ctx context.Context, currentUserID models.IDType, roundID models.IDType, q *models.SubmissionResultQuery) ([]models.SubmissionResult, error) {
 	round_repo := repository.NewRoundRepository()
-	conn, close, err := repository.GetDB()
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -781,10 +781,10 @@ func (e *RoundService) GetResults(currentUserID models.IDType, roundID models.ID
 	}
 	return round_repo.GetResults(conn, roundID, q)
 }
-func (e *RoundService) DeleteRound(sess *cache.Session, roundID models.IDType) error {
+func (e *RoundService) DeleteRound(ctx context.Context, sess *cache.Session, roundID models.IDType) error {
 	round_repo := repository.NewRoundRepository()
 	role_repo := repository.NewRoleRepository()
-	conn, close, err := repository.GetDB()
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		return err
 	}
@@ -832,10 +832,10 @@ func (e *RoundService) DeleteRound(sess *cache.Session, roundID models.IDType) e
 	tx.Commit()
 	return nil
 }
-func (e *RoundService) AddMyselfAsJury(currentUserID models.IDType, roundID models.IDType) (*models.Role, error) {
+func (e *RoundService) AddMyselfAsJury(ctx context.Context, currentUserID models.IDType, roundID models.IDType) (*models.Role, error) {
 	round_repo := repository.NewRoundRepository()
 	role_repo := repository.NewRoleRepository()
-	conn, close, err := repository.GetDB()
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -879,10 +879,10 @@ func (e *RoundService) AddMyselfAsJury(currentUserID models.IDType, roundID mode
 	return role, nil
 }
 
-func (e *RoundService) Randomize(userId models.IDType, roundId models.IDType) (*models.Task, error) {
+func (e *RoundService) Randomize(ctx context.Context, userId models.IDType, roundId models.IDType) (*models.Task, error) {
 	round_repo := repository.NewRoundRepository()
 	role_repo := repository.NewRoleRepository()
-	conn, close, err := repository.GetDB()
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		return nil, err
 	}

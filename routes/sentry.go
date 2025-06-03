@@ -10,12 +10,12 @@ import (
 )
 
 func NewSentryMiddleWare() gin.HandlerFunc {
-	isDebug := consts.Config.Server.Mode == "debug"
+	isDebug := gin.IsDebugging()
 	// To initialize Sentry's handler, you need to initialize Sentry itself beforehand
 	if err := sentry.Init(sentry.ClientOptions{
 		Dsn:         consts.Config.Sentry.DSN,
 		Debug:       isDebug,
-		Environment: consts.Config.Server.Mode,
+		Environment: consts.Config.Server.Environment,
 		Tags: map[string]string{
 			"base-url":    consts.Config.Server.BaseURL,
 			"Build-Time":  consts.BuildTime,
@@ -36,6 +36,7 @@ func NewSentryMiddleWare() gin.HandlerFunc {
 		AttachStacktrace: true,
 		SampleRate:       0.8,
 		SendDefaultPII:   false,
+		EnableLogs:       gin.IsDebugging(),
 	}); err != nil {
 		fmt.Printf("Sentry initialization failed: %v\n", err)
 	}

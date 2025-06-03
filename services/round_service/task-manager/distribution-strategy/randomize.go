@@ -15,13 +15,13 @@ type Randomizer struct{}
 
 func (d *DistributorServer) Randomize(ctx context.Context, req *models.DistributeWithRoundRobinRequest) (*models.DistributeWithRoundRobinResponse, error) {
 	roundId := models.IDType(req.RoundId)
-	go randomize(roundId) //nolint:errcheck
+	go randomize(ctx, roundId) //nolint:errcheck
 	return &models.DistributeWithRoundRobinResponse{
 		TaskId: req.TaskId,
 	}, nil
 }
-func randomize(roundId models.IDType) error {
-	conn, close, err := repository.GetDB()
+func randomize(ctx context.Context, roundId models.IDType) error {
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		return err
 	}

@@ -12,6 +12,7 @@ import (
 	"nokib/campwiz/services/round_service"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"golang.org/x/net/context"
 )
 
@@ -30,13 +31,12 @@ type EvaluationRequest struct {
 	Thumbnail    *string           `json:"thumbnail,omitempty"`
 }
 
-func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluationRequests []EvaluationRequest) (result *models.EvaluationListResponseWithCurrentStats, err error) {
+func (e *EvaluationService) BulkEvaluate(ctx *gin.Context, currentUserID models.IDType, evaluationRequests []EvaluationRequest) (result *models.EvaluationListResponseWithCurrentStats, err error) {
 	// ev_repo := repository.NewEvaluationRepository()
 	user_repo := repository.NewUserRepository()
 	round_repo := repository.NewRoundRepository()
-
 	// jury_repo := repository.NewRoleRepository()
-	conn, close, err := repository.GetDB()
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -202,14 +202,14 @@ func (e *EvaluationService) BulkEvaluate(currentUserID models.IDType, evaluation
 	}
 	return
 }
-func (e *EvaluationService) PublicBulkEvaluate(currentUserID models.IDType, evaluationRequests []EvaluationRequest) (evaluations []*models.Evaluation, totalAssignmentCount int, totalEvaluationCount int, err error) {
+func (e *EvaluationService) PublicBulkEvaluate(ctx context.Context, currentUserID models.IDType, evaluationRequests []EvaluationRequest) (evaluations []*models.Evaluation, totalAssignmentCount int, totalEvaluationCount int, err error) {
 	// ev_repo := repository.NewEvaluationRepository()
 	user_repo := repository.NewUserRepository()
 	round_repo := repository.NewRoundRepository()
 	evaluations = []*models.Evaluation{}
 
 	// jury_repo := repository.NewRoleRepository()
-	conn, close, err := repository.GetDB()
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		return nil, 0, 0, err
 	}
@@ -456,11 +456,11 @@ func (e *EvaluationService) PublicBulkEvaluate(currentUserID models.IDType, eval
 	return
 }
 
-func (e *EvaluationService) Evaluate(currentUserID models.IDType, evaluationID models.IDType, evaluationRequest *EvaluationRequest) (*models.Evaluation, error) {
+func (e *EvaluationService) Evaluate(ctx context.Context, currentUserID models.IDType, evaluationID models.IDType, evaluationRequest *EvaluationRequest) (*models.Evaluation, error) {
 	ev_repo := repository.NewEvaluationRepository()
 	user_repo := repository.NewUserRepository()
 	jury_repo := repository.NewRoleRepository()
-	conn, close, err := repository.GetDB()
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -542,7 +542,7 @@ func (e *EvaluationService) Evaluate(currentUserID models.IDType, evaluationID m
 	tx.Commit()
 	return evaluation, nil
 }
-func (e *EvaluationService) PublicEvaluate(currentUserID models.IDType, submissionID types.SubmissionIDType, evaluationRequest *EvaluationRequest) (*models.Evaluation, error) {
+func (e *EvaluationService) PublicEvaluate(ctx context.Context, currentUserID models.IDType, submissionID types.SubmissionIDType, evaluationRequest *EvaluationRequest) (*models.Evaluation, error) {
 	if evaluationRequest == nil {
 		return nil, errors.New("evaluation request is required")
 	}
@@ -550,11 +550,11 @@ func (e *EvaluationService) PublicEvaluate(currentUserID models.IDType, submissi
 		return nil, errors.New("score is required")
 	}
 	if evaluationRequest.EvaluationID != "" {
-		return e.Evaluate(currentUserID, evaluationRequest.EvaluationID, evaluationRequest)
+		return e.Evaluate(ctx, currentUserID, evaluationRequest.EvaluationID, evaluationRequest)
 	}
 	submission_repo := repository.NewSubmissionRepository()
 	jury_repo := repository.NewRoleRepository()
-	conn, close, err := repository.GetDB()
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -623,10 +623,10 @@ func (e *EvaluationService) PublicEvaluate(currentUserID models.IDType, submissi
 	tx.Commit()
 	return evaluation, nil
 }
-func (e *EvaluationService) GetEvaluationById(userId models.IDType, evaluationId models.IDType) (*models.Evaluation, error) {
+func (e *EvaluationService) GetEvaluationById(ctx context.Context, userId models.IDType, evaluationId models.IDType) (*models.Evaluation, error) {
 	ev_repo := repository.NewEvaluationRepository()
 	user_repo := repository.NewUserRepository()
-	conn, close, err := repository.GetDB()
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -669,10 +669,10 @@ func (e *EvaluationService) GetEvaluationById(userId models.IDType, evaluationId
 // - if includeEvaluated is nil, no condition
 // - if includeSkipped is true, include skipped submissions
 // - if includeSkipped is false, exclude skipped submissions
-func (e *EvaluationService) GetNextEvaluations(currenUserID models.IDType, filter *models.EvaluationFilter) (evaluations []*models.Evaluation, totalAssigned int, totalEvaluated int, err error) {
+func (e *EvaluationService) GetNextEvaluations(ctx context.Context, currenUserID models.IDType, filter *models.EvaluationFilter) (evaluations []*models.Evaluation, totalAssigned int, totalEvaluated int, err error) {
 	ev_repo := repository.NewEvaluationRepository()
 	roleRepo := repository.NewRoleRepository()
-	conn, close, err := repository.GetDB()
+	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
 		return
 	}

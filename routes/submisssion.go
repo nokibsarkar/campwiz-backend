@@ -32,7 +32,7 @@ func ListAllSubmissions(c *gin.Context) {
 		filter.Limit = 10
 	}
 	submission_service := services.NewSubmissionService()
-	submissions, err := submission_service.ListAllSubmissions(filter)
+	submissions, err := submission_service.ListAllSubmissions(c, filter)
 
 	if err != nil {
 		c.JSON(400, models.ResponseError{
@@ -76,7 +76,7 @@ func GetDraftSubmission(c *gin.Context) {
 func GetSubmission(c *gin.Context) {
 	idString := c.Param("submissionId")
 	submission_service := services.NewSubmissionService()
-	submission, err := submission_service.GetSubmission(types.SubmissionIDType(idString))
+	submission, err := submission_service.GetSubmission(c, types.SubmissionIDType(idString))
 	if err != nil {
 		c.JSON(404, models.ResponseError{
 			Detail: "Submission not found",

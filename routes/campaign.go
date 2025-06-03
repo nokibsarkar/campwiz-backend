@@ -105,6 +105,7 @@ func GetAllCampaignTimeLine(c *gin.Context) {
 // @Produce  json
 // @Success 200 {object} models.ResponseSingle[models.CampaignExtended]
 // @Router /campaign/{campaignId} [get]
+// @Security ApiKeyAuth
 // @Param campaignId path string true "The campaign ID"
 // @Param campaignQuery query services.SingleCampaignQuery false "The query for the campaign"
 // @Tags Campaign
@@ -167,6 +168,7 @@ func ListAllJury(c *gin.Context) {
 // @tags Campaign
 // @param campaignRequest body services.CampaignCreateRequest true "The campaign request"
 // @produce json
+// @Security ApiKeyAuth
 // @success 200 {object} models.Campaign
 // @router /campaign/ [post]
 func CreateCampaign(c *gin.Context, sess *cache.Session) {
@@ -201,6 +203,7 @@ func CreateCampaign(c *gin.Context, sess *cache.Session) {
 // @Produce  json
 // @Success 200 {object} models.ResponseSingle[models.Campaign]
 // @Router /campaign/{id} [post]
+// @Security ApiKeyAuth
 // @Tags Campaign
 // @Param id path string true "The campaign ID"
 // @Param campaignRequest body services.CampaignUpdateRequest true "The campaign request"

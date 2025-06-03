@@ -18,11 +18,19 @@ func WithPermission(requiredPermission consts.Permission, handler func(c *gin.Co
 	})
 }
 
+// GetPermissionMap godoc
+// @Summary Get the permission map
+// @Description Get the permission map
+// @Produce json
+// @Success 200 {object} models.ResponseSingle[consts.PermissionMap]
+// @Router /api/v2/permisssions/ [get]
+// @Tags Permissions
 func GetPermissionMap(c *gin.Context) {
 	c.JSON(200, models.ResponseSingle[consts.PermissionMap]{
 		Data: consts.GetPermissionMap(),
 	})
 }
+
 func NewPermissionRoutes(parent *gin.RouterGroup) {
 	r := parent.Group("/permisssions")
 	r.GET("/", GetPermissionMap)

@@ -36,8 +36,11 @@ func GetDB(ctx1 context.Context) (db *gorm.DB, close func(), err error) {
 		// DisableForeignKeyConstraintWhenMigrating: true,
 
 	})
-	ctx, _ := ctx1.(*gin.Context)
-	hub := sentrygin.GetHubFromContext(ctx)
+	ctx, ok := ctx1.(*gin.Context)
+	var hub *sentry.Hub
+	if ok {
+		hub = sentrygin.GetHubFromContext(ctx)
+	}
 	// span := sentrygin.GetHubFromContext(ctx).Scope()
 	fmt.Printf("Span %+v", hub)
 	if err != nil {

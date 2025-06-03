@@ -1104,14 +1104,8 @@ definitions:
       type: array
     type: object
 info:
-  contact:
-    email: nokibsarkar@gmail.com
-    name: Nokib Sarkar
-    url: https://github.com/nokibsarkar
+  contact: {}
   description: This is the API documentation for Campwiz
-  license:
-    name: GPL-3.0
-    url: https://www.gnu.org/licenses/gpl-3.0.html
   title: Campwiz API
   version: "1"
 paths:
@@ -1119,7 +1113,7 @@ paths:
     get:
       description: get all campaigns
       parameters:
-      - collectionFormat: multi
+      - collectionFormat: csv
         in: query
         items:
           type: string
@@ -1758,7 +1752,7 @@ paths:
       - in: query
         name: prev
         type: string
-      - collectionFormat: multi
+      - collectionFormat: csv
         in: query
         items:
           enum:
@@ -2079,4 +2073,9 @@ paths:
       - User
 produces:
 - application/json
+securityDefinitions:
+  ApiKeyAuth:
+    in: cookie
+    name: c-auth
+    type: apiKey
 swagger: "2.0"

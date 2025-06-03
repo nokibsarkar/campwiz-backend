@@ -12,15 +12,7 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "contact": {
-            "name": "Nokib Sarkar",
-            "url": "https://github.com/nokibsarkar",
-            "email": "nokibsarkar@gmail.com"
-        },
-        "license": {
-            "name": "GPL-3.0",
-            "url": "https://www.gnu.org/licenses/gpl-3.0.html"
-        },
+        "contact": {},
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
@@ -42,7 +34,7 @@ const docTemplate = `{
                         "items": {
                             "type": "string"
                         },
-                        "collectionFormat": "multi",
+                        "collectionFormat": "csv",
                         "name": "ids",
                         "in": "query"
                     },
@@ -1236,7 +1228,7 @@ const docTemplate = `{
                             ],
                             "type": "string"
                         },
-                        "collectionFormat": "multi",
+                        "collectionFormat": "csv",
                         "name": "type",
                         "in": "query"
                     }
@@ -3054,6 +3046,13 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "name": "c-auth",
+            "in": "cookie"
         }
     }
 }`

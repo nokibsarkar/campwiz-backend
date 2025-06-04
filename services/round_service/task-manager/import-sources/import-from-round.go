@@ -18,6 +18,7 @@ type RoundPreviousRound struct {
 
 func (t *ImporterServer) ImportFromPreviousRound(ctx context.Context, req *models.ImportFromPreviousRoundRequest) (*models.ImportResponse, error) {
 	log.Println("Importing from previous round")
+
 	currentRoundId := req.GetRoundId()
 	sourceRoundId := req.GetSourceRoundId()
 	if sourceRoundId == "" {
@@ -40,7 +41,7 @@ func (t *ImporterServer) ImportFromPreviousRound(ctx context.Context, req *model
 		round_repo:    repository.NewRoundRepository(),
 		limit:         100,
 	}
-	go t.importFrom(ctx, &source, taskId, currentRoundId)
+	go t.importFrom(context.Background(), &source, taskId, currentRoundId)
 
 	return &models.ImportResponse{
 		TaskId:  taskId,
@@ -56,6 +57,7 @@ func (c *RoundPreviousRound) ImportImageResults(ctx context.Context, currentRoun
 	imageResults := []models.MediaResult{}
 	q, close := repository.GetDBWithGen(ctx)
 	defer close()
+	log.Println("Importing images from previous round:", c.SourceRoundId, "with score:", c.Score)
 	Submission := q.Submission
 	err := Submission.
 		Select(Submission.Name.As("Name"),
@@ -82,6 +84,7 @@ func (c *RoundPreviousRound) ImportImageResults(ctx context.Context, currentRoun
 		Limit(c.limit).
 		Scan(&imageResults)
 	if err != nil {
+		log.Println("Error importing images from previous round:", err)
 		(*failedImageReason)["*"] = err.Error()
 		return nil, failedImageReason
 	}

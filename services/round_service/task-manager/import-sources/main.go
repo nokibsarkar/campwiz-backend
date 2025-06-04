@@ -57,6 +57,8 @@ func NewImporterServer() *ImporterServer {
 	return &ImporterServer{}
 }
 func (t *ImporterServer) importFrom(ctx context.Context, source IImportSource, taskId string, currentRoundId string) {
+
+	log.Printf("Importing from source for task %s in round %s\n", taskId, currentRoundId)
 	/** Open Database Connection */
 	conn, close, err := repository.GetDB(ctx)
 	if err != nil {
@@ -73,16 +75,20 @@ func (t *ImporterServer) importFrom(ctx context.Context, source IImportSource, t
 		log.Println("Error fetching task: ", err)
 		return
 	}
+	log.Printf("Task fetched: %s %v\n", taskId, task)
 	if task == nil {
 		log.Println("Task not found")
 		return
 	}
+
+	log.Printf("Task found: %v\n", task)
 	// Fetch the currentRound
 	currentRound, err := round_repo.FindByID(conn.Preload("Campaign"), models.IDType(currentRoundId))
 	if err != nil {
 		log.Println("Error fetching round: ", err)
 		return
 	}
+	log.Printf("Current round: %v\n", currentRound)
 	// if round.LatestDistributionTaskID != nil && *round.LatestDistributionTaskID != task.TaskID {
 	// 	log.Println("Task is not the latest task for the round")
 	// 	task.Status = models.TaskStatusFailed
@@ -98,6 +104,7 @@ func (t *ImporterServer) importFrom(ctx context.Context, source IImportSource, t
 	failedCount := 0
 	currentRoundStatus := currentRound.Status
 	{
+		log.Printf("Starting import for round %s with task %s\n", currentRound.RoundID, task.TaskID)
 		// Update the round status to importing
 		currentRound.LatestDistributionTaskID = &task.TaskID
 		currentRound.Status = models.RoundStatusImporting
@@ -111,6 +118,7 @@ func (t *ImporterServer) importFrom(ctx context.Context, source IImportSource, t
 			return
 		}
 		defer func() {
+			log.Println("Finalizing task and round status")
 			res := conn.Updates(&models.Round{
 				RoundID: currentRound.RoundID,
 				Status:  currentRoundStatus,
@@ -134,7 +142,6 @@ func (t *ImporterServer) importFrom(ctx context.Context, source IImportSource, t
 			}
 		}()
 	}
-	log.Printf("Importing images for round %v\n", currentRound.Campaign)
 	FailedImages := &map[string]string{}
 	technicalJudge := round_service.NewTechnicalJudgeService(currentRound, currentRound.Campaign)
 	if technicalJudge == nil {
@@ -144,7 +151,9 @@ func (t *ImporterServer) importFrom(ctx context.Context, source IImportSource, t
 	}
 	user_repo := repository.NewUserRepository()
 	for {
+		log.Println("Importing images from source")
 		successBatch, failedBatch := source.ImportImageResults(ctx, currentRound, FailedImages)
+		log.Printf("Received batch of images: %d success, %d failed\n", len(successBatch), len(*FailedImages))
 		if failedBatch != nil {
 			task.FailedCount = len(*failedBatch)
 			*task.FailedIds = datatypes.NewJSONType(*failedBatch)

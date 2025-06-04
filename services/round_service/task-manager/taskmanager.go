@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"nokib/campwiz/models"
+	"nokib/campwiz/repository/cache"
 	distributionstrategy "nokib/campwiz/services/round_service/task-manager/distribution-strategy"
 	importsources "nokib/campwiz/services/round_service/task-manager/import-sources"
 	statisticsupdater "nokib/campwiz/services/round_service/task-manager/statistics-updater"
@@ -40,6 +41,7 @@ func main() {
 	// 	}
 	// 	opts = []grpc.ServerOption{grpc.Creds(creds)}
 	// }
+	opts = append(opts, grpc.UnaryInterceptor(cache.GRPCSentryServerInterceptor))
 	grpcServer := grpc.NewServer(opts...)
 	models.RegisterImporterServer(grpcServer, importsources.NewImporterServer())
 	models.RegisterDistributorServer(grpcServer, distributionstrategy.NewDistributorServer())

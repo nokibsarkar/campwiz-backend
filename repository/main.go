@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"nokib/campwiz/consts"
 	"nokib/campwiz/models"
@@ -27,22 +26,25 @@ func getLogMode(debug bool) logger.LogLevel {
 	}
 	return logger.Warn
 }
-func GetDB(ctx1 context.Context) (db *gorm.DB, close func(), err error) {
+
+var sentrylogger = cache.NewSentryGinLogger(logger.Default.LogMode(getLogMode(consts.Config.Database.Main.Debug || consts.Config.Server.Mode == "debug")))
+
+func GetDB(ctx context.Context) (db *gorm.DB, close func(), err error) {
 	dsn := consts.Config.Database.Main.DSN
 	db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
-		Logger: cache.NewSentryGinLogger(logger.Default.LogMode(getLogMode(consts.Config.Database.Main.Debug || consts.Config.Server.Mode == "debug"))),
+		Logger: sentrylogger,
 		// PrepareStmt:            true,
 		SkipDefaultTransaction: true,
 		// DisableForeignKeyConstraintWhenMigrating: true,
 
 	})
-	ctx, ok := ctx1.(*gin.Context)
+	ctxgin, ok := ctx.(*gin.Context)
 	var hub *sentry.Hub
 	if ok {
-		hub = sentrygin.GetHubFromContext(ctx)
+		hub = sentrygin.GetHubFromContext(ctxgin)
+	} else {
+		hub = cache.GetHubFromContext(ctx)
 	}
-	// span := sentrygin.GetHubFromContext(ctx).Scope()
-	fmt.Printf("Span %+v", hub)
 	if err != nil {
 		if hub != nil {
 			hub.WithScope(func(scope *sentry.Scope) {
@@ -71,34 +73,40 @@ func GetDB(ctx1 context.Context) (db *gorm.DB, close func(), err error) {
 		}
 		return nil, nil, err
 	}
+
 	return db.WithContext(ctx), func() {
 		raw_db, err := db.DB()
+
 		if err != nil {
-			if hub != nil {
-				hub.WithScope(func(scope *sentry.Scope) {
-					scope.SetLevel(sentry.LevelFatal)
-					// will be tagged with my-tag="my value"
-					sentry.CaptureException(err)
-				})
-			}
+			// if hub != nil {
+			// 	hub.WithScope(func(scope *sentry.Scope) {
+
+			// 		scope.SetLevel(sentry.LevelFatal)
+			// 		// will be tagged with my-tag="my value"
+			// 		sentry.CaptureException(err)
+			// 	})
+			// }
 			panic("failed to connect database")
 		}
 
 		if err := raw_db.Close(); err != nil {
-			if hub != nil {
-				hub.WithScope(func(scope *sentry.Scope) {
-					scope.SetLevel(sentry.LevelFatal)
-					sentry.CaptureException(err)
-				})
-			}
+			// if hub != nil {
+			// 	hub.WithScope(func(scope *sentry.Scope) {
+			// 		scope.SetLevel(sentry.LevelFatal)
+			// 		sentry.CaptureException(err)
+			// 	})
+			// }
+
+			// log.Printf("Trace ID: %s", hub.Scope().GetSpan().TraceID)
 			log.Printf("failed to close database %s", err.Error())
 		}
+
 	}, nil
 }
 func GetDbWithoutDefaultTransaction(ctx context.Context) (db *gorm.DB, close func()) {
 	dsn := consts.Config.Database.Main.DSN
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
-		Logger:                 cache.NewSentryGinLogger(logger.Default.LogMode(getLogMode(consts.Config.Database.Main.Debug || consts.Config.Server.Mode == "debug"))),
+		Logger:                 sentrylogger,
 		SkipDefaultTransaction: true,
 	})
 	if err != nil {
@@ -137,17 +145,16 @@ func GetTestDB() (db *gorm.DB, mock sqlmock.Sqlmock, close func()) {
 	}
 }
 func GetDBWithGen(ctx1 context.Context) (q *query.Query, close func()) {
-	ctx, _ := ctx1.(*gin.Context)
 	dsn := consts.Config.Database.Main.DSN
 	// logMode := logger.Warn
 	close = func() {}
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
-		Logger: cache.NewSentryGinLogger(logger.Default.LogMode(getLogMode(consts.Config.Database.Main.Debug || consts.Config.Server.Mode == "debug"))),
+		Logger: sentrylogger,
 	})
 	if err != nil {
 		return nil, close
 	}
-	q = query.Use(db.WithContext(ctx))
+	q = query.Use(db.WithContext(ctx1))
 	return q, func() {
 		raw_db, err := db.DB()
 		if err != nil {
@@ -162,8 +169,7 @@ func GetCommonsReplicaWithGen(ctx1 context.Context) (q *query.Query, close func(
 	dsn := consts.Config.Database.Commons.DSN
 	// logMode := logger.Warn
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
-
-		Logger: cache.NewSentryGinLogger(logger.Default.LogMode(getLogMode(consts.Config.Server.Mode == "debug"))),
+		Logger: sentrylogger,
 	})
 	hub := sentrygin.GetHubFromContext(ctx)
 	if err != nil {
@@ -205,7 +211,7 @@ func GetCommonsReplicaWithGen(ctx1 context.Context) (q *query.Query, close func(
 
 func InitDB(ctx context.Context, testing bool) {
 	conn, err := gorm.Open(mysql.Open(consts.Config.Database.Main.DSN), &gorm.Config{
-		Logger: cache.NewSentryGinLogger(logger.Default.LogMode(getLogMode(consts.Config.Database.Main.Debug || consts.Config.Server.Mode == "debug"))),
+		Logger: sentrylogger,
 		// PrepareStmt:            true,
 		SkipDefaultTransaction:                   true,
 		DisableForeignKeyConstraintWhenMigrating: true,
@@ -227,8 +233,8 @@ func InitDB(ctx context.Context, testing bool) {
 	}
 	db.Commit()
 	conn, err = gorm.Open(mysql.Open(consts.Config.Database.Main.DSN), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
-		// PrepareStmt:            true,
+		Logger:                                   logger.Default.LogMode(logger.Info),
+		PrepareStmt:                              true,
 		SkipDefaultTransaction:                   true,
 		DisableForeignKeyConstraintWhenMigrating: false,
 	})

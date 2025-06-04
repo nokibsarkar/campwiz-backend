@@ -2,6 +2,7 @@
 package repository
 
 import (
+	"fmt"
 	"nokib/campwiz/models"
 
 	"gorm.io/gorm"
@@ -22,6 +23,7 @@ func (r *TaskRepository) Create(tx *gorm.DB, task *models.Task) (*models.Task, e
 }
 func (r *TaskRepository) FindByID(tx *gorm.DB, taskId models.IDType) (*models.Task, error) {
 	task := &models.Task{}
+	fmt.Println("TaskRepository.FindByID called with taskId:", taskId)
 	err := tx.Limit(1).Find(&models.Task{TaskID: taskId}).First(task).Error
 	if err != nil {
 		return nil, err

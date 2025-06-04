@@ -147,7 +147,7 @@ func (e *EvaluationService) BulkEvaluate(ctx *gin.Context, currentUserID models.
 			tx.Rollback()
 			return nil, res.Error
 		}
-		if evaluationRequest.Description != nil {
+		if evaluationRequest.Description != nil && *evaluationRequest.Description != "" {
 			up := tx.Updates(&models.Submission{
 				SubmissionID: submission.SubmissionID,
 				MediaSubmission: models.MediaSubmission{

@@ -27,6 +27,7 @@ func NewSentryMiddleWare() gin.HandlerFunc {
 		TracesSampler: sentry.TracesSampler(func(ctx sentry.SamplingContext) float64 {
 			// As an example, this does not send some
 			// transactions to Sentry based on their name.
+			fmt.Printf("\n\n\nSentry TracesSampler called: %s\n\n", ctx.Span.Name)
 			if ctx.Span.Name == "GET /health" {
 				return 0.0
 			}

@@ -16,6 +16,7 @@ import (
 	"nokib/campwiz/services/round_service"
 	"os"
 
+	"github.com/gin-gonic/gin"
 	"gorm.io/datatypes"
 )
 
@@ -215,6 +216,7 @@ func (b *RoundService) ImportFromCommons(ctx context.Context, roundId models.IDT
 		return nil, err
 	}
 	defer grpcConn.Close() //nolint:errcheck
+
 	importer := models.NewImporterClient(grpcConn)
 	importResponse, err := importer.ImportFromCommonsCategory(ctx, &models.ImportFromCommonsCategoryRequest{
 		CommonsCategory: categories,
@@ -227,7 +229,7 @@ func (b *RoundService) ImportFromCommons(ctx context.Context, roundId models.IDT
 	log.Printf("Import response: %v", importResponse)
 	return task, nil
 }
-func (b *RoundService) ImportFromPreviousRound(ctx context.Context, currentUserId models.IDType, targetRoundId models.IDType, filter *ImportFromPreviousRoundPayload) (*models.Task, error) {
+func (b *RoundService) ImportFromPreviousRound(ctx *gin.Context, currentUserId models.IDType, targetRoundId models.IDType, filter *ImportFromPreviousRoundPayload) (*models.Task, error) {
 	round_repo := repository.NewRoundRepository()
 	task_repo := repository.NewTaskRepository()
 	conn, close, err := repository.GetDB(ctx)
@@ -303,7 +305,7 @@ func (b *RoundService) ImportFromPreviousRound(ctx context.Context, currentUserI
 	log.Println("GRPC client created")
 	defer grpcClient.Close() //nolint:errcheck
 	importClient := models.NewImporterClient(grpcClient)
-	_, err = importClient.ImportFromPreviousRound(ctx, &models.ImportFromPreviousRoundRequest{
+	_, err = importClient.ImportFromPreviousRound(cache.WithGRPCContext(ctx), &models.ImportFromPreviousRoundRequest{
 		RoundId:       targetRound.RoundID.String(),
 		SourceRoundId: sourceRound.RoundID.String(),
 		TaskId:        task.TaskID.String(),
@@ -373,7 +375,7 @@ func (b *RoundService) ImportFromCSV(ctx context.Context, roundId models.IDType,
 	log.Println("GRPC client created")
 	defer grpcClient.Close() //nolint:errcheck
 	importClient := models.NewImporterClient(grpcClient)
-	_, err = importClient.ImportFromCSV(ctx, &models.ImportFromCSVRequest{
+	_, err = importClient.ImportFromCSV(cache.WithGRPCContext(ctx), &models.ImportFromCSVRequest{
 		FilePath:           tempFile.Name(),
 		SubmissionIdColumn: req.SubmissionIDColumn,
 		PageIdColumn:       req.PageIDColumn,

@@ -24,7 +24,6 @@ type Dirtributor interface {
 	CountAssignedEvaluations() ([]gen.T, error)
 	// SELECT * FROM `evaluations` WHERE `judge_id` NOT IN (SELECT judge_id FROM evaluations WHERE `submission_id` = @submission_id AND `judge_id` IS NOT NULL) LIMIT @limit
 	SelectUnAssignedJudges(submission_id types.SubmissionIDType, limit int) ([]*Evaluation, error)
-
 	// UPDATE `evaluations` e
 	//  JOIN (
 	//     SELECT

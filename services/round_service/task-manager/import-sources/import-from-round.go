@@ -9,7 +9,7 @@ import (
 )
 
 type RoundPreviousRound struct {
-	Score         float64
+	Scores        []float64
 	SourceRoundId string
 	currentIndex  string
 	limit         int
@@ -27,15 +27,18 @@ func (t *ImporterServer) ImportFromPreviousRound(ctx context.Context, req *model
 	if currentRoundId == "" {
 		return nil, fmt.Errorf("roundId is required")
 	}
-	minimumScore := models.ScoreType(req.GetMinimumScore())
 	taskId := req.GetTaskId()
 	if taskId == "" {
 		return nil, fmt.Errorf("taskId is required")
 	}
-	scores := models.ScoreType(minimumScore)
+
+	scores := []float64{} // Ensure scores are in float64 format
+	for _, score := range req.GetScores() {
+		scores = append(scores, float64(score))
+	}
 
 	source := RoundPreviousRound{
-		Score:         float64(scores),
+		Scores:        scores,
 		SourceRoundId: sourceRoundId,
 		currentIndex:  "",
 		round_repo:    repository.NewRoundRepository(),
@@ -57,7 +60,7 @@ func (c *RoundPreviousRound) ImportImageResults(ctx context.Context, currentRoun
 	imageResults := []models.MediaResult{}
 	q, close := repository.GetDBWithGen(ctx)
 	defer close()
-	log.Println("Importing images from previous round:", c.SourceRoundId, "with score:", c.Score)
+	log.Println("Importing images from previous round:", c.SourceRoundId, "with score:", c.Scores)
 	Submission := q.Submission
 	err := Submission.
 		Select(Submission.Name.As("Name"),
@@ -80,7 +83,7 @@ func (c *RoundPreviousRound) ImportImageResults(ctx context.Context, currentRoun
 			Submission.PageID.As("PageID"),
 		).Where(Submission.SubmissionID.Gt(c.currentIndex)).
 		Where(Submission.RoundID.Eq(c.SourceRoundId)).
-		Where(Submission.Score.Gte(c.Score)).
+		Where(Submission.Score.In(c.Scores...)).
 		Limit(c.limit).
 		Scan(&imageResults)
 	if err != nil {
@@ -94,14 +97,16 @@ func (c *RoundPreviousRound) ImportImageResults(ctx context.Context, currentRoun
 	c.currentIndex = imageResults[len(imageResults)-1].SubmissionID.String()
 	return imageResults, failedImageReason
 }
-func NewRoundPreviousRound(scores models.ScoreType, roundId models.IDType) *RoundPreviousRound {
+func NewRoundPreviousRound(scores []models.ScoreType, roundId models.IDType) *RoundPreviousRound {
 	res := &RoundPreviousRound{
-		Score:         float64(scores),
+		Scores:        make([]float64, len(scores)),
 		SourceRoundId: roundId.String(),
 		currentIndex:  "",
 		round_repo:    repository.NewRoundRepository(),
 		limit:         100,
 	}
-
+	for i, score := range scores {
+		res.Scores[i] = float64(score)
+	}
 	return res
 }

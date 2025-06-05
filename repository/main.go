@@ -27,7 +27,7 @@ func getLogMode(debug bool) logger.LogLevel {
 	return logger.Warn
 }
 
-var sentrylogger = cache.NewSentryGinLogger(logger.Default.LogMode(getLogMode(consts.Config.Database.Main.Debug || consts.Config.Server.Mode == "debug")))
+var sentrylogger = logger.Default.LogMode(logger.Info) // cache.NewSentryGinLogger(logger.Default.LogMode(getLogMode(consts.Config.Database.Main.Debug || consts.Config.Server.Mode == "debug")))
 
 func GetDB(ctx context.Context) (db *gorm.DB, close func(), err error) {
 	dsn := consts.Config.Database.Main.DSN
@@ -171,7 +171,13 @@ func GetCommonsReplicaWithGen(ctx1 context.Context) (q *query.Query, close func(
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
 		Logger: sentrylogger,
 	})
-	hub := sentrygin.GetHubFromContext(ctx)
+	ctxgin, ok := ctx1.(*gin.Context)
+	var hub *sentry.Hub
+	if ok {
+		hub = sentrygin.GetHubFromContext(ctxgin)
+	} else {
+		hub = cache.GetHubFromContext(ctx1)
+	}
 	if err != nil {
 		if hub != nil {
 			hub.WithScope(func(scope *sentry.Scope) {

@@ -27,7 +27,7 @@ func getLogMode(debug bool) logger.LogLevel {
 	return logger.Warn
 }
 
-var sentrylogger = cache.NewSentryGinLogger(logger.Default.LogMode(getLogMode(consts.Config.Database.Main.Debug || consts.Config.Server.Mode == "debug")))
+var sentrylogger = logger.Default.LogMode(logger.Info) // cache.NewSentryGinLogger(logger.Default.LogMode(getLogMode(consts.Config.Database.Main.Debug || consts.Config.Server.Mode == "debug")))
 
 func GetDB(ctx context.Context) (db *gorm.DB, close func(), err error) {
 	dsn := consts.Config.Database.Main.DSN

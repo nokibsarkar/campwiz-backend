@@ -24,40 +24,96 @@ type Dirtributor interface {
 	CountAssignedEvaluations() ([]gen.T, error)
 	// SELECT * FROM `evaluations` WHERE `judge_id` NOT IN (SELECT judge_id FROM evaluations WHERE `submission_id` = @submission_id AND `judge_id` IS NOT NULL) LIMIT @limit
 	SelectUnAssignedJudges(submission_id types.SubmissionIDType, limit int) ([]*Evaluation, error)
-	// UPDATE `evaluations` e1
-	//  SET e1.judge_id = @judge_id, e1.distribution_task_id = @task_id WHERE e1.evaluation_id IN (
-	// 	SELECT e2.evaluation_id FROM evaluations e2
-	// 	JOIN submissions s ON e2.submission_id = s.submission_id
-	// 	WHERE  e2.judge_id IN (@reassignable_judges)
-	// 	AND s.submitted_by_id <> @my_user_id
-	// AND e2.judge_id <> @judge_id
-	// 	AND e2.round_id = @round_id
-	// 	AND e2.score IS NULL
-	// AND (e2.distribution_task_id <> @task_id OR e2.distribution_task_id IS NULL)
-	// 	AND e2.evaluation_id NOT IN (
-	// 		SELECT e3.evaluation_id FROM evaluations e3
-	// 		WHERE e3.judge_id = @judge_id
-	// 		AND e3.round_id = @round_id
-	// 	)
-	// 	ORDER BY RAND()
-	// ) LIMIT @N;
-	DistributeAssignmentsFromSelectedSource(judge_id models.IDType, my_user_id models.IDType, round_id string, reassignable_judges []string, task_id models.IDType, N int) (gen.RowsAffected, error)
-	// UPDATE `evaluations` e1
-	//  SET e1.judge_id = @my_judge_id, e1.distribution_task_id = @task_id WHERE e1.evaluation_id IN (
-	// 	SELECT e2.evaluation_id FROM evaluations e2
-	// 	JOIN submissions s ON e2.submission_id = s.submission_id
-	// 	AND s.submitted_by_id <> @my_user_id
-	// 	AND e2.round_id = @round_id
-	// AND (e2.distribution_task_id <> @task_id OR e2.distribution_task_id IS NULL)
-	// 	AND e2.score IS NULL
-	// AND e2.evaluated_at IS NULL
-	// 	AND e2.evaluation_id NOT IN (
-	// 		SELECT e3.evaluation_id FROM evaluations e3
-	// 		WHERE e3.judge_id = @my_judge_id
-	// 		AND e3.round_id = @round_id
-	// 	)
-	// 	ORDER BY RAND()
-	// ) LIMIT @N;
+
+	// UPDATE `evaluations` e
+	//  JOIN (
+	//     SELECT
+	//         `evaluation_id`
+	//     FROM
+	//         `evaluations` e2
+	//     WHERE e2.submission_id NOT IN (
+	//     SELECT
+	//         `submission_id`
+	//     FROM
+	//         `evaluations`
+	//     WHERE
+	//         `judge_id` = @my_judge_id
+	//             AND
+	//         `round_id` = @round_id
+	//     UNION
+	//         SELECT
+	//             `submission_id`
+	//         FROM
+	//             `submissions` s
+	//         WHERE
+	//             `s`.`round_id` = @round_id
+	//                 AND
+	//                 `s`.`submitted_by_id` = @my_user_id
+	//     ) AND
+	//         e2.round_id = @round_id
+	//      AND
+	//         e2.score IS NULL
+	//     AND
+	//         e2.evaluated_at IS NULL
+	//     AND
+	//         (
+	//             e2.distribution_task_id IS NULL
+	//                 OR
+	//             e2.distribution_task_id <> @task_id
+	//     ) GROUP BY
+	//         e2.submission_id
+	//     LIMIT @N
+	//  ) AS `e2`
+	//     ON e.evaluation_id = e2.evaluation_id
+	//     SET
+	//     e.judge_id = @my_judge_id,
+	//     e.distribution_task_id = @task_id
+	// LIMIT @N;
+	DistributeAssignmentsFromSelectedSource(my_judge_id models.IDType, my_user_id models.IDType, round_id string, reassignable_judges []string, task_id models.IDType, N int) (gen.RowsAffected, error)
+	// 	UPDATE `evaluations` e
+	//  JOIN (
+	//     SELECT
+	//         `evaluation_id`
+	//     FROM
+	//         `evaluations` e2
+	//     WHERE e2.submission_id NOT IN (
+	//     SELECT
+	//         `submission_id`
+	//     FROM
+	//         `evaluations`
+	//     WHERE
+	//         `judge_id` = @my_judge_id
+	//             AND
+	//         `round_id` = @round_id
+	//     UNION
+	//         SELECT
+	//             `submission_id`
+	//         FROM
+	//             `submissions` s
+	//         WHERE
+	//             `s`.`round_id` = @round_id
+	//                 AND
+	//                 `s`.`submitted_by_id` = @my_user_id
+	//     ) AND
+	//         e2.round_id = @round_id
+	//     AND
+	//         e2.score IS NULL
+	//     AND
+	//         e2.evaluated_at IS NULL
+	//     AND
+	//         (
+	//             e2.distribution_task_id IS NULL
+	//                 OR
+	//             e2.distribution_task_id <> @task_id
+	//     ) GROUP BY
+	//         e2.submission_id
+	//     LIMIT @N
+	//  ) AS `e2`
+	//     ON e.evaluation_id = e2.evaluation_id
+	//     SET
+	//     e.judge_id = @my_judge_id,
+	//     e.distribution_task_id = @task_id
+	// LIMIT @N;
 	DistributeAssignmentsIncludingUnassigned(my_judge_id models.IDType, my_user_id models.IDType, round_id string, task_id models.IDType, N int) (gen.RowsAffected, error)
 	// UPDATE `evaluations` e1
 	// SET e1.judge_id = (

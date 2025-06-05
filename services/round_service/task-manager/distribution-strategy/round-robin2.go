@@ -9,6 +9,8 @@ import (
 
 	"fmt"
 
+	"slices"
+
 	"github.com/getsentry/sentry-go"
 	"gorm.io/gorm"
 )
@@ -155,136 +157,163 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries2(ctx context.Contex
 	// /////////////////////////////////////////////////////////
 	Assignment := q1.Evaluation
 	roundId := strategy.RoundId
-	alreadyAssignedWorkloads := MinimumWorkloadHeap{}
-	alreadyAssignedToTargetJury := map[models.IDType]WorkLoadType{}
-	err = Assignment.Select(Assignment.JudgeID, Assignment.EvaluationID.Count().As("Count")).
-		Where(Assignment.RoundID.Eq(roundId.String())).Where(Assignment.JudgeID.In(targetRoleIds...)).
-		Group(Assignment.JudgeID).Scan(&alreadyAssignedWorkloads)
-	if err != nil {
-		return
-	}
-	totalAlreadyAssignedtoTargetJuryCount := WorkLoadType(0)
-	for _, workload := range alreadyAssignedWorkloads {
-		totalAlreadyAssignedtoTargetJuryCount += workload.Count
-		alreadyAssignedToTargetJury[workload.JudgeID] = WorkLoadType(workload.Count)
-	}
-	parentSpan.SetData("total_assigned_count", totalAlreadyAssignedtoTargetJuryCount)
-
-	// get current number of evaluations to be distributed
-	evaluatedByTarget := []JurorV3{}
-	stmt := Assignment.Select(Assignment.EvaluationID.Count().As("Count"), Assignment.JudgeID).
-		Where(Assignment.RoundID.Eq(strategy.RoundId.String())).
-		Where(Assignment.Score.IsNotNull()).
-		Where(Assignment.EvaluatedAt.IsNotNull()).
-		Group(Assignment.JudgeID).
-		Where(Assignment.JudgeID.In(targetRoleIds...))
-
-	alreadyEvaluatedByTargetMap := map[models.IDType]WorkLoadType{}
-	// Get the total number of unevaluated elligible assignments
-	err = stmt.Scan(&evaluatedByTarget)
-	if err != gorm.ErrRecordNotFound && err != nil {
-		log.Println("Error: ", err)
-		return
-	}
-	parentSpan.SetData("evaluated_assignment_count", len(evaluatedByTarget))
-	for _, juror := range evaluatedByTarget {
-		alreadyEvaluatedByTargetMap[juror.JudgeID] = WorkLoadType(juror.Count)
-	}
-	transferableAssignmentCount := []JurorV3{}
-	stmt = Assignment.Select(Assignment.EvaluationID.Count().As("Count"), Assignment.JudgeID).
-		Where(Assignment.RoundID.Eq(strategy.RoundId.String())).
-		Where(Assignment.Score.IsNull()).
-		Where(Assignment.EvaluatedAt.IsNull()).
-		Group(Assignment.JudgeID)
-	if len(sourceRoleIds) > 0 {
-		stmt = stmt.Where(Assignment.JudgeID.In(sourceRoleIds...))
-	}
-	// Get the total number of unevaluated elligible assignments
-	err = stmt.Scan(&transferableAssignmentCount)
-	if err != gorm.ErrRecordNotFound && err != nil {
-		log.Println("Error: ", err)
-		return
-	}
-
-	totalTransferableEvaluations := 0
-	for _, juror := range transferableAssignmentCount {
-		if _, ok := alreadyAssignedToTargetJury[juror.JudgeID]; !ok {
-			totalTransferableEvaluations += int(juror.Count)
-		}
-	}
-	totalReassignableEvaluations := totalAlreadyAssignedtoTargetJuryCount + WorkLoadType(totalTransferableEvaluations)
-
-	parentSpan.SetData("total_transferable_evaluations", totalTransferableEvaluations)
-	log.Println("Total unevaluated evaluations: ", totalTransferableEvaluations)
-	targetRoleCount := len(targetRoles)
-	log.Println("Total target roles: ", targetRoleCount)
-	log.Printf("Tranferable assignments: %+v", alreadyEvaluatedByTargetMap)
-	parentSpan.SetData("target_role_count", targetRoleCount)
-	parentSpan.SetData("already_assigned_workflow_map", alreadyAssignedToTargetJury)
-	// for each of the target roles, we would be distributing the evaluations
-	errorMargin := 2
-	for i := range targetRoleCount {
-		childSpan := parentSpan.StartChild("assignment.distribution.round-robin-v2.target-role", func(s *sentry.Span) {
-			s.SetTag("target_role_index", fmt.Sprint(i))
-			s.SetTag("target_role_id", targetRoles[i].RoleID.String())
-			s.SetTag("target_role_user_id", targetRoles[i].UserID.String())
-			s.SetData("target_role_total_assigned", targetRoles[i].TotalAssigned)
-		})
-		defer childSpan.Finish()
-		targetRole := targetRoles[i]
-		targetJudgeId := targetRole.RoleID
-		judgeUserId := targetRole.UserID
-		log.Println("Target Judge ID: ", targetJudgeId)
-		childSpan.SetData("target_judge_id", targetJudgeId.String())
-		// Get the average
-		currentUnAssignedJuryCount := targetRoleCount - i
-		childSpan.SetData("current_unassigned_jury_count", currentUnAssignedJuryCount)
-		avgWorkload := totalTransferableEvaluations/currentUnAssignedJuryCount + errorMargin
-		log.Printf("Average workload for target judge %s: %d", targetJudgeId, avgWorkload)
-		childSpan.SetData("average_workload", avgWorkload)
-
-		//// DETERMINE THE WORKLOAD FOR THE JURY
-		alreadyAssigned := alreadyAssignedToTargetJury[targetJudgeId]
-		alreadyEvaluated := alreadyEvaluatedByTargetMap[targetJudgeId]
-		Evaluation := q1.Evaluation
-
-		keepUpto := min(WorkLoadType(avgWorkload), alreadyAssigned)
-		lockableEvaluations := max(alreadyEvaluated, keepUpto) - alreadyEvaluated
-		log.Printf("Locking assigned workload for target judge %s: %d", targetJudgeId, lockableEvaluations)
-		stmt := Evaluation.Where(Evaluation.JudgeID.Eq(targetJudgeId.String())).
-			Where(Evaluation.RoundID.Eq(strategy.RoundId.String())).
-			Where(Evaluation.Score.IsNull()).
-			Where(Evaluation.EvaluatedAt.IsNull()).
-			Where(Evaluation.Where(Evaluation.DistributionTaskID.Neq(strategy.TaskId.String())).Or(Evaluation.DistributionTaskID.IsNull())).
-			Limit(int(lockableEvaluations))
-		res, err := stmt.UpdateColumn(Evaluation.DistributionTaskID, strategy.TaskId)
+	for range 1 {
+		alreadyAssignedWorkloads := MinimumWorkloadHeap{}
+		alreadyAssignedToTargetJury := map[models.IDType]WorkLoadType{}
+		err = Assignment.Select(Assignment.JudgeID, Assignment.EvaluationID.Count().As("Count")).
+			Where(Assignment.RoundID.Eq(roundId.String())).Where(Assignment.JudgeID.In(targetRoleIds...)).
+			Group(Assignment.JudgeID).Scan(&alreadyAssignedWorkloads)
 		if err != nil {
-			log.Println("Error locking workload: ", err)
-			task.Status = models.TaskStatusFailed
 			return
 		}
-		locked := res.RowsAffected
-		if avgWorkload > int(alreadyAssigned) {
-			// add the difference to the workload
-			newlyAssignable := avgWorkload - int(alreadyAssigned)
+		totalAlreadyAssignedtoTargetJuryCount := WorkLoadType(0)
+		for _, workload := range alreadyAssignedWorkloads {
+			totalAlreadyAssignedtoTargetJuryCount += workload.Count
+			alreadyAssignedToTargetJury[workload.JudgeID] = WorkLoadType(workload.Count)
+		}
+		parentSpan.SetData("total_assigned_count", totalAlreadyAssignedtoTargetJuryCount)
 
-			var newlyAssigned int64
-			if includeFromSourceOnly {
-				newlyAssigned, err = q1.Evaluation.WithContext(ctx).DistributeAssignmentsFromSelectedSource(targetJudgeId, judgeUserId, strategy.RoundId.String(), sourceRoleIds, strategy.TaskId, int(newlyAssignable))
-			} else {
-				newlyAssigned, err = q1.Evaluation.WithContext(ctx).DistributeAssignmentsIncludingUnassigned(targetJudgeId, judgeUserId, strategy.RoundId.String(), strategy.TaskId, int(newlyAssignable))
+		// get current number of evaluations to be distributed
+		evaluatedByTarget := []JurorV3{}
+		stmt := Assignment.Select(Assignment.EvaluationID.Count().As("Count"), Assignment.JudgeID).
+			Where(Assignment.RoundID.Eq(strategy.RoundId.String())).
+			Where(Assignment.Score.IsNotNull()).
+			Where(Assignment.EvaluatedAt.IsNotNull()).
+			Group(Assignment.JudgeID).
+			Where(Assignment.JudgeID.In(targetRoleIds...))
+
+		alreadyEvaluatedByTargetMap := map[models.IDType]WorkLoadType{}
+		// Get the total number of unevaluated elligible assignments
+		err = stmt.Scan(&evaluatedByTarget)
+		if err != gorm.ErrRecordNotFound && err != nil {
+			log.Println("Error: ", err)
+			return
+		}
+		parentSpan.SetData("evaluated_assignment_count", len(evaluatedByTarget))
+		for _, juror := range evaluatedByTarget {
+			alreadyEvaluatedByTargetMap[juror.JudgeID] = WorkLoadType(juror.Count)
+		}
+		transferableAssignmentCount := []JurorV3{}
+		stmt = Assignment.Select(Assignment.EvaluationID.Count().As("Count"), Assignment.JudgeID).
+			Where(Assignment.RoundID.Eq(strategy.RoundId.String())).
+			Where(Assignment.Score.IsNull()).
+			Where(Assignment.EvaluatedAt.IsNull()).
+			Group(Assignment.JudgeID)
+		if len(sourceRoleIds) > 0 {
+			stmt = stmt.Where(Assignment.JudgeID.In(sourceRoleIds...))
+		}
+		// Get the total number of unevaluated elligible assignments
+		err = stmt.Scan(&transferableAssignmentCount)
+		if err != gorm.ErrRecordNotFound && err != nil {
+			log.Println("Error: ", err)
+			return
+		}
+
+		totalTransferableEvaluations := 0
+		for _, juror := range transferableAssignmentCount {
+			if _, ok := alreadyAssignedToTargetJury[juror.JudgeID]; !ok {
+				totalTransferableEvaluations += int(juror.Count)
 			}
+		}
+		totalReassignableEvaluations := totalAlreadyAssignedtoTargetJuryCount + WorkLoadType(totalTransferableEvaluations)
+
+		parentSpan.SetData("total_transferable_evaluations", totalTransferableEvaluations)
+		log.Println("Total unevaluated evaluations: ", totalTransferableEvaluations)
+		targetRoleCount := len(targetRoles)
+		log.Println("Total target roles: ", targetRoleCount)
+		log.Printf("Tranferable assignments: %+v", alreadyEvaluatedByTargetMap)
+		log.Printf("Already assigned to target jury: %+v", alreadyAssignedToTargetJury)
+		parentSpan.SetData("target_role_count", targetRoleCount)
+		parentSpan.SetData("already_assigned_workflow_map", alreadyAssignedToTargetJury)
+		// for each of the target roles, we would be distributing the evaluations
+		errorMargin := 0
+		for i := range targetRoleCount {
+			// select locked
+			b := JurorV3{}
+			err = q1.Evaluation.Select(q1.Evaluation.EvaluationID.Count().As("Count")).
+				Where(q1.Evaluation.RoundID.Eq(strategy.RoundId.String())).
+				Where(q1.Evaluation.DistributionTaskID.Eq(strategy.TaskId.String())).Scan(&b)
 			if err != nil {
 				log.Println("Error: ", err)
 				task.Status = models.TaskStatusFailed
 				return
 			}
-			totalReassignableEvaluations -= alreadyEvaluated + WorkLoadType(locked) + WorkLoadType(newlyAssigned)
-		} else if avgWorkload <= int(alreadyAssigned) {
-			// If the workload is less than the already assigned workload,
-			// the lock already made
-			totalReassignableEvaluations -= alreadyEvaluated + WorkLoadType(locked)
-		}
+			log.Printf("\n\n\tCurrently locked evaluations for target role %d: %d", i, b.Count)
 
+			childSpan := parentSpan.StartChild("assignment.distribution.round-robin-v2.target-role", func(s *sentry.Span) {
+				s.SetTag("target_role_index", fmt.Sprint(i))
+				s.SetTag("target_role_id", targetRoles[i].RoleID.String())
+				s.SetTag("target_role_user_id", targetRoles[i].UserID.String())
+				s.SetData("target_role_total_assigned", targetRoles[i].TotalAssigned)
+			})
+			defer childSpan.Finish()
+
+			targetRole := targetRoles[i]
+			targetJudgeId := targetRole.RoleID
+			judgeUserId := targetRole.UserID
+			log.Println("Target Judge ID: ", targetJudgeId)
+			childSpan.SetData("target_judge_id", targetJudgeId.String())
+			// Get the average
+			log.Printf("Total reassignable evaluations: %d", totalReassignableEvaluations)
+
+			currentUnAssignedJuryCount := targetRoleCount - i
+			childSpan.SetData("current_unassigned_jury_count", currentUnAssignedJuryCount)
+			avgWorkload := int(totalReassignableEvaluations)/currentUnAssignedJuryCount + errorMargin
+			log.Printf("Average workload for target judge %s: %d", targetJudgeId, avgWorkload)
+			childSpan.SetData("average_workload", avgWorkload)
+
+			//// DETERMINE THE WORKLOAD FOR THE JURY
+			alreadyAssigned := alreadyAssignedToTargetJury[targetJudgeId]
+			alreadyEvaluated := alreadyEvaluatedByTargetMap[targetJudgeId]
+			Evaluation := q1.Evaluation
+
+			keepUpto := min(WorkLoadType(avgWorkload), alreadyAssigned)
+			lockableEvaluations := max(alreadyEvaluated, keepUpto) - alreadyEvaluated
+			locked := int64(0)
+			if lockableEvaluations > 0 {
+				log.Printf("Locking assigned workload for target judge %s: %d", targetJudgeId, lockableEvaluations)
+				stmt := Evaluation.Where(Evaluation.JudgeID.Eq(targetJudgeId.String())).
+					Where(Evaluation.RoundID.Eq(strategy.RoundId.String())).
+					Where(Evaluation.Score.IsNull()).
+					Where(Evaluation.EvaluatedAt.IsNull()).
+					Where(Evaluation.Where(Evaluation.DistributionTaskID.Neq(strategy.TaskId.String())).Or(Evaluation.DistributionTaskID.IsNull())).
+					Limit(int(lockableEvaluations))
+				res, err := stmt.UpdateColumn(Evaluation.DistributionTaskID, strategy.TaskId)
+				if err != nil {
+					log.Println("Error locking workload: ", err)
+					task.Status = models.TaskStatusFailed
+					return
+				}
+				locked = res.RowsAffected
+			}
+			if avgWorkload > int(alreadyAssigned) {
+				// add the difference to the workload
+				newlyAssignable := avgWorkload - int(alreadyAssigned)
+
+				var newlyAssigned int64
+				if includeFromSourceOnly {
+					combinedSourceRoleIds := slices.Concat(sourceRoleIds, targetRoleIds[:i-1])
+					newlyAssigned, err = q1.Evaluation.WithContext(ctx).DistributeAssignmentsFromSelectedSource(targetJudgeId, judgeUserId, strategy.RoundId.String(), combinedSourceRoleIds, strategy.TaskId, int(newlyAssignable))
+				} else {
+					newlyAssigned, err = q1.Evaluation.WithContext(ctx).DistributeAssignmentsIncludingUnassigned(targetJudgeId, judgeUserId, strategy.RoundId.String(), strategy.TaskId, int(newlyAssignable))
+				}
+				if err != nil {
+					log.Println("Error: ", err)
+					task.Status = models.TaskStatusFailed
+					return
+				}
+				totalReassignableEvaluations -= alreadyEvaluated + WorkLoadType(locked) + WorkLoadType(newlyAssigned)
+			} else if avgWorkload <= int(alreadyAssigned) {
+				// If the workload is less than the already assigned workload,
+				// the lock already made
+				totalReassignableEvaluations -= alreadyEvaluated + WorkLoadType(locked)
+			}
+		}
+	}
+	err = strategy.triggerStatisticsUpdateByRoundID(tx, round)
+	if err != nil {
+		task.Status = models.TaskStatusFailed
+		log.Println("Error: ", err)
+		return
 	}
 }

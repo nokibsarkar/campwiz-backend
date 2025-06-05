@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"reflect"
 	"strings"
 	"time"
 
@@ -100,8 +101,16 @@ const (
 )
 
 func GetHubFromContext(ctx context.Context) *sentry.Hub {
-	if hub, ok := ctx.Value(GRPC_HUB_KEY).(*sentry.Hub); ok {
-		return hub
+
+	if ctx == nil {
+		return nil
+	} else if val := reflect.ValueOf(ctx); val.Kind() == reflect.Ptr && val.IsNil() {
+		return nil
+	}
+	if val := ctx.Value(GRPC_HUB_KEY); val != nil {
+		if hub, ok := val.(*sentry.Hub); ok {
+			return hub
+		}
 	}
 	return nil
 }

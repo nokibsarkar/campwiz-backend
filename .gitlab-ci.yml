@@ -52,7 +52,7 @@ deploy-dev:
   rules:
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
   script:
-    - !references [.deploy-to-server, script]
+    - !reference [.deploy-to-server, script]
 deploy-beta:
   stage: deploy
   environment: beta
@@ -62,7 +62,7 @@ deploy-beta:
   rules:
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
   script:
-    - !references [.deploy-to-server, script]
+    - !reference [.deploy-to-server, script]
 deploy-production:
   stage: deploy
   environment: production
@@ -72,4 +72,4 @@ deploy-production:
   rules:
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
   script:
-    - !references [.deploy-to-server, script]
+    - !reference [.deploy-to-server, script]

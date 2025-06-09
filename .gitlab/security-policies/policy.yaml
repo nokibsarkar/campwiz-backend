@@ -1,0 +1,12 @@
+experiments:
+  pipeline_execution_schedule_policy:
+    enabled: true
+schedules:
+  - type: weekly
+    days_of_week:
+      - thursday
+    start_time: "08:00" # 8 AM
+    time_window:
+      value: 7200 # 2 hour window
+      distribution: random
+    timezone: "Asia/Dhaka"

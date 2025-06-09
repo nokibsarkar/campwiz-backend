@@ -2,6 +2,7 @@ image: golang:latest
 variables:
   SECURE_FILES_DOWNLOAD_PATH: .
   PRIVATE_KEY_NAME: id_rsa.toolforge
+  SSH_USER: nokibsarkar
 
 stages:
   - deploy

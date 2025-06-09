@@ -338,7 +338,8 @@ func (b *RoundService) ImportFromCSV(ctx context.Context, roundId models.IDType,
 		tx.Rollback()
 		return nil, fmt.Errorf("campaign not found")
 	}
-	tempFile, err := os.CreateTemp("", "import-*.csv")
+	tempDir := os.Getenv("TOOL_DATA_DIR")
+	tempFile, err := os.CreateTemp(tempDir, "import-*.csv")
 	if err != nil {
 		return nil, err
 	}

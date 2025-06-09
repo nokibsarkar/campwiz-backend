@@ -19,7 +19,7 @@ lint:
       | sh -s -- -b $(go env GOPATH)/bin v2.1.6
     - golangci-lint run --timeout 5m
 
-# This job is a placeholder for deployment to the server.
+# This job is a hiden job including all the common scripts for deployment to the server.
 .deploy-to-server:
   stage: deploy
   script:

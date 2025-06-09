@@ -37,7 +37,7 @@ stages:
     - |
       ssh -i "~/.ssh/$PRIVATE_KEY_NAME" "$SSH_USER@$SSH_HOST" 'bash -s' <<EOF
       become "$TOOLNAME"
-      toolforge build start -L https://gitlab.wikimedia.org/nokibsarkar/campwiz-backend.git -b "$BRANCH"
+      toolforge build start -L https://gitlab.wikimedia.org/nokibsarkar/campwiz-backend.git --ref "$BRANCH"
       toolforge jobs load jobs-$ENVIRONMENT.yaml
       toolforge jobs restart campwiz-task-manager
       toolforge jobs restart campwiz-backend-readonly

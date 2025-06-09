@@ -2,6 +2,8 @@ image: golang:latest
 variables:
   SECURE_FILES_DOWNLOAD_PATH: "."
   PRIVATE_KEY_NAME: id_rsa.toolforge
+  CI_BETA_BRANCH: beta
+  CI_DEV_BRANCH: dev
 stages:
   - lint
   - deploy

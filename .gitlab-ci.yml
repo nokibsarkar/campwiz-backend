@@ -12,38 +12,36 @@ variables:
   CI_BETA_BRANCH: beta
   CI_DEV_BRANCH: dev
 stages:
-- lint
-- deploy
+  - lint
+  - deploy
 lint:
   stage: lint
   script:
-  - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh
-    | sh -s -- -b $(go env GOPATH)/bin v2.1.6
-  - golangci-lint run --timeout 5m
-".deploy-to-server":
+    - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.1.6
+    - golangci-lint run --timeout 5m
+.deploy-to-server:
   stage: deploy
   script:
-  - mkdir -p ~/.ssh
-  - ssh-keyscan $SSH_HOST >> ~/.ssh/known_hosts
-  - curl --silent "https://gitlab.com/gitlab-org/incubation-engineering/mobile-devops/download-secure-files/-/raw/main/installer"
-    | bash
-  - mv $SECURE_FILES_DOWNLOAD_PATH/$PRIVATE_KEY_NAME ~/.ssh
-  - chmod 600 ~/.ssh/$PRIVATE_KEY_NAME
-  - apt update
-  - apt install -y rsync
-  - rsync -Pav --no-perms --omit-dir-times -e "ssh -i ~/.ssh/$PRIVATE_KEY_NAME" jobs.yaml  "$SSH_USER@$SSH_HOST:$SSH_REMOTE_PATH"
-  - echo "Success"
-  - |
-    ssh -i "~/.ssh/$PRIVATE_KEY_NAME" "$SSH_USER@$SSH_HOST" 'bash -s' <<EOF
-    become "$TOOLNAME"
-    toolforge build start -L https://gitlab.wikimedia.org/nokibsarkar/campwiz-backend.git --ref "$BRANCH"
-    toolforge jobs load jobs.yaml
-    toolforge jobs restart campwiz-task-manager
-    toolforge jobs restart campwiz-backend-readonly
-    toolforge jobs restart campwiz-backend-thing
-    exit
-    exit
-    EOF
+    - mkdir -p ~/.ssh
+    - ssh-keyscan $SSH_HOST >> ~/.ssh/known_hosts
+    - curl --silent "https://gitlab.com/gitlab-org/incubation-engineering/mobile-devops/download-secure-files/-/raw/main/installer"  | bash
+    - mv $SECURE_FILES_DOWNLOAD_PATH/$PRIVATE_KEY_NAME ~/.ssh
+    - chmod 600 ~/.ssh/$PRIVATE_KEY_NAME
+    - apt update
+    - apt install -y rsync
+    - rsync -Pav --no-perms --omit-dir-times -e "ssh -i ~/.ssh/$PRIVATE_KEY_NAME" jobs.yaml  "$SSH_USER@$SSH_HOST:$SSH_REMOTE_PATH"
+    - echo "Success"
+    - |
+      ssh -i "~/.ssh/$PRIVATE_KEY_NAME" "$SSH_USER@$SSH_HOST" 'bash -s' <<EOF
+      become "$TOOLNAME"
+      toolforge build start -L https://gitlab.wikimedia.org/nokibsarkar/campwiz-backend.git --ref "$BRANCH"
+      toolforge jobs load jobs.yaml
+      toolforge jobs restart campwiz-task-manager
+      toolforge jobs restart campwiz-backend-readonly
+      toolforge jobs restart campwiz-backend-thing
+      exit
+      exit
+      EOF
 deploy-dev:
   stage: deploy
   environment: development
@@ -51,10 +49,9 @@ deploy-dev:
     ENVIRONMENT: dev
     TOOLNAME: campwiz-backend-dev
   rules:
-  - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
   script:
-  - - ".deploy-to-server"
-    - script
+    - !references [.deploy-to-server, script]
 deploy-beta:
   stage: deploy
   environment: beta
@@ -62,10 +59,9 @@ deploy-beta:
     ENVIRONMENT: beta
     TOOLNAME: campwiz-backend-beta
   rules:
-  - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
   script:
-  - - ".deploy-to-server"
-    - script
+    - !references [.deploy-to-server, script]
 deploy-production:
   stage: deploy
   environment: production
@@ -73,7 +69,6 @@ deploy-production:
     ENVIRONMENT: production
     TOOLNAME: campwiz-backend
   rules:
-  - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
   script:
-  - - ".deploy-to-server"
-    - script
+    - !references [.deploy-to-server, script]

@@ -10,29 +10,37 @@ variables:
   SECURE_FILES_DOWNLOAD_PATH: "."
   PRIVATE_KEY_NAME: id_rsa.toolforge
 stages:
-- lint
-- deploy
+  - lint
+  - deploy
 lint:
   stage: lint
   script:
-  - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh
-    | sh -s -- -b $(go env GOPATH)/bin v2.1.6
-  - golangci-lint run --timeout 5m
-deploy-server:
+    - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh
+      | sh -s -- -b $(go env GOPATH)/bin v2.1.6
+    - golangci-lint run --timeout 5m
+
+# This job is a placeholder for deployment to the server.
+.deploy-to-server:
+  stage: deploy
+  script:
+    - echo "This job is a placeholder for deployment to the server."
+    - echo "You can customize this job to deploy your application as needed."
+    - echo "For example, you can use rsync or scp to transfer files to the server."
+    - mkdir -p ~/.ssh
+    - ssh-keyscan $SSH_HOST >> ~/.ssh/known_hosts
+    - curl --silent "https://gitlab.com/gitlab-org/incubation-engineering/mobile-devops/download-secure-files/-/raw/main/installer"
+      | bash
+    - mv $SECURE_FILES_DOWNLOAD_PATH/$PRIVATE_KEY_NAME ~/.ssh
+    - chmod 600 ~/.ssh/$PRIVATE_KEY_NAME
+    - apt update
+    - apt install -y rsync
+    - rsync -Pav --no-perms --omit-dir-times -e "ssh -i ~/.ssh/$PRIVATE_KEY_NAME" jobs.yaml  "$SSH_USER@$SSH_HOST:$SSH_REMOTE_PATH"
+    - echo "Success"
+deploy-production:
   stage: deploy
   environment: production
   rules:
-  - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
+  extends: .deploy-to-server
   script:
-  - mkdir -p ~/.ssh
-  - ssh-keyscan $SSH_HOST >> ~/.ssh/known_hosts
-  - curl --silent "https://gitlab.com/gitlab-org/incubation-engineering/mobile-devops/download-secure-files/-/raw/main/installer"
-    | bash
-  - mv $SECURE_FILES_DOWNLOAD_PATH/$PRIVATE_KEY_NAME ~/.ssh
-  - chmod 600 ~/.ssh/$PRIVATE_KEY_NAME
-  - apt update
-  - apt install -y rsync
-  - rsync -Pav --no-perms --omit-dir-times -e "ssh -i ~/.ssh/$PRIVATE_KEY_NAME" jobs.yaml  "$SSH_USER@$SSH_HOST:$SSH_REMOTE_PATH"
-  - echo "Success"
-  - ssh -i "~/.ssh/$PRIVATE_KEY_NAME" "$SSH_USER@$SSH_HOST" 'bash -s' < ./deploy.sh
-
+    - ssh -i "~/.ssh/$PRIVATE_KEY_NAME" "$SSH_USER@$SSH_HOST" 'bash -s' < ./deploy.sh

@@ -23,9 +23,6 @@ lint:
 .deploy-to-server:
   stage: deploy
   script:
-    - echo "This job is a placeholder for deployment to the server."
-    - echo "You can customize this job to deploy your application as needed."
-    - echo "For example, you can use rsync or scp to transfer files to the server."
     - mkdir -p ~/.ssh
     - ssh-keyscan $SSH_HOST >> ~/.ssh/known_hosts
     - curl --silent "https://gitlab.com/gitlab-org/incubation-engineering/mobile-devops/download-secure-files/-/raw/main/installer"
@@ -41,6 +38,6 @@ deploy-production:
   environment: production
   rules:
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
-  extends: .deploy-to-server
   script:
+    - !reference [.deploy-to-server, script]
     - ssh -i "~/.ssh/$PRIVATE_KEY_NAME" "$SSH_USER@$SSH_HOST" 'bash -s' < ./deploy.sh

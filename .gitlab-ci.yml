@@ -77,5 +77,3 @@ deploy-production:
   script:
   - - ".deploy-to-server"
     - script
-include:
-- template: Auto-DevOps.gitlab-ci.yml

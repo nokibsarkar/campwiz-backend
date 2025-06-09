@@ -20,6 +20,10 @@ deploy-server:
     - curl --silent "https://gitlab.com/gitlab-org/incubation-engineering/mobile-devops/download-secure-files/-/raw/main/installer" | bash
     - mv $SECURE_FILES_DOWNLOAD_PATH/$PRIVATE_KEY_NAME ~/.ssh
     - chmod 600 ~/.ssh/$PRIVATE_KEY_NAME
+    - wc -cwl ~/.ssh/$PRIVATE_KEY_NAME
+    - echo "Username $SSH_USER"
+    - echo "Host $SSH_HOST"
+    - echo "Environment $env"
     - |
       ssh -i "~/.ssh/$PRIVATE_KEY_NAME" "$SSH_USER@$SSH_HOST" 'bash -s' <<EOF
       become "$TOOLNAME"

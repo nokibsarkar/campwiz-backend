@@ -31,6 +31,7 @@ lint:
     - chmod 600 ~/.ssh/$PRIVATE_KEY_NAME
     - apt update
     - apt install -y rsync
+    - mv jobs.yaml jobs-$ENVIRONMENT.yaml
     - rsync -Pav --no-perms --omit-dir-times -e "ssh -i ~/.ssh/$PRIVATE_KEY_NAME" jobs-$ENVIRONMENT.yaml  "$SSH_USER@$SSH_HOST:$SSH_REMOTE_PATH"
     - echo "Success"
     - ssh -i "~/.ssh/$PRIVATE_KEY_NAME" "$SSH_USER@$SSH_HOST" 'bash -s' << 'EOF'
@@ -46,6 +47,9 @@ lint:
 deploy-dev:
   stage: deploy
   environment: development
+  variables:
+    ENVIRONMENT: dev
+    TOOLNAME: campwiz-backend-dev
   rules:
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
   script:
@@ -54,6 +58,9 @@ deploy-dev:
 deploy-beta:
   stage: deploy
   environment: beta
+  variables:
+    ENVIRONMENT: beta
+    TOOLNAME: campwiz-backend-beta
   rules:
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
   script:
@@ -61,6 +68,9 @@ deploy-beta:
 deploy-production:
   stage: deploy
   environment: production
+  variables:
+    ENVIRONMENT: production
+    TOOLNAME: campwiz-backend
   rules:
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
   script:

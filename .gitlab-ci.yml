@@ -34,7 +34,7 @@ stages:
     - mv jobs.yaml jobs-$ENVIRONMENT.yaml
     - rsync -Pav --no-perms --omit-dir-times -e "ssh -i ~/.ssh/$PRIVATE_KEY_NAME" jobs-$ENVIRONMENT.yaml  "$SSH_USER@$SSH_HOST:$SSH_REMOTE_PATH"
     - echo "Success"
-    - ssh -i "~/.ssh/$PRIVATE_KEY_NAME" "$SSH_USER@$SSH_HOST" 'bash -s' << 'EOF'
+    - ssh -i "~/.ssh/$PRIVATE_KEY_NAME" "$SSH_USER@$SSH_HOST" 'bash -s' <<EOF
       become "$TOOLNAME"
       toolforge build start -L https://gitlab.wikimedia.org/nokibsarkar/campwiz-backend.git -b "$BRANCH"
       toolforge jobs load jobs-$ENVIRONMENT.yaml

@@ -27,18 +27,21 @@ stages:
       exit
       EOF
 deploy-to-dev:
+  stage: deploy
   environment: development
   variables:
     TOOLNAME: campwiz-backend-dev
   script:
     - !reference [.deploy, script]
 deploy-to-beta:
+  stage: deploy
   environment: beta
   variables:
     TOOLNAME: campwiz-backend-beta
   script:
     - !reference [.deploy, script]
 deploy-to-prod:
+  stage: deploy
   environment: production
   variables:
     TOOLNAME: campwiz-backend

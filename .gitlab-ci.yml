@@ -39,9 +39,9 @@ stages:
       become "$TOOLNAME"
       toolforge build start -L https://gitlab.wikimedia.org/nokibsarkar/campwiz-backend.git -b "$BRANCH"
       toolforge jobs load jobs-$ENVIRONMENT.yaml
-      toolforge jobs restart campwiz-task-manager-$ENVIRONMENT
-      toolforge jobs restart campwiz-backend-readonly-$ENVIRONMENT
-      toolforge jobs restart campwiz-backend-thing-$ENVIRONMENT
+      toolforge jobs restart campwiz-task-manager
+      toolforge jobs restart campwiz-backend-readonly
+      toolforge jobs restart campwiz-backend-thing
       exit
       exit
       EOF

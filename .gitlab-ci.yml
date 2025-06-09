@@ -1,23 +1,15 @@
-# You can override the included template(s) by including variable overrides
-# SAST customization: https://docs.gitlab.com/ee/user/application_security/sast/#customizing-the-sast-settings
-# Secret Detection customization: https://docs.gitlab.com/ee/user/application_security/secret_detection/pipeline/#customization
-# Dependency Scanning customization: https://docs.gitlab.com/ee/user/application_security/dependency_scanning/#customizing-the-dependency-scanning-settings
-# Container Scanning customization: https://docs.gitlab.com/ee/user/application_security/container_scanning/#customizing-the-container-scanning-settings
-# Note that environment variables can be set in several places
-# See https://docs.gitlab.com/ee/ci/variables/#cicd-variable-precedence
 image: golang:latest
 variables:
   SECURE_FILES_DOWNLOAD_PATH: "."
   PRIVATE_KEY_NAME: id_rsa.toolforge
 stages:
-  # - lint
+  - lint
   - deploy
-# lint:
-#   stage: lint
-#   script:
-#     - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh
-#       | sh -s -- -b $(go env GOPATH)/bin v2.1.6
-#     - golangci-lint run --timeout 5m
+lint:
+  stage: lint
+  script:
+    - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.1.6
+    - golangci-lint run --timeout 5m
 
 # This job is a hidden job including all the common scripts for deployment to the server.
 .deploy-to-server:
@@ -25,8 +17,7 @@ stages:
   script:
     - mkdir -p ~/.ssh
     - ssh-keyscan $SSH_HOST >> ~/.ssh/known_hosts
-    - curl --silent "https://gitlab.com/gitlab-org/incubation-engineering/mobile-devops/download-secure-files/-/raw/main/installer"
-      | bash
+    - curl --silent "https://gitlab.com/gitlab-org/incubation-engineering/mobile-devops/download-secure-files/-/raw/main/installer" | bash
     - mv $SECURE_FILES_DOWNLOAD_PATH/$PRIVATE_KEY_NAME ~/.ssh
     - chmod 600 ~/.ssh/$PRIVATE_KEY_NAME
     - apt update

@@ -24,7 +24,7 @@ stages:
       ssh -i "~/.ssh/$PRIVATE_KEY_NAME" "$SSH_USER@$SSH_HOST" 'bash -s' <<EOF
       become "$TOOLNAME"
       toolforge build start -L --image-name campwiz-backend-fake-nginx https://gitlab.wikimedia.org/nokibsarkar/campwiz-backend.git --ref fake-nginx
-      toolforge webservice buildservice restart --mount all --buildservice-image tool-campwiz-backend/campwiz-backend-fake-nginx:latest
+      toolforge webservice buildservice restart --mount all --buildservice-image tool-$TOOLNAME/campwiz-backend-fake-nginx:latest
       exit
       exit
       EOF

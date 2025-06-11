@@ -1,1 +1,1 @@
-web: mkdir -p /app/.heroku/php/var/run/nginx/ &&heroku-php-nginx -c nginx.conf -p $PORT
+web: heroku-php-nginx -c nginx.conf -p $PORT

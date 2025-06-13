@@ -3053,6 +3053,12 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
+                },
+                "sourceJuries": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },

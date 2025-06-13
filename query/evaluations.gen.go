@@ -756,6 +756,9 @@ type IEvaluationDo interface {
 	DistributeAssigments(judge_id models.IDType, limit int) (rowsAffected int64, err error)
 	CountAssignedEvaluations() (result []cache.Evaluation, err error)
 	SelectUnAssignedJudges(submission_id types.SubmissionIDType, limit int) (result []*cache.Evaluation, err error)
+	DistributeAssignmentsFromSelectedSource(my_judge_id models.IDType, my_user_id models.IDType, round_id string, reassignable_judges []string, task_id models.IDType, N int) (rowsAffected int64, err error)
+	DistributeAssignmentsIncludingUnassigned(my_judge_id models.IDType, my_user_id models.IDType, round_id string, task_id models.IDType, N int) (rowsAffected int64, err error)
+	DistributeTheLastRemainingEvaluations(task_id models.IDType, round_id string) (rowsAffected int64, err error)
 	RemoveRedundantEvaluation(roundID string, quorum int)
 	FetchTargetSwappables(roundId string, amiJudgeID string, limit int) (result []*models.Evaluation, err error)
 }
@@ -801,6 +804,182 @@ func (e evaluationDo) SelectUnAssignedJudges(submission_id types.SubmissionIDTyp
 
 	var executeSQL *gorm.DB
 	executeSQL = e.UnderlyingDB().Raw(generateSQL.String(), params...).Find(&result) // ignore_security_alert
+	err = executeSQL.Error
+
+	return
+}
+
+// UPDATE `evaluations` e
+// JOIN (
+//
+//	SELECT
+//	    `evaluation_id`
+//	FROM
+//	    `evaluations` e2
+//	WHERE e2.submission_id NOT IN (
+//	SELECT
+//	    `submission_id`
+//	FROM
+//	    `evaluations`
+//	WHERE
+//	    `judge_id` = @my_judge_id
+//	        AND
+//	    `round_id` = @round_id
+//	UNION
+//	    SELECT
+//	        `submission_id`
+//	    FROM
+//	        `submissions` s
+//	    WHERE
+//	        `s`.`round_id` = @round_id
+//	            AND
+//	            `s`.`submitted_by_id` = @my_user_id
+//	) AND
+//	    e2.round_id = @round_id
+//	 AND
+//	    e2.score IS NULL
+//	AND
+//	    e2.evaluated_at IS NULL
+//	AND
+//	    (
+//	        e2.distribution_task_id IS NULL
+//	            OR
+//	        e2.distribution_task_id <> @task_id
+//	) GROUP BY
+//	    e2.submission_id
+//	LIMIT @N
+//
+// ) AS `e2`
+//
+//	ON e.evaluation_id = e2.evaluation_id
+//	SET
+//	e.judge_id = @my_judge_id,
+//	e.distribution_task_id = @task_id
+//
+// LIMIT @N;
+func (e evaluationDo) DistributeAssignmentsFromSelectedSource(my_judge_id models.IDType, my_user_id models.IDType, round_id string, reassignable_judges []string, task_id models.IDType, N int) (rowsAffected int64, err error) {
+	var params []interface{}
+
+	var generateSQL strings.Builder
+	params = append(params, my_judge_id)
+	params = append(params, round_id)
+	params = append(params, round_id)
+	params = append(params, my_user_id)
+	params = append(params, round_id)
+	params = append(params, task_id)
+	params = append(params, N)
+	params = append(params, my_judge_id)
+	params = append(params, task_id)
+	params = append(params, N)
+	generateSQL.WriteString("UPDATE `evaluations` e JOIN ( SELECT `evaluation_id` FROM `evaluations` e2 WHERE e2.submission_id NOT IN ( SELECT `submission_id` FROM `evaluations` WHERE `judge_id` = ? AND `round_id` = ? UNION SELECT `submission_id` FROM `submissions` s WHERE `s`.`round_id` = ? AND `s`.`submitted_by_id` = ? ) AND e2.round_id = ? AND e2.score IS NULL AND e2.evaluated_at IS NULL AND ( e2.distribution_task_id IS NULL OR e2.distribution_task_id <> ? ) GROUP BY e2.submission_id LIMIT ? ) AS `e2` ON e.evaluation_id = e2.evaluation_id SET e.judge_id = ?, e.distribution_task_id = ? LIMIT ?; ")
+
+	var executeSQL *gorm.DB
+	executeSQL = e.UnderlyingDB().Exec(generateSQL.String(), params...) // ignore_security_alert
+	rowsAffected = executeSQL.RowsAffected
+	err = executeSQL.Error
+
+	return
+}
+
+// UPDATE `evaluations` e
+// JOIN (
+//
+//	SELECT
+//	    `evaluation_id`
+//	FROM
+//	    `evaluations` e2
+//	WHERE e2.submission_id NOT IN (
+//	SELECT
+//	    `submission_id`
+//	FROM
+//	    `evaluations`
+//	WHERE
+//	    `judge_id` = @my_judge_id
+//	        AND
+//	    `round_id` = @round_id
+//	UNION
+//	    SELECT
+//	        `submission_id`
+//	    FROM
+//	        `submissions` s
+//	    WHERE
+//	        `s`.`round_id` = @round_id
+//	            AND
+//	            `s`.`submitted_by_id` = @my_user_id
+//	) AND
+//	    e2.round_id = @round_id
+//	AND
+//	    e2.score IS NULL
+//	AND
+//	    e2.evaluated_at IS NULL
+//	AND
+//	    (
+//	        e2.distribution_task_id IS NULL
+//	            OR
+//	        e2.distribution_task_id <> @task_id
+//	) GROUP BY
+//	    e2.submission_id
+//	LIMIT @N
+//
+// ) AS `e2`
+//
+//	ON e.evaluation_id = e2.evaluation_id
+//	SET
+//	e.judge_id = @my_judge_id,
+//	e.distribution_task_id = @task_id
+//
+// LIMIT @N;
+func (e evaluationDo) DistributeAssignmentsIncludingUnassigned(my_judge_id models.IDType, my_user_id models.IDType, round_id string, task_id models.IDType, N int) (rowsAffected int64, err error) {
+	var params []interface{}
+
+	var generateSQL strings.Builder
+	params = append(params, my_judge_id)
+	params = append(params, round_id)
+	params = append(params, round_id)
+	params = append(params, my_user_id)
+	params = append(params, round_id)
+	params = append(params, task_id)
+	params = append(params, N)
+	params = append(params, my_judge_id)
+	params = append(params, task_id)
+	params = append(params, N)
+	generateSQL.WriteString("UPDATE `evaluations` e JOIN ( SELECT `evaluation_id` FROM `evaluations` e2 WHERE e2.submission_id NOT IN ( SELECT `submission_id` FROM `evaluations` WHERE `judge_id` = ? AND `round_id` = ? UNION SELECT `submission_id` FROM `submissions` s WHERE `s`.`round_id` = ? AND `s`.`submitted_by_id` = ? ) AND e2.round_id = ? AND e2.score IS NULL AND e2.evaluated_at IS NULL AND ( e2.distribution_task_id IS NULL OR e2.distribution_task_id <> ? ) GROUP BY e2.submission_id LIMIT ? ) AS `e2` ON e.evaluation_id = e2.evaluation_id SET e.judge_id = ?, e.distribution_task_id = ? LIMIT ?; ")
+
+	var executeSQL *gorm.DB
+	executeSQL = e.UnderlyingDB().Exec(generateSQL.String(), params...) // ignore_security_alert
+	rowsAffected = executeSQL.RowsAffected
+	err = executeSQL.Error
+
+	return
+}
+
+// UPDATE `evaluations` e1
+// SET e1.judge_id = (
+//
+//	SELECT role_id FROM roles
+//	WHERE role_id NOT IN (SELECT judge_id FROM evaluations WHERE submission_id = e1.submission_id AND round_id = @round_id)
+//	AND round_id = @round_id
+//	ORDER BY RAND()
+//	LIMIT 1
+//
+// ), e1.distribution_task_id = @task_id
+// WHERE e1.score IS NULL
+// AND e1.evaluated_at IS NULL
+// AND e1.judge_id IS NULL
+// AND e1.round_id = @round_id;
+func (e evaluationDo) DistributeTheLastRemainingEvaluations(task_id models.IDType, round_id string) (rowsAffected int64, err error) {
+	var params []interface{}
+
+	var generateSQL strings.Builder
+	params = append(params, round_id)
+	params = append(params, round_id)
+	params = append(params, task_id)
+	params = append(params, round_id)
+	generateSQL.WriteString("UPDATE `evaluations` e1 SET e1.judge_id = ( SELECT role_id FROM roles WHERE role_id NOT IN (SELECT judge_id FROM evaluations WHERE submission_id = e1.submission_id AND round_id = ?) AND round_id = ? ORDER BY RAND() LIMIT 1 ), e1.distribution_task_id = ? WHERE e1.score IS NULL AND e1.evaluated_at IS NULL AND e1.judge_id IS NULL AND e1.round_id = ?; ")
+
+	var executeSQL *gorm.DB
+	executeSQL = e.UnderlyingDB().Exec(generateSQL.String(), params...) // ignore_security_alert
+	rowsAffected = executeSQL.RowsAffected
 	err = executeSQL.Error
 
 	return

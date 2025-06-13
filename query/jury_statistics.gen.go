@@ -161,7 +161,7 @@ type IJuryStatisticsDo interface {
 	schema.Tabler
 
 	GetJuryStatistics(roundID string) (result []models.JuryStatistics, err error)
-	TriggerByRoundID(roundID string) (err error)
+	TriggerByRoundID(round_id string) (err error)
 }
 
 // SELECT COUNT(*) AS TotalAssigned, SUM(IF(evaluated_at IS NOT NULL, 1, 0)) AS TotalEvaluated, judge_id FROM `evaluations` WHERE round_id = @roundID AND `judge_id` IS NOT NULL GROUP  BY judge_id
@@ -179,14 +179,18 @@ func (j juryStatisticsDo) GetJuryStatistics(roundID string) (result []models.Jur
 	return
 }
 
-// UPDATE roles AS jury JOIN ( SELECT judge_id, COUNT(*) AS c,    SUM(evaluated_at IS NOT NULL) AS ev  FROM evaluations  WHERE  round_id = @roundID  GROUP BY judge_id ) AS d ON jury.role_id = d.judge_id SET jury.total_evaluated = d.ev, jury.total_assigned = d.c WHERE jury.round_id = @roundID
-func (j juryStatisticsDo) TriggerByRoundID(roundID string) (err error) {
+// UPDATE roles AS jury join (
+// select r.role_id as judge_id, ifnull(d.c, 0) as c, ifnull(d.ev,0) as ev from roles r left join ( SELECT judge_id, COUNT(*) AS c,
+// SUM(evaluated_at IS NOT NULL) AS ev FROM evaluations WHERE round_id = @round_id GROUP BY judge_id ) d on r.role_id=d.judge_id  where r.round_id=@round_id
+// ) as k on jury.role_id = k.judge_id SET jury.total_evaluated = k.ev, jury.total_assigned = k.c WHERE jury.round_id = @round_id AND jury.type = 'jury'
+func (j juryStatisticsDo) TriggerByRoundID(round_id string) (err error) {
 	var params []interface{}
 
 	var generateSQL strings.Builder
-	params = append(params, roundID)
-	params = append(params, roundID)
-	generateSQL.WriteString("UPDATE roles AS jury JOIN ( SELECT judge_id, COUNT(*) AS c, SUM(evaluated_at IS NOT NULL) AS ev FROM evaluations WHERE round_id = ? GROUP BY judge_id ) AS d ON jury.role_id = d.judge_id SET jury.total_evaluated = d.ev, jury.total_assigned = d.c WHERE jury.round_id = ? ")
+	params = append(params, round_id)
+	params = append(params, round_id)
+	params = append(params, round_id)
+	generateSQL.WriteString("UPDATE roles AS jury join ( select r.role_id as judge_id, ifnull(d.c, 0) as c, ifnull(d.ev,0) as ev from roles r left join ( SELECT judge_id, COUNT(*) AS c, SUM(evaluated_at IS NOT NULL) AS ev FROM evaluations WHERE round_id = ? GROUP BY judge_id ) d on r.role_id=d.judge_id where r.round_id=? ) as k on jury.role_id = k.judge_id SET jury.total_evaluated = k.ev, jury.total_assigned = k.c WHERE jury.round_id = ? AND jury.type = 'jury' ")
 
 	var executeSQL *gorm.DB
 	executeSQL = j.UnderlyingDB().Exec(generateSQL.String(), params...) // ignore_security_alert

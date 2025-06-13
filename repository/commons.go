@@ -129,7 +129,7 @@ func (c *CommonsRepository) GetImagesFromCommonsCategories2(ctx context.Context,
 	lastCount := batchSize
 	for lastCount == batchSize {
 		log.Println("Getting images from commons category: ", category)
-		ssubmissionChunk, err := q.CommonsSubmissionEntry.FetchSubmissionsFromCommonsDBByCategoryOld(category, lastPageID, startDateInt, endDateInt, batchSize, allowedtypes)
+		ssubmissionChunk, err := q.CommonsSubmissionEntry.FetchSubmissionsFromCommonsDBByCategory(category, lastPageID, startDateInt, endDateInt, batchSize, allowedtypes)
 		if err != nil {
 			log.Println("Error: ", err)
 			return

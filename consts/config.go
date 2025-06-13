@@ -2,6 +2,7 @@ package consts
 
 import (
 	"log"
+	"os"
 
 	"github.com/spf13/viper"
 )
@@ -94,7 +95,7 @@ func LoadConfig() {
 	Config = &ApplicationConfiguration{}
 
 	viper.AddConfigPath(".")
-	viper.AddConfigPath("/data/project/campwiz-backend")
+	viper.AddConfigPath(os.Getenv("TOOL_DATA_DIR"))
 	viper.SetConfigName(".env")
 	viper.SetConfigType("yaml")
 	viper.AutomaticEnv()

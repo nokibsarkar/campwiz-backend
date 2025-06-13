@@ -305,11 +305,15 @@ func (b *RoundService) ImportFromPreviousRound(ctx *gin.Context, currentUserId m
 	log.Println("GRPC client created")
 	defer grpcClient.Close() //nolint:errcheck
 	importClient := models.NewImporterClient(grpcClient)
+	scores := make([]float32, len(filter.Scores))
+	for i, score := range filter.Scores {
+		scores[i] = float32(score)
+	}
 	_, err = importClient.ImportFromPreviousRound(cache.WithGRPCContext(ctx), &models.ImportFromPreviousRoundRequest{
 		RoundId:       targetRound.RoundID.String(),
 		SourceRoundId: sourceRound.RoundID.String(),
 		TaskId:        task.TaskID.String(),
-		MinimumScore:  float32(filter.Scores[0]),
+		Scores:        scores,
 	})
 	return task, err
 }
@@ -335,7 +339,8 @@ func (b *RoundService) ImportFromCSV(ctx context.Context, roundId models.IDType,
 		tx.Rollback()
 		return nil, fmt.Errorf("campaign not found")
 	}
-	tempFile, err := os.CreateTemp("", "import-*.csv")
+	tempDir := os.Getenv("TOOL_DATA_DIR")
+	tempFile, err := os.CreateTemp(tempDir, "import-*.csv")
 	if err != nil {
 		return nil, err
 	}

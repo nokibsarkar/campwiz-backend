@@ -158,7 +158,6 @@ func GetDBWithGen(ctx1 context.Context) (q *query.Query, close func()) {
 	}
 }
 func GetCommonsReplicaWithGen(ctx1 context.Context) (q *query.Query, close func()) {
-	ctx, _ := ctx1.(*gin.Context)
 	dsn := consts.Config.Database.Commons.DSN
 	// logMode := logger.Warn
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
@@ -182,7 +181,7 @@ func GetCommonsReplicaWithGen(ctx1 context.Context) (q *query.Query, close func(
 		}
 		panic("failed to connect database")
 	}
-	q = query.Use(db.WithContext(ctx))
+	q = query.Use(db.WithContext(ctx1))
 	return q, func() {
 		raw_db, err := db.DB()
 		if err != nil {

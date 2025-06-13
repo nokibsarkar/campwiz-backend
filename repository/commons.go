@@ -112,7 +112,6 @@ func (c *CommonsRepository) GetImagesFromCommonsCategories(category string) ([]m
 	return result, map[string]string{}
 }
 func (c *CommonsRepository) GetImagesFromCommonsCategories2(ctx context.Context, category string, lastPageID uint64, round *models.Round, startDate time.Time, endDate time.Time) (result []models.MediaResult, currentfailedImages map[string]string, lastPageIDOut uint64) {
-
 	q, close := GetCommonsReplicaWithGen(ctx)
 	defer close()
 	log.Printf("1 Getting images from commons category: %s", category)
@@ -130,7 +129,6 @@ func (c *CommonsRepository) GetImagesFromCommonsCategories2(ctx context.Context,
 	for lastCount == batchSize {
 		log.Println("Getting images from commons category: ", category)
 		ssubmissionChunk, err := q.CommonsSubmissionEntry.FetchSubmissionsFromCommonsDBByCategory(category, lastPageID, startDateInt, endDateInt, batchSize, allowedtypes)
-
 		if err != nil {
 			log.Println("Error: ", err)
 			return

@@ -232,6 +232,7 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries2(ctx context.Contex
 			b := JurorV3{}
 			err = q1.Evaluation.Select(q1.Evaluation.EvaluationID.Count().As("Count")).
 				Where(q1.Evaluation.RoundID.Eq(strategy.RoundId.String())).
+				// Where(q1.Evaluation.JudgeID.Eq(targetJudgeId.String())).
 				Where(q1.Evaluation.DistributionTaskID.Eq(strategy.TaskId.String())).Scan(&b)
 			if err != nil {
 				log.Println("Error: ", err)

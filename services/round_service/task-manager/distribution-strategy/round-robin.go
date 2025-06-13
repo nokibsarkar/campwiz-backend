@@ -233,12 +233,11 @@ func (strategy *RoundRobinDistributionStrategy) createMissingEvaluations(tx *gor
 		for range rest {
 			evID := idgenerator.GenerateID("e")
 			evaluation := models.Evaluation{
-				SubmissionID:       submission.SubmissionID,
-				EvaluationID:       evID,
-				Type:               evtype,
-				DistributionTaskID: strategy.TaskId,
-				ParticipantID:      submission.ParticipantID,
-				RoundID:            round.RoundID,
+				SubmissionID:  submission.SubmissionID,
+				EvaluationID:  evID,
+				Type:          evtype,
+				ParticipantID: submission.ParticipantID,
+				RoundID:       round.RoundID,
 			}
 			evaluations = append(evaluations, evaluation)
 		}

@@ -1008,6 +1008,10 @@ definitions:
         items:
           type: string
         type: array
+      sourceJuries:
+        items:
+          type: string
+        type: array
     type: object
   services.EvaluationRequest:
     properties:

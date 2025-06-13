@@ -7,6 +7,7 @@ package query
 import (
 	"context"
 	"database/sql"
+	"log"
 	"strings"
 
 	"gorm.io/gorm"
@@ -218,9 +219,9 @@ func (c commonsSubmissionEntryDo) FetchSubmissionsFromCommonsDBByCategory(catego
 	params = append(params, categoryName)
 	params = append(params, limit)
 	generateSQL.WriteString("SELECT page_id, page_title, user_name, fr_timestamp, fr_height, fr_width, fr_size, ft_media_type FROM categorylinks JOIN page JOIN file JOIN filerevision JOIN actor JOIN `user` JOIN filetypes ON ft_id = file_type AND fr_id=file_latest AND user_id=actor_user and cl_from=page_id and file_name=page_title and actor_id=fr_actor where ft_media_type IN (?) and cl_from > ? and ? <= fr_timestamp and fr_timestamp < ? and cl_to=? and fr_deleted = false and file_deleted=false ORDER BY `page_id` ASC LIMIT ?; ")
-
 	var executeSQL *gorm.DB
 	executeSQL = c.UnderlyingDB().Raw(generateSQL.String(), params...).Find(&result) // ignore_security_alert
+	log.Printf("executeSQL: %s", executeSQL.Statement.SQL.String())
 	err = executeSQL.Error
 
 	return

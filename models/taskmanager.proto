@@ -46,6 +46,8 @@ message DistributeWithRoundRobinRequest {
     string round_id = 1;
    string task_id = 2;
    repeated string jury_usernames = 3;
+   repeated string source_jury_usernames = 4;
+    repeated string target_jury_usernames = 5;
 }
 message DistributeWithRoundRobinResponse {
    string task_id = 1;

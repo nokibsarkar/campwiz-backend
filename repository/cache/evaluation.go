@@ -119,7 +119,7 @@ type Dirtributor interface {
 	// 		SELECT role_id FROM roles
 	// 		WHERE role_id NOT IN (SELECT judge_id FROM evaluations WHERE submission_id = e1.submission_id AND round_id = @round_id)
 	// 		AND round_id = @round_id
-	// 		ORDER BY RAND()
+	// 		ORDER BY total_evaluated ASC, total_assigned ASC, RAND()
 	// 		LIMIT 1
 	// ), e1.distribution_task_id = @task_id
 	// WHERE e1.score IS NULL

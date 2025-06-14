@@ -23,8 +23,8 @@ import (
 	sentrygin "github.com/getsentry/sentry-go/gin"
 )
 
-var RSAPrivateKey *ecdsa.PrivateKey
-var RSAPublicKey *ecdsa.PublicKey
+var ECDSAPrivateKEY *ecdsa.PrivateKey
+var ECDSAPublicKey *ecdsa.PublicKey
 
 type AuthenticationService struct {
 	Config *consts.AuthenticationConfiguration
@@ -53,11 +53,11 @@ func init() {
 	if _, err := rsaPrivateFp.WriteTo(privateKeyBytes); err != nil {
 		log.Panicln("Error writing private key: ", err)
 	}
-	RSAPrivateKey, err = jwt.ParseECPrivateKeyFromPEM(privateKeyBytes.Bytes())
+	ECDSAPrivateKEY, err = jwt.ParseECPrivateKeyFromPEM(privateKeyBytes.Bytes())
 	if err != nil {
 		log.Panicln("Error parsing private key: ", err)
 	}
-	RSAPublicKey, err = jwt.ParseECPublicKeyFromPEM(publicBytes.Bytes())
+	ECDSAPublicKey, err = jwt.ParseECPublicKeyFromPEM(publicBytes.Bytes())
 	if err != nil {
 		log.Panicln("Error parsing public key: ", err)
 	}
@@ -99,7 +99,7 @@ func (a *AuthenticationService) NewSession(tx *gorm.DB, tokenMap *SessionClaims)
 	}
 	tokenMap.ID = string(models.IDType(session.ID))
 	token := jwt.NewWithClaims(jwt.SigningMethodES256, tokenMap)
-	accessToken, err := token.SignedString(RSAPrivateKey)
+	accessToken, err := token.SignedString(ECDSAPrivateKEY)
 	if err != nil {
 		log.Println("Error: ", err)
 		return "", nil, err
@@ -118,7 +118,7 @@ func (a *AuthenticationService) NewRefreshToken(tokenMap *SessionClaims) (string
 		Name:       tokenMap.Name,
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodES256, refreshClaims)
-	refreshToken, err := token.SignedString(RSAPrivateKey)
+	refreshToken, err := token.SignedString(ECDSAPrivateKEY)
 	if err != nil {
 		log.Println("Error: ", err)
 		return "", err
@@ -203,7 +203,7 @@ func (a *AuthenticationService) decodeToken(tokenString string) (*SessionClaims,
 			return nil, errors.New("invalid issuer")
 		}
 
-		return RSAPublicKey, nil
+		return ECDSAPublicKey, nil
 	})
 	if err != nil {
 		return claims, err

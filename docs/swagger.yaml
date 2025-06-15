@@ -209,6 +209,11 @@ definitions:
       campaignId:
         description: A unique identifier for the campaign, it should be custom defined
         type: string
+      campaignType:
+        allOf:
+        - $ref: '#/definitions/models.CampaignType'
+        description: The type of the campaign, it should be one of the CampaignType
+          constants
       createdAt:
         description: The time the campaign was created, it would be set automatically
         type: string
@@ -244,6 +249,7 @@ definitions:
       status:
         $ref: '#/definitions/models.RoundStatus'
     required:
+    - campaignType
     - endDate
     - language
     - name
@@ -256,6 +262,11 @@ definitions:
       campaignId:
         description: A unique identifier for the campaign, it should be custom defined
         type: string
+      campaignType:
+        allOf:
+        - $ref: '#/definitions/models.CampaignType'
+        description: The type of the campaign, it should be one of the CampaignType
+          constants
       coordinators:
         items:
           type: string
@@ -295,16 +306,42 @@ definitions:
       status:
         $ref: '#/definitions/models.RoundStatus'
     required:
+    - campaignType
     - endDate
     - language
     - name
     - startDate
     type: object
+  models.CampaignType:
+    enum:
+    - commons
+    - wikipedia
+    - wikidata
+    - categorization
+    - reference
+    type: string
+    x-enum-varnames:
+    - CampaignTypeCommons
+    - CampaignTypeWikipedia
+    - CampaignTypeWikidata
+    - CampaignTypeCategorization
+    - CampaignTypeReference
   models.CampaignUpdateStatusRequest:
     properties:
       isArchived:
         description: The status of the campaign
         type: boolean
+    type: object
+  models.CategoryResponse:
+    properties:
+      added:
+        items:
+          type: string
+        type: array
+      removed:
+        items:
+          type: string
+        type: array
     type: object
   models.Evaluation:
     properties:
@@ -428,6 +465,17 @@ definitions:
       data:
         items:
           $ref: '#/definitions/models.Campaign'
+        type: array
+      next:
+        type: string
+      prev:
+        type: string
+    type: object
+  models.ResponseList-models_CategoryResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/models.CategoryResponse'
         type: array
       next:
         type: string
@@ -930,6 +978,11 @@ definitions:
     type: object
   services.CampaignCreateRequest:
     properties:
+      campaignType:
+        allOf:
+        - $ref: '#/definitions/models.CampaignType'
+        description: The type of the campaign, it should be one of the CampaignType
+          constants
       coordinators:
         items:
           type: string
@@ -960,6 +1013,7 @@ definitions:
       status:
         $ref: '#/definitions/models.RoundStatus'
     required:
+    - campaignType
     - endDate
     - language
     - name
@@ -967,6 +1021,11 @@ definitions:
     type: object
   services.CampaignUpdateRequest:
     properties:
+      campaignType:
+        allOf:
+        - $ref: '#/definitions/models.CampaignType'
+        description: The type of the campaign, it should be one of the CampaignType
+          constants
       coordinators:
         items:
           type: string
@@ -997,6 +1056,7 @@ definitions:
       status:
         $ref: '#/definitions/models.RoundStatus'
     required:
+    - campaignType
     - endDate
     - language
     - name
@@ -1345,6 +1405,35 @@ paths:
       summary: Update a campaign
       tags:
       - Campaign
+  /category/{submissionId}:
+    post:
+      description: Submit categories for a submission
+      parameters:
+      - description: The submission ID
+        in: path
+        name: submissionId
+        required: true
+        type: string
+      - description: The categories to submit
+        in: body
+        name: categories
+        required: true
+        schema:
+          items:
+            type: string
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ResponseList-models_CategoryResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Submit categories for a submission
+      tags:
+      - Categories
   /evaluation/:
     get:
       description: get all evaluations

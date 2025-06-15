@@ -28,9 +28,224 @@ func newCategory(db *gorm.DB, opts ...gen.DOOption) category {
 
 	tableName := _category.categoryDo.TableName()
 	_category.ALL = field.NewAsterisk(tableName)
-	_category.CategoryID = field.NewString(tableName, "category_id")
-	_category.Name = field.NewString(tableName, "name")
-	_category.SubmissionName = field.NewString(tableName, "submission_name")
+	_category.CategoryName = field.NewString(tableName, "category_name")
+	_category.SubmissionID = field.NewString(tableName, "submission_id")
+	_category.AddedByID = field.NewString(tableName, "added_by_id")
+	_category.CreatedAt = field.NewTime(tableName, "created_at")
+	_category.DeletedAt = field.NewField(tableName, "deleted_at")
+	_category.AddedBy = categoryBelongsToAddedBy{
+		db: db.Session(&gorm.Session{}),
+
+		RelationField: field.NewRelation("AddedBy", "models.User"),
+		LeadingProject: struct {
+			field.RelationField
+		}{
+			RelationField: field.NewRelation("AddedBy.LeadingProject", "models.Project"),
+		},
+	}
+
+	_category.Submission = categoryBelongsToSubmission{
+		db: db.Session(&gorm.Session{}),
+
+		RelationField: field.NewRelation("Submission", "models.Submission"),
+		Participant: struct {
+			field.RelationField
+		}{
+			RelationField: field.NewRelation("Submission.Participant", "models.User"),
+		},
+		Submitter: struct {
+			field.RelationField
+		}{
+			RelationField: field.NewRelation("Submission.Submitter", "models.User"),
+		},
+		Campaign: struct {
+			field.RelationField
+			CreatedBy struct {
+				field.RelationField
+			}
+			Project struct {
+				field.RelationField
+			}
+			LatestRound struct {
+				field.RelationField
+				Campaign struct {
+					field.RelationField
+				}
+				Creator struct {
+					field.RelationField
+				}
+				DependsOnRound struct {
+					field.RelationField
+				}
+				Roles struct {
+					field.RelationField
+					Round struct {
+						field.RelationField
+					}
+					Campaign struct {
+						field.RelationField
+					}
+					User struct {
+						field.RelationField
+					}
+					Project struct {
+						field.RelationField
+					}
+				}
+			}
+			Roles struct {
+				field.RelationField
+			}
+			Rounds struct {
+				field.RelationField
+			}
+		}{
+			RelationField: field.NewRelation("Submission.Campaign", "models.Campaign"),
+			CreatedBy: struct {
+				field.RelationField
+			}{
+				RelationField: field.NewRelation("Submission.Campaign.CreatedBy", "models.User"),
+			},
+			Project: struct {
+				field.RelationField
+			}{
+				RelationField: field.NewRelation("Submission.Campaign.Project", "models.Project"),
+			},
+			LatestRound: struct {
+				field.RelationField
+				Campaign struct {
+					field.RelationField
+				}
+				Creator struct {
+					field.RelationField
+				}
+				DependsOnRound struct {
+					field.RelationField
+				}
+				Roles struct {
+					field.RelationField
+					Round struct {
+						field.RelationField
+					}
+					Campaign struct {
+						field.RelationField
+					}
+					User struct {
+						field.RelationField
+					}
+					Project struct {
+						field.RelationField
+					}
+				}
+			}{
+				RelationField: field.NewRelation("Submission.Campaign.LatestRound", "models.Round"),
+				Campaign: struct {
+					field.RelationField
+				}{
+					RelationField: field.NewRelation("Submission.Campaign.LatestRound.Campaign", "models.Campaign"),
+				},
+				Creator: struct {
+					field.RelationField
+				}{
+					RelationField: field.NewRelation("Submission.Campaign.LatestRound.Creator", "models.User"),
+				},
+				DependsOnRound: struct {
+					field.RelationField
+				}{
+					RelationField: field.NewRelation("Submission.Campaign.LatestRound.DependsOnRound", "models.Round"),
+				},
+				Roles: struct {
+					field.RelationField
+					Round struct {
+						field.RelationField
+					}
+					Campaign struct {
+						field.RelationField
+					}
+					User struct {
+						field.RelationField
+					}
+					Project struct {
+						field.RelationField
+					}
+				}{
+					RelationField: field.NewRelation("Submission.Campaign.LatestRound.Roles", "models.Role"),
+					Round: struct {
+						field.RelationField
+					}{
+						RelationField: field.NewRelation("Submission.Campaign.LatestRound.Roles.Round", "models.Round"),
+					},
+					Campaign: struct {
+						field.RelationField
+					}{
+						RelationField: field.NewRelation("Submission.Campaign.LatestRound.Roles.Campaign", "models.Campaign"),
+					},
+					User: struct {
+						field.RelationField
+					}{
+						RelationField: field.NewRelation("Submission.Campaign.LatestRound.Roles.User", "models.User"),
+					},
+					Project: struct {
+						field.RelationField
+					}{
+						RelationField: field.NewRelation("Submission.Campaign.LatestRound.Roles.Project", "models.Project"),
+					},
+				},
+			},
+			Roles: struct {
+				field.RelationField
+			}{
+				RelationField: field.NewRelation("Submission.Campaign.Roles", "models.Role"),
+			},
+			Rounds: struct {
+				field.RelationField
+			}{
+				RelationField: field.NewRelation("Submission.Campaign.Rounds", "models.Round"),
+			},
+		},
+		Round: struct {
+			field.RelationField
+		}{
+			RelationField: field.NewRelation("Submission.Round", "models.Round"),
+		},
+		DistributionTask: struct {
+			field.RelationField
+			Submittor struct {
+				field.RelationField
+			}
+			TaskData struct {
+				field.RelationField
+				Task struct {
+					field.RelationField
+				}
+			}
+		}{
+			RelationField: field.NewRelation("Submission.DistributionTask", "models.Task"),
+			Submittor: struct {
+				field.RelationField
+			}{
+				RelationField: field.NewRelation("Submission.DistributionTask.Submittor", "models.User"),
+			},
+			TaskData: struct {
+				field.RelationField
+				Task struct {
+					field.RelationField
+				}
+			}{
+				RelationField: field.NewRelation("Submission.DistributionTask.TaskData", "models.TaskData"),
+				Task: struct {
+					field.RelationField
+				}{
+					RelationField: field.NewRelation("Submission.DistributionTask.TaskData.Task", "models.Task"),
+				},
+			},
+		},
+		ImportTask: struct {
+			field.RelationField
+		}{
+			RelationField: field.NewRelation("Submission.ImportTask", "models.Task"),
+		},
+	}
 
 	_category.fillFieldMap()
 
@@ -40,10 +255,15 @@ func newCategory(db *gorm.DB, opts ...gen.DOOption) category {
 type category struct {
 	categoryDo
 
-	ALL            field.Asterisk
-	CategoryID     field.String
-	Name           field.String
-	SubmissionName field.String
+	ALL          field.Asterisk
+	CategoryName field.String
+	SubmissionID field.String
+	AddedByID    field.String
+	CreatedAt    field.Time
+	DeletedAt    field.Field
+	AddedBy      categoryBelongsToAddedBy
+
+	Submission categoryBelongsToSubmission
 
 	fieldMap map[string]field.Expr
 }
@@ -60,9 +280,11 @@ func (c category) As(alias string) *category {
 
 func (c *category) updateTableName(table string) *category {
 	c.ALL = field.NewAsterisk(table)
-	c.CategoryID = field.NewString(table, "category_id")
-	c.Name = field.NewString(table, "name")
-	c.SubmissionName = field.NewString(table, "submission_name")
+	c.CategoryName = field.NewString(table, "category_name")
+	c.SubmissionID = field.NewString(table, "submission_id")
+	c.AddedByID = field.NewString(table, "added_by_id")
+	c.CreatedAt = field.NewTime(table, "created_at")
+	c.DeletedAt = field.NewField(table, "deleted_at")
 
 	c.fillFieldMap()
 
@@ -79,20 +301,262 @@ func (c *category) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (c *category) fillFieldMap() {
-	c.fieldMap = make(map[string]field.Expr, 3)
-	c.fieldMap["category_id"] = c.CategoryID
-	c.fieldMap["name"] = c.Name
-	c.fieldMap["submission_name"] = c.SubmissionName
+	c.fieldMap = make(map[string]field.Expr, 7)
+	c.fieldMap["category_name"] = c.CategoryName
+	c.fieldMap["submission_id"] = c.SubmissionID
+	c.fieldMap["added_by_id"] = c.AddedByID
+	c.fieldMap["created_at"] = c.CreatedAt
+	c.fieldMap["deleted_at"] = c.DeletedAt
+
 }
 
 func (c category) clone(db *gorm.DB) category {
 	c.categoryDo.ReplaceConnPool(db.Statement.ConnPool)
+	c.AddedBy.db = db.Session(&gorm.Session{Initialized: true})
+	c.AddedBy.db.Statement.ConnPool = db.Statement.ConnPool
+	c.Submission.db = db.Session(&gorm.Session{Initialized: true})
+	c.Submission.db.Statement.ConnPool = db.Statement.ConnPool
 	return c
 }
 
 func (c category) replaceDB(db *gorm.DB) category {
 	c.categoryDo.ReplaceDB(db)
+	c.AddedBy.db = db.Session(&gorm.Session{})
+	c.Submission.db = db.Session(&gorm.Session{})
 	return c
+}
+
+type categoryBelongsToAddedBy struct {
+	db *gorm.DB
+
+	field.RelationField
+
+	LeadingProject struct {
+		field.RelationField
+	}
+}
+
+func (a categoryBelongsToAddedBy) Where(conds ...field.Expr) *categoryBelongsToAddedBy {
+	if len(conds) == 0 {
+		return &a
+	}
+
+	exprs := make([]clause.Expression, 0, len(conds))
+	for _, cond := range conds {
+		exprs = append(exprs, cond.BeCond().(clause.Expression))
+	}
+	a.db = a.db.Clauses(clause.Where{Exprs: exprs})
+	return &a
+}
+
+func (a categoryBelongsToAddedBy) WithContext(ctx context.Context) *categoryBelongsToAddedBy {
+	a.db = a.db.WithContext(ctx)
+	return &a
+}
+
+func (a categoryBelongsToAddedBy) Session(session *gorm.Session) *categoryBelongsToAddedBy {
+	a.db = a.db.Session(session)
+	return &a
+}
+
+func (a categoryBelongsToAddedBy) Model(m *models.Category) *categoryBelongsToAddedByTx {
+	return &categoryBelongsToAddedByTx{a.db.Model(m).Association(a.Name())}
+}
+
+func (a categoryBelongsToAddedBy) Unscoped() *categoryBelongsToAddedBy {
+	a.db = a.db.Unscoped()
+	return &a
+}
+
+type categoryBelongsToAddedByTx struct{ tx *gorm.Association }
+
+func (a categoryBelongsToAddedByTx) Find() (result *models.User, err error) {
+	return result, a.tx.Find(&result)
+}
+
+func (a categoryBelongsToAddedByTx) Append(values ...*models.User) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Append(targetValues...)
+}
+
+func (a categoryBelongsToAddedByTx) Replace(values ...*models.User) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Replace(targetValues...)
+}
+
+func (a categoryBelongsToAddedByTx) Delete(values ...*models.User) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Delete(targetValues...)
+}
+
+func (a categoryBelongsToAddedByTx) Clear() error {
+	return a.tx.Clear()
+}
+
+func (a categoryBelongsToAddedByTx) Count() int64 {
+	return a.tx.Count()
+}
+
+func (a categoryBelongsToAddedByTx) Unscoped() *categoryBelongsToAddedByTx {
+	a.tx = a.tx.Unscoped()
+	return &a
+}
+
+type categoryBelongsToSubmission struct {
+	db *gorm.DB
+
+	field.RelationField
+
+	Participant struct {
+		field.RelationField
+	}
+	Submitter struct {
+		field.RelationField
+	}
+	Campaign struct {
+		field.RelationField
+		CreatedBy struct {
+			field.RelationField
+		}
+		Project struct {
+			field.RelationField
+		}
+		LatestRound struct {
+			field.RelationField
+			Campaign struct {
+				field.RelationField
+			}
+			Creator struct {
+				field.RelationField
+			}
+			DependsOnRound struct {
+				field.RelationField
+			}
+			Roles struct {
+				field.RelationField
+				Round struct {
+					field.RelationField
+				}
+				Campaign struct {
+					field.RelationField
+				}
+				User struct {
+					field.RelationField
+				}
+				Project struct {
+					field.RelationField
+				}
+			}
+		}
+		Roles struct {
+			field.RelationField
+		}
+		Rounds struct {
+			field.RelationField
+		}
+	}
+	Round struct {
+		field.RelationField
+	}
+	DistributionTask struct {
+		field.RelationField
+		Submittor struct {
+			field.RelationField
+		}
+		TaskData struct {
+			field.RelationField
+			Task struct {
+				field.RelationField
+			}
+		}
+	}
+	ImportTask struct {
+		field.RelationField
+	}
+}
+
+func (a categoryBelongsToSubmission) Where(conds ...field.Expr) *categoryBelongsToSubmission {
+	if len(conds) == 0 {
+		return &a
+	}
+
+	exprs := make([]clause.Expression, 0, len(conds))
+	for _, cond := range conds {
+		exprs = append(exprs, cond.BeCond().(clause.Expression))
+	}
+	a.db = a.db.Clauses(clause.Where{Exprs: exprs})
+	return &a
+}
+
+func (a categoryBelongsToSubmission) WithContext(ctx context.Context) *categoryBelongsToSubmission {
+	a.db = a.db.WithContext(ctx)
+	return &a
+}
+
+func (a categoryBelongsToSubmission) Session(session *gorm.Session) *categoryBelongsToSubmission {
+	a.db = a.db.Session(session)
+	return &a
+}
+
+func (a categoryBelongsToSubmission) Model(m *models.Category) *categoryBelongsToSubmissionTx {
+	return &categoryBelongsToSubmissionTx{a.db.Model(m).Association(a.Name())}
+}
+
+func (a categoryBelongsToSubmission) Unscoped() *categoryBelongsToSubmission {
+	a.db = a.db.Unscoped()
+	return &a
+}
+
+type categoryBelongsToSubmissionTx struct{ tx *gorm.Association }
+
+func (a categoryBelongsToSubmissionTx) Find() (result *models.Submission, err error) {
+	return result, a.tx.Find(&result)
+}
+
+func (a categoryBelongsToSubmissionTx) Append(values ...*models.Submission) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Append(targetValues...)
+}
+
+func (a categoryBelongsToSubmissionTx) Replace(values ...*models.Submission) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Replace(targetValues...)
+}
+
+func (a categoryBelongsToSubmissionTx) Delete(values ...*models.Submission) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Delete(targetValues...)
+}
+
+func (a categoryBelongsToSubmissionTx) Clear() error {
+	return a.tx.Clear()
+}
+
+func (a categoryBelongsToSubmissionTx) Count() int64 {
+	return a.tx.Count()
+}
+
+func (a categoryBelongsToSubmissionTx) Unscoped() *categoryBelongsToSubmissionTx {
+	a.tx = a.tx.Unscoped()
+	return &a
 }
 
 type categoryDo struct{ gen.DO }

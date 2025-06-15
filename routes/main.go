@@ -28,6 +28,7 @@ func NewRoutes(nonAPIParent *gin.RouterGroup) *gin.RouterGroup {
 	NewTaskRoutes(r)
 	NewEvaluationRoutes(r)
 	NewProjectRoutes(r)
+	NewCategoryRoutes(r)
 	AccessReportRoutes(r)
 	return r
 }
@@ -118,5 +119,11 @@ func NewProjectRoutes(parent *gin.RouterGroup) *gin.RouterGroup {
 	r.POST("/:projectId", WithPermission(consts.PermissionUpdateProject, UpdateProject))
 	r.GET("/:projectId", WithSession(GetSingleProject))
 
+	return r
+}
+
+func NewCategoryRoutes(parent *gin.RouterGroup) *gin.RouterGroup {
+	r := parent.Group("/category")
+	r.POST("/:submissionId", WithSession(SubmitCategories))
 	return r
 }

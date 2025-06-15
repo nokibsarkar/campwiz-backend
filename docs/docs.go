@@ -289,6 +289,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/category/{submissionId}": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Submit categories for a submission",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Submit categories for a submission",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The submission ID",
+                        "name": "submissionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "The categories to submit",
+                        "name": "categories",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResponseList-models_CategoryResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/evaluation/": {
             "get": {
                 "security": [
@@ -1877,6 +1923,7 @@ const docTemplate = `{
         "models.Campaign": {
             "type": "object",
             "required": [
+                "campaignType",
                 "endDate",
                 "language",
                 "name",
@@ -1889,6 +1936,14 @@ const docTemplate = `{
                 "campaignId": {
                     "description": "A unique identifier for the campaign, it should be custom defined",
                     "type": "string"
+                },
+                "campaignType": {
+                    "description": "The type of the campaign, it should be one of the CampaignType constants",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.CampaignType"
+                        }
+                    ]
                 },
                 "createdAt": {
                     "description": "The time the campaign was created, it would be set automatically",
@@ -1945,6 +2000,7 @@ const docTemplate = `{
         "models.CampaignExtended": {
             "type": "object",
             "required": [
+                "campaignType",
                 "endDate",
                 "language",
                 "name",
@@ -1957,6 +2013,14 @@ const docTemplate = `{
                 "campaignId": {
                     "description": "A unique identifier for the campaign, it should be custom defined",
                     "type": "string"
+                },
+                "campaignType": {
+                    "description": "The type of the campaign, it should be one of the CampaignType constants",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.CampaignType"
+                        }
+                    ]
                 },
                 "coordinators": {
                     "type": "array",
@@ -2016,12 +2080,46 @@ const docTemplate = `{
                 }
             }
         },
+        "models.CampaignType": {
+            "type": "string",
+            "enum": [
+                "commons",
+                "wikipedia",
+                "wikidata",
+                "categorization",
+                "reference"
+            ],
+            "x-enum-varnames": [
+                "CampaignTypeCommons",
+                "CampaignTypeWikipedia",
+                "CampaignTypeWikidata",
+                "CampaignTypeCategorization",
+                "CampaignTypeReference"
+            ]
+        },
         "models.CampaignUpdateStatusRequest": {
             "type": "object",
             "properties": {
                 "isArchived": {
                     "description": "The status of the campaign",
                     "type": "boolean"
+                }
+            }
+        },
+        "models.CategoryResponse": {
+            "type": "object",
+            "properties": {
+                "added": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "removed": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -2202,6 +2300,23 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.Campaign"
+                    }
+                },
+                "next": {
+                    "type": "string"
+                },
+                "prev": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ResponseList-models_CategoryResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.CategoryResponse"
                     }
                 },
                 "next": {
@@ -2940,12 +3055,21 @@ const docTemplate = `{
         "services.CampaignCreateRequest": {
             "type": "object",
             "required": [
+                "campaignType",
                 "endDate",
                 "language",
                 "name",
                 "startDate"
             ],
             "properties": {
+                "campaignType": {
+                    "description": "The type of the campaign, it should be one of the CampaignType constants",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.CampaignType"
+                        }
+                    ]
+                },
                 "coordinators": {
                     "type": "array",
                     "items": {
@@ -2994,12 +3118,21 @@ const docTemplate = `{
         "services.CampaignUpdateRequest": {
             "type": "object",
             "required": [
+                "campaignType",
                 "endDate",
                 "language",
                 "name",
                 "startDate"
             ],
             "properties": {
+                "campaignType": {
+                    "description": "The type of the campaign, it should be one of the CampaignType constants",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.CampaignType"
+                        }
+                    ]
+                },
                 "coordinators": {
                     "type": "array",
                     "items": {

@@ -20,7 +20,12 @@ type Category struct {
 	Submission *Submission `json:"-" gorm:"foreignKey:SubmissionID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"` // The submission this category belongs to
 	gorm.DeletedAt
 }
+
+// This would be as response after a user submits categories for a submission.
 type CategoryResponse struct {
-	Added   []string `json:"added"`
-	Removed []string `json:"removed"`
+	// PageTitle is the title of the page where the categories were added or removed
+	PageTitle string   `json:"pageTitle"` //
+	Added     []string `json:"added"`
+	Removed   []string `json:"removed"`
+	Executed  bool     `json:"executed"` // Whether the categories were added or removed successfully
 }

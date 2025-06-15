@@ -338,6 +338,13 @@ definitions:
         items:
           type: string
         type: array
+      executed:
+        description: Whether the categories were added or removed successfully
+        type: boolean
+      pageTitle:
+        description: PageTitle is the title of the page where the categories were
+          added or removed
+        type: string
       removed:
         items:
           type: string
@@ -471,17 +478,6 @@ definitions:
       prev:
         type: string
     type: object
-  models.ResponseList-models_CategoryResponse:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/models.CategoryResponse'
-        type: array
-      next:
-        type: string
-      prev:
-        type: string
-    type: object
   models.ResponseList-models_Evaluation:
     properties:
       data:
@@ -562,6 +558,11 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/models.CampaignExtended'
+    type: object
+  models.ResponseSingle-models_CategoryResponse:
+    properties:
+      data:
+        $ref: '#/definitions/models.CategoryResponse'
     type: object
   models.ResponseSingle-models_Evaluation:
     properties:
@@ -1428,10 +1429,39 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.ResponseList-models_CategoryResponse'
+            $ref: '#/definitions/models.ResponseSingle-models_CategoryResponse'
       security:
       - ApiKeyAuth: []
       summary: Submit categories for a submission
+      tags:
+      - Categories
+  /category/{submissionId}/preview:
+    post:
+      description: Submit categories preview for a submission
+      parameters:
+      - description: The submission ID
+        in: path
+        name: submissionId
+        required: true
+        type: string
+      - description: The categories to preview
+        in: body
+        name: categories
+        required: true
+        schema:
+          items:
+            type: string
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ResponseSingle-models_CategoryResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Submit categories preview for a submission
       tags:
       - Categories
   /evaluation/:

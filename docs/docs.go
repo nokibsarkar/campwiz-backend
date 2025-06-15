@@ -329,7 +329,53 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.ResponseList-models_CategoryResponse"
+                            "$ref": "#/definitions/models.ResponseSingle-models_CategoryResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/category/{submissionId}/preview": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Submit categories preview for a submission",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Submit categories preview for a submission",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The submission ID",
+                        "name": "submissionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "The categories to preview",
+                        "name": "categories",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResponseSingle-models_CategoryResponse"
                         }
                     }
                 }
@@ -2115,6 +2161,14 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "executed": {
+                    "description": "Whether the categories were added or removed successfully",
+                    "type": "boolean"
+                },
+                "pageTitle": {
+                    "description": "PageTitle is the title of the page where the categories were added or removed",
+                    "type": "string"
+                },
                 "removed": {
                     "type": "array",
                     "items": {
@@ -2310,23 +2364,6 @@ const docTemplate = `{
                 }
             }
         },
-        "models.ResponseList-models_CategoryResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.CategoryResponse"
-                    }
-                },
-                "next": {
-                    "type": "string"
-                },
-                "prev": {
-                    "type": "string"
-                }
-            }
-        },
         "models.ResponseList-models_Evaluation": {
             "type": "object",
             "properties": {
@@ -2450,6 +2487,14 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/models.CampaignExtended"
+                }
+            }
+        },
+        "models.ResponseSingle-models_CategoryResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/models.CategoryResponse"
                 }
             }
         },

@@ -1,7 +1,6 @@
 package models
 
 import (
-	"errors"
 	"nokib/campwiz/consts"
 	"time"
 
@@ -90,13 +89,6 @@ type CampaignUpdateStatusRequest struct {
 	IsArchived bool `json:"isArchived"`
 }
 
-func (t *CampaignType) Scan(value interface{}) error {
-	if str, ok := value.(string); ok {
-		*t = CampaignType(str)
-		return nil
-	}
-	return errors.New("failed to scan CampaignType")
-}
 func (t CampaignType) Value() (any, error) {
 	return t.String(), nil
 }

@@ -1,7 +1,9 @@
 package repository
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -16,6 +18,7 @@ import (
 )
 
 const COMMONS_API = "http://commons.wikimedia.org/w/api.php"
+const CAMPWIZ_USER_AGENT = "Campwiz/1.0 (https://campwiz.nokib.com; +https://github.com/nokibsarkar/campwiz)"
 
 var COMMONS_AUDIO_THUMB = "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png"
 var COMMONS_THUMB_WIDTH uint64 = 400
@@ -36,9 +39,44 @@ func (c *CommonsRepository) Get(values url.Values) (_ io.ReadCloser, err error) 
 		return nil, err
 	}
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.accessToken))
+	// Set the user agent to commons
+	req.Header.Set("User-Agent", CAMPWIZ_USER_AGENT)
 	resp, err := c.cl.Do(req)
 	if err != nil {
 		return nil, err
+	}
+	return resp.Body, nil
+}
+func (c *CommonsRepository) POST(values url.Values, body map[string]any) (_ io.ReadCloser, err error) {
+	// Post values to commons
+	url := fmt.Sprintf("%s?%s", c.endpoint, values.Encode())
+	body["format"] = "json" // Ensure format is set to json
+	if body["action"] == nil {
+		body["action"] = "query" // Default action if not set
+	}
+	// Convert body to JSON
+	buf := bytes.NewBuffer(nil)
+	enc := json.NewEncoder(buf)
+	err = enc.Encode(body)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequest("POST", url, buf)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.accessToken))
+	req.Header.Set("Content-Type", "application/json")
+	// Set the user agent to commons
+	req.Header.Set("User-Agent", CAMPWIZ_USER_AGENT)
+	resp, err := c.cl.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		return nil, fmt.Errorf("failed to post to commons: %s, body: %s", resp.Status, string(bodyBytes))
 	}
 	return resp.Body, nil
 }
@@ -401,4 +439,43 @@ func NewCommonsRepository() *CommonsRepository {
 		accessToken: consts.Config.Auth.AccessToken,
 		cl:          &http.Client{},
 	}
+}
+
+func (c *CommonsRepository) GetLatestPageRevisionByPageID(ctx context.Context, pageID uint64) (*models.Revision, error) {
+	qs := url.Values{
+		"action":   {"query"},
+		"format":   {"json"},
+		"prop":     {"revisions"},
+		"pageids":  {fmt.Sprintf("%d", pageID)},
+		"rvprop":   {"ids|timestamp|user|comment|content"},
+		"rvslots":  {"main"},
+		"rvlimit":  {"1"},
+		"continue": {""},
+	}
+	resp, err := c.Get(qs)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Close()
+	decoder := json.NewDecoder(resp)
+	var response PageQueryResponse[models.RevisionPage]
+	if err := decoder.Decode(&response); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+	if response.Error != nil {
+		return nil, fmt.Errorf("error from commons API: %s - %s", response.Error.Code, response.Error.Info)
+	}
+	if len(response.Query.Pages) == 0 {
+		return nil, fmt.Errorf("no pages found for page ID %d", pageID)
+	}
+	page, exists := response.Query.Pages[fmt.Sprintf("%d", pageID)]
+	if !exists {
+		return nil, fmt.Errorf("no page found for page ID %d", pageID)
+	}
+	if len(page.Revisions) == 0 {
+		return nil, fmt.Errorf("no revisions found for page ID %d", pageID)
+	}
+	revision := &page.Revisions[0]
+	revision.Page = page.Page
+	return revision, nil
 }

@@ -15,10 +15,10 @@ const META_OAUTH_ACCESS_TOKEN_URL = "https://meta.wikimedia.org/w/rest.php/oauth
 const META_PROFILE_URL = "https://meta.wikimedia.org/w/rest.php/oauth2/resource/profile"
 const DATETIMEFORMAT = "20060102150405"
 
-var OAuth2Config = oauth2.Config{
-	ClientID:     consts.Config.Auth.OAuth2.ClientID,
-	ClientSecret: consts.Config.Auth.OAuth2.ClientSecret,
-	RedirectURL:  consts.Config.Server.BaseURL + consts.Config.Auth.OAuth2.RedirectPath,
+var OAuth2IdentityConfig = &oauth2.Config{
+	ClientID:     consts.Config.Auth.OAuth2IdentityVerification.ClientID,
+	ClientSecret: consts.Config.Auth.OAuth2IdentityVerification.ClientSecret,
+	RedirectURL:  consts.Config.Server.BaseURL + consts.Config.Auth.OAuth2IdentityVerification.RedirectPath,
 	Endpoint: oauth2.Endpoint{
 		AuthURL:  META_OAUTH_AUTHORIZE_URL,
 		TokenURL: META_OAUTH_ACCESS_TOKEN_URL,
@@ -26,25 +26,27 @@ var OAuth2Config = oauth2.Config{
 }
 
 type OAuth2Service struct {
-	Config *consts.OAuth2Configuration
+	Config *oauth2.Config
+	ctx    context.Context
 }
 
-func NewOAuth2Service() *OAuth2Service {
+func NewOAuth2Service(ctx context.Context, config *oauth2.Config) *OAuth2Service {
 	return &OAuth2Service{
-		Config: &consts.Config.Auth.OAuth2,
+		Config: config,
+		ctx:    ctx,
 	}
 }
 func (o *OAuth2Service) Init(callback string) string {
 	// state := url.QueryEscape(callback)
-	return OAuth2Config.AuthCodeURL(callback)
+	return o.Config.AuthCodeURL(callback)
 }
 func (o *OAuth2Service) GetToken(code string, redirectURL string) (*oauth2.Token, error) {
-	previousRedirectURL := OAuth2Config.RedirectURL
+	previousRedirectURL := o.Config.RedirectURL
 	defer func() {
-		OAuth2Config.RedirectURL = previousRedirectURL
+		o.Config.RedirectURL = previousRedirectURL
 	}()
-	OAuth2Config.RedirectURL = redirectURL
-	token, err := OAuth2Config.Exchange(context.Background(), code)
+	o.Config.RedirectURL = redirectURL
+	token, err := o.Config.Exchange(o.ctx, code)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +80,7 @@ type WikipediaProfileFull struct {
 }
 
 func (o *OAuth2Service) GetUser(token *oauth2.Token) (*WikipediaProfileFull, error) {
-	client := OAuth2Config.Client(context.Background(), token)
+	client := o.Config.Client(context.Background(), token)
 	resp, err := client.Get(META_PROFILE_URL)
 	if err != nil {
 		return nil, err

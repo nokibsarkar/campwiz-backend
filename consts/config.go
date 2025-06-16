@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/spf13/viper"
+	"golang.org/x/oauth2"
 )
 
 var Version string
@@ -64,14 +65,15 @@ type OAuth2Configuration struct {
 	APIURL       string `mapstructure:"APIURL"`
 }
 type AuthenticationConfiguration struct {
-	Secret            string              `mapstructure:"Secret"`
-	Expiry            int                 `mapstructure:"Expiry"`
-	Refresh           int                 `mapstructure:"Refresh"`
-	Issuer            string              `mapstructure:"Issuer"`
-	OAuth2            OAuth2Configuration `mapstructure:"OAuth2"`
-	AccessToken       string              `mapstructure:"AccessToken"`
-	RSAPrivateKeyPath string              `mapstructure:"RSAPrivateKeyPath"`
-	RSAPublicKeyPath  string              `mapstructure:"RSAPublicKeyPath"`
+	Secret                     string               `mapstructure:"Secret"`
+	Expiry                     int                  `mapstructure:"Expiry"`
+	Refresh                    int                  `mapstructure:"Refresh"`
+	Issuer                     string               `mapstructure:"Issuer"`
+	OAuth2IdentityVerification OAuth2Configuration  `mapstructure:"OAuth2"`
+	Oauth2ReadWrite            *OAuth2Configuration `mapstructure:"OAuth2ReadWrite"`
+	AccessToken                string               `mapstructure:"AccessToken"`
+	RSAPrivateKeyPath          string               `mapstructure:"RSAPrivateKeyPath"`
+	RSAPublicKeyPath           string               `mapstructure:"RSAPublicKeyPath"`
 }
 type TaskManagerConfiguration struct {
 	Host string `mapstructure:"Host"`
@@ -115,4 +117,20 @@ func init() {
 	LoadConfig()
 	// Set the release version
 	Release = Version
+}
+
+func (authConfig *AuthenticationConfiguration) GetOAuth2ReadWriteOauthConfig() *oauth2.Config {
+	if authConfig.Oauth2ReadWrite == nil {
+		return nil
+	}
+	return &oauth2.Config{
+		ClientID:     authConfig.Oauth2ReadWrite.ClientID,
+		ClientSecret: authConfig.Oauth2ReadWrite.ClientSecret,
+		RedirectURL:  authConfig.Oauth2ReadWrite.RedirectPath,
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  authConfig.Oauth2ReadWrite.AuthURL,
+			TokenURL: authConfig.Oauth2ReadWrite.TokenURL,
+		},
+		// APIURL: authConfig.Oauth2ReadWrite.APIURL,
+	}
 }

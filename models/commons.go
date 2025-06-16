@@ -116,8 +116,11 @@ const (
 )
 
 type PageCategory struct {
-	Name    string
-	SortKey string // Sort key is optional, can be empty
+	// The name of the category, Without the namespace
+	Name    string `json:"name"` // The name of the category, without namespace
+	SortKey string `json:"-"`    // Sort key is optional, can be empty
+	// Whether the category is fixed and cannot be removed
+	Fixed bool `json:"fixed"` // Whether the category is fixed and cannot be removed
 }
 type Token struct {
 	Start   int

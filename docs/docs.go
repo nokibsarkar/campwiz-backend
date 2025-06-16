@@ -296,7 +296,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Submit categories for a submission",
+                "description": "Submit categories for a submission. The Tool would edit on commons usng the token provided in the session. But the token would never be stored in the database.",
                 "produces": [
                     "application/json"
                 ],
@@ -313,15 +313,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "The categories to submit",
-                        "name": "categories",
+                        "description": "The categories to be set and the summary",
+                        "name": "Request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/routes.ConfirmSubmitCategory"
                         }
                     }
                 ],
@@ -1719,6 +1716,47 @@ const docTemplate = `{
                 }
             }
         },
+        "/user/callback/write": {
+            "get": {
+                "description": "Handle the OAuth2 callback",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Handle the OAuth2 callback for the ReadWrite scope. This endpoint would fetch an access token and set it as a cookie, it would not, by any means, store it on the server. Refresh Token would also be set as a cookie.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The code from the OAuth2 provider",
+                        "name": "code",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "The state",
+                        "name": "state",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "The base URL",
+                        "name": "baseURL",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResponseSingle-routes_RedirectResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/user/login": {
             "get": {
                 "description": "Redirect to the OAuth2 login",
@@ -3069,6 +3107,26 @@ const docTemplate = `{
                 },
                 "size": {
                     "type": "integer"
+                }
+            }
+        },
+        "routes.ConfirmSubmitCategory": {
+            "type": "object",
+            "required": [
+                "categories",
+                "summary"
+            ],
+            "properties": {
+                "categories": {
+                    "description": "The Categories you want to set for the submission.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "summary": {
+                    "description": "The Summary to be added when your edit is submitted.\nThis is a required field.",
+                    "type": "string"
                 }
             }
         },

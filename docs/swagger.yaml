@@ -961,6 +961,22 @@ definitions:
       size:
         type: integer
     type: object
+  routes.ConfirmSubmitCategory:
+    properties:
+      categories:
+        description: The Categories you want to set for the submission.
+        items:
+          type: string
+        type: array
+      summary:
+        description: |-
+          The Summary to be added when your edit is submitted.
+          This is a required field.
+        type: string
+    required:
+    - categories
+    - summary
+    type: object
   routes.RedirectResponse:
     properties:
       redirect:
@@ -1408,21 +1424,21 @@ paths:
       - Campaign
   /category/{submissionId}:
     post:
-      description: Submit categories for a submission
+      description: Submit categories for a submission. The Tool would edit on commons
+        usng the token provided in the session. But the token would never be stored
+        in the database.
       parameters:
       - description: The submission ID
         in: path
         name: submissionId
         required: true
         type: string
-      - description: The categories to submit
+      - description: The categories to be set and the summary
         in: body
-        name: categories
+        name: Request
         required: true
         schema:
-          items:
-            type: string
-          type: array
+          $ref: '#/definitions/routes.ConfirmSubmitCategory'
       produces:
       - application/json
       responses:
@@ -2320,6 +2336,35 @@ paths:
           schema:
             $ref: '#/definitions/models.ResponseSingle-routes_RedirectResponse'
       summary: Handle the OAuth2 callback
+      tags:
+      - User
+  /user/callback/write:
+    get:
+      description: Handle the OAuth2 callback
+      parameters:
+      - description: The code from the OAuth2 provider
+        in: query
+        name: code
+        required: true
+        type: string
+      - description: The state
+        in: query
+        name: state
+        type: string
+      - description: The base URL
+        in: query
+        name: baseURL
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ResponseSingle-routes_RedirectResponse'
+      summary: Handle the OAuth2 callback for the ReadWrite scope. This endpoint would
+        fetch an access token and set it as a cookie, it would not, by any means,
+        store it on the server. Refresh Token would also be set as a cookie.
       tags:
       - User
   /user/login:

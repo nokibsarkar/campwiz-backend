@@ -24,6 +24,8 @@ type AuthenticationMiddleWare struct {
 }
 
 const AuthenticationCookieName = "c-auth"
+const ReadWriteAuthenticationCookieName = "c-auth-rw"   // This is used for read-write access
+const ReadWriteRefreshCookieName = "X-Refresh-Token-RW" // This is used for read-write access to refresh token
 const RefreshCookieName = "X-Refresh-Token"
 const SESSION_KEY = "session"
 

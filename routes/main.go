@@ -69,7 +69,8 @@ func NewSubmissionRoutes(parent *gin.RouterGroup) {
 func NewUserAuthenticationRoutes(parent *gin.RouterGroup) {
 	user := parent.Group("/")
 	user.GET("/user/login", RedirectForLogin)
-	user.GET("/user/callback", HandleOAuth2Callback)
+	user.GET("/user/callback", HandleOAuth2IdentityVerificationCallback)
+	user.GET("/user/callback/write", HandleOAuth2ReadWriteCallback)
 }
 func NewUserRoutes(parent *gin.RouterGroup) {
 	r := parent.Group("/user")

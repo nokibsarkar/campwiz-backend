@@ -12,14 +12,22 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type ConfirmSubmitCategory struct {
+	// The Categories you want to set for the submission.
+	Categories []string `json:"categories" binding:"required"`
+	// The Summary to be added when your edit is submitted.
+	// This is a required field.
+	Summary string `json:"summary" binding:"required"`
+}
+
 // SubmitCategories godoc
 // @Summary Submit categories for a submission
-// @Description Submit categories for a submission
+// @Description Submit categories for a submission. The Tool would edit on commons usng the token provided in the session. But the token would never be stored in the database.
 // @Produce json
 // @Success 200 {object} models.ResponseSingle[models.CategoryResponse]
 // @Router /category/{submissionId} [post]
 // @Param submissionId path string true "The submission ID"
-// @Param categories body []string true "The categories to submit"
+// @Param Request body ConfirmSubmitCategory true "The categories to be set and the summary"
 // @Tags Categories
 // @Security ApiKeyAuth
 // @Error 400 {object} models.ResponseError
@@ -35,15 +43,14 @@ func SubmitCategories(ctx *gin.Context, sess *cache.Session) {
 		ctx.JSON(400, models.ResponseError{Detail: "Submission ID is required"})
 		return
 	}
-
-	var categories []string
-	if err := ctx.ShouldBindJSON(&categories); err != nil {
+	body := &ConfirmSubmitCategory{}
+	if err := ctx.ShouldBindJSON(body); err != nil {
 		ctx.JSON(400, models.ResponseError{Detail: "Invalid request: " + err.Error()})
 		return
 	}
 
 	categoryService := services.NewCategoryService()
-	resp, err := categoryService.SubmitCategories(ctx, types.SubmissionIDType(submissionID), categories, sess.UserID)
+	resp, err := categoryService.SubmitCategories(ctx, types.SubmissionIDType(submissionID), body.Categories, body.Summary, sess.UserID)
 	if err != nil {
 		ctx.JSON(400, models.ResponseError{Detail: err.Error()})
 		return

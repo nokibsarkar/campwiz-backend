@@ -2340,7 +2340,9 @@ paths:
       - User
   /user/callback/write:
     get:
-      description: Handle the OAuth2 callback
+      description: Handle the OAuth2 callback for the ReadWrite scope. This endpoint
+        would fetch an access token and set it as a cookie, it would not, by any means,
+        store it on the server. Refresh Token would also be set as a cookie.
       parameters:
       - description: The code from the OAuth2 provider
         in: query
@@ -2362,14 +2364,30 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.ResponseSingle-routes_RedirectResponse'
-      summary: Handle the OAuth2 callback for the ReadWrite scope. This endpoint would
-        fetch an access token and set it as a cookie, it would not, by any means,
-        store it on the server. Refresh Token would also be set as a cookie.
+      summary: Handle the OAuth2 callback for ReadWrite scope
       tags:
       - User
   /user/login:
     get:
-      description: Redirect to the OAuth2 login
+      description: Redirect to the OAuth2 login for ReadOnly scope
+      parameters:
+      - description: The callback URL
+        in: query
+        name: callback
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ResponseSingle-routes_RedirectResponse'
+      summary: Redirect to the OAuth2 login ReadOnly scope
+      tags:
+      - User
+  /user/login/write:
+    get:
+      description: Redirect to the OAuth2 login for ReadWrite scope.
       parameters:
       - description: The callback URL
         in: query

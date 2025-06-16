@@ -1718,14 +1718,14 @@ const docTemplate = `{
         },
         "/user/callback/write": {
             "get": {
-                "description": "Handle the OAuth2 callback",
+                "description": "Handle the OAuth2 callback for the ReadWrite scope. This endpoint would fetch an access token and set it as a cookie, it would not, by any means, store it on the server. Refresh Token would also be set as a cookie.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "User"
                 ],
-                "summary": "Handle the OAuth2 callback for the ReadWrite scope. This endpoint would fetch an access token and set it as a cookie, it would not, by any means, store it on the server. Refresh Token would also be set as a cookie.",
+                "summary": "Handle the OAuth2 callback for ReadWrite scope",
                 "parameters": [
                     {
                         "type": "string",
@@ -1759,7 +1759,35 @@ const docTemplate = `{
         },
         "/user/login": {
             "get": {
-                "description": "Redirect to the OAuth2 login",
+                "description": "Redirect to the OAuth2 login for ReadOnly scope",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Redirect to the OAuth2 login ReadOnly scope",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The callback URL",
+                        "name": "callback",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResponseSingle-routes_RedirectResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/login/write": {
+            "get": {
+                "description": "Redirect to the OAuth2 login for ReadWrite scope.",
                 "produces": [
                     "application/json"
                 ],

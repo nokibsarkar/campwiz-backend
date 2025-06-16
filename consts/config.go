@@ -70,7 +70,7 @@ type AuthenticationConfiguration struct {
 	Refresh                    int                  `mapstructure:"Refresh"`
 	Issuer                     string               `mapstructure:"Issuer"`
 	OAuth2IdentityVerification OAuth2Configuration  `mapstructure:"OAuth2"`
-	Oauth2ReadWrite            *OAuth2Configuration `mapstructure:"OAuth2ReadWrite"`
+	Oauth2WriteAccess          *OAuth2Configuration `mapstructure:"OAuth2WriteAccess"`
 	AccessToken                string               `mapstructure:"AccessToken"`
 	RSAPrivateKeyPath          string               `mapstructure:"RSAPrivateKeyPath"`
 	RSAPublicKeyPath           string               `mapstructure:"RSAPublicKeyPath"`
@@ -112,24 +112,42 @@ func LoadConfig() {
 	}
 
 }
+
+const META_OAUTH_AUTHORIZE_URL = "https://meta.wikimedia.org/w/rest.php/oauth2/authorize"
+const META_OAUTH_ACCESS_TOKEN_URL = "https://meta.wikimedia.org/w/rest.php/oauth2/access_token"
+
 func init() {
 	// Load the config file
 	LoadConfig()
 	// Set the release version
 	Release = Version
 }
-
-func (authConfig *AuthenticationConfiguration) GetOAuth2ReadWriteOauthConfig() *oauth2.Config {
-	if authConfig.Oauth2ReadWrite == nil {
+func (authConfig *AuthenticationConfiguration) GetOAuth2IdentityVerificationOauthConfig() *oauth2.Config {
+	if authConfig.OAuth2IdentityVerification.ClientID == "" {
 		return nil
 	}
 	return &oauth2.Config{
-		ClientID:     authConfig.Oauth2ReadWrite.ClientID,
-		ClientSecret: authConfig.Oauth2ReadWrite.ClientSecret,
-		RedirectURL:  authConfig.Oauth2ReadWrite.RedirectPath,
+		ClientID:     authConfig.OAuth2IdentityVerification.ClientID,
+		ClientSecret: authConfig.OAuth2IdentityVerification.ClientSecret,
+		RedirectURL:  Config.Server.BaseURL + authConfig.OAuth2IdentityVerification.RedirectPath,
 		Endpoint: oauth2.Endpoint{
-			AuthURL:  authConfig.Oauth2ReadWrite.AuthURL,
-			TokenURL: authConfig.Oauth2ReadWrite.TokenURL,
+			AuthURL:  META_OAUTH_AUTHORIZE_URL,
+			TokenURL: META_OAUTH_ACCESS_TOKEN_URL,
+		},
+		// APIURL: authConfig.OAuth2IdentityVerification.APIURL,
+	}
+}
+func (authConfig *AuthenticationConfiguration) GetOAuth2ReadWriteOauthConfig() *oauth2.Config {
+	if authConfig.Oauth2WriteAccess == nil {
+		return nil
+	}
+	return &oauth2.Config{
+		ClientID:     authConfig.Oauth2WriteAccess.ClientID,
+		ClientSecret: authConfig.Oauth2WriteAccess.ClientSecret,
+		RedirectURL:  Config.Server.BaseURL + authConfig.Oauth2WriteAccess.RedirectPath,
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  META_OAUTH_AUTHORIZE_URL,
+			TokenURL: META_OAUTH_ACCESS_TOKEN_URL,
 		},
 		// APIURL: authConfig.Oauth2ReadWrite.APIURL,
 	}

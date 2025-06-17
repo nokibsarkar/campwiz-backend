@@ -137,6 +137,10 @@ type PageCategory struct {
 	// Whether the category is fixed and cannot be removed
 	Fixed bool `json:"fixed"` // Whether the category is fixed and cannot be removed
 }
+type SubmissionWithCategoryList struct {
+	Submission
+	Categories []PageCategory `json:"categories"` // List of categories associated with the submission
+}
 type BaseEditResponse struct {
 	WikiMediaBaseResponse
 	Edit EditResponse `json:"edit"`

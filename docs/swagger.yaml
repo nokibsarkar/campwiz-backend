@@ -414,6 +414,15 @@ definitions:
     - MediaTypeAudio
     - MediaTypeVideo
     - MediaTypePDF
+  models.PageCategory:
+    properties:
+      fixed:
+        description: Whether the category is fixed and cannot be removed
+        type: boolean
+      name:
+        description: The name of the category, Without the namespace
+        type: string
+    type: object
   models.Project:
     properties:
       createdAt:
@@ -588,6 +597,11 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/models.Submission'
+    type: object
+  models.ResponseSingle-models_SubmissionWithCategoryList:
+    properties:
+      data:
+        $ref: '#/definitions/models.SubmissionWithCategoryList'
     type: object
   models.ResponseSingle-models_Task:
     properties:
@@ -870,6 +884,86 @@ definitions:
         type: string
       type:
         $ref: '#/definitions/models.MediaType'
+    type: object
+  models.SubmissionWithCategoryList:
+    properties:
+      assignmentCount:
+        description: The number of times the submission has been assigned to the juries
+        type: integer
+      author:
+        description: The Actual Author in the Wikimedia
+        type: string
+      bitrate:
+        description: in kbps
+        type: integer
+      campaignId:
+        type: string
+      categories:
+        description: List of categories associated with the submission
+        items:
+          $ref: '#/definitions/models.PageCategory'
+        type: array
+      createdAtServer:
+        type: string
+      creditHTML:
+        type: string
+      currentRoundId:
+        type: string
+      description:
+        type: string
+      distributionTaskId:
+        type: string
+      duration:
+        description: in milliseconds
+        type: integer
+      evaluationCount:
+        description: The number of times the submission has been evaluated by the
+          juries
+        type: integer
+      height:
+        type: integer
+      importTaskId:
+        type: string
+      license:
+        type: string
+      mediatype:
+        $ref: '#/definitions/models.MediaType'
+      metadata:
+        items:
+          type: integer
+        type: array
+      pageId:
+        type: integer
+      participantId:
+        type: string
+      resolution:
+        type: integer
+      score:
+        allOf:
+        - $ref: '#/definitions/models.ScoreType'
+        description: The Average Score of the submission
+      size:
+        description: in bytes
+        type: integer
+      submissionId:
+        type: string
+      submittedAt:
+        type: string
+      submittedById:
+        description: The User who submitted the article on behalf of the participant
+        type: string
+      thumbheight:
+        type: integer
+      thumburl:
+        type: string
+      thumbwidth:
+        type: integer
+      title:
+        type: string
+      url:
+        type: string
+      width:
+        type: integer
     type: object
   models.Task:
     properties:
@@ -1423,6 +1517,26 @@ paths:
       tags:
       - Campaign
   /category/{submissionId}:
+    get:
+      description: Get categories for a submission
+      parameters:
+      - description: The submission ID
+        in: path
+        name: submissionId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ResponseSingle-models_SubmissionWithCategoryList'
+      security:
+      - ApiKeyAuth: []
+      summary: Get categories for a submission
+      tags:
+      - Categories
     post:
       description: Submit categories for a submission. The Tool would edit on commons
         usng the token provided in the session. But the token would never be stored

@@ -85,11 +85,10 @@ func (s *CategoryService) calculateCategoryDifference(conn *gorm.DB, ctx *gin.Co
 		response.Added = append(response.Added, category)
 		log.Printf("Added category: %s", category)
 	}
-	for existingCategory := range *categoryMap {
-		canonicalName := models.ToCanonicalName(existingCategory)
+	for canonicalName := range *categoryMap {
 		if _, ok := added[canonicalName]; !ok && canonicalName != "" {
-			response.Removed = append(response.Removed, existingCategory)
-			log.Printf("Removed category: %s", existingCategory)
+			response.Removed = append(response.Removed, models.FromCanonicalName(canonicalName))
+			log.Printf("Removed category: %s", canonicalName)
 		}
 	}
 	return response, submission, round, campaign, *categoryMap, nil
@@ -110,7 +109,7 @@ func (s *CategoryService) SubmitCategoriesPreview(ctx *gin.Context, submissionID
 	response.Executed = false
 	return response, nil
 }
-func (s *CategoryService) handleAuthorization(ctx *gin.Context, userID models.IDType) (cl *http.Client, err error) {
+func (s *CategoryService) handleAuthorization(ctx *gin.Context) (cl *http.Client, err error) {
 	authConfig := consts.Config.Auth.GetOAuth2ReadWriteOauthConfig()
 	oauth2Service := NewOAuth2Service(ctx, authConfig, consts.Config.Auth.Oauth2WriteAccess.RedirectPath)
 	token := &oauth2.Token{
@@ -185,7 +184,7 @@ func (s *CategoryService) handleAuthorization(ctx *gin.Context, userID models.ID
 
 }
 func (s *CategoryService) SubmitCategories(ctx *gin.Context, submissionID types.SubmissionIDType, categories []string, summary string, userID models.IDType) (*models.CategoryResponse, error) {
-	httpClient, err := s.handleAuthorization(ctx, userID)
+	httpClient, err := s.handleAuthorization(ctx)
 	if err != nil {
 		log.Println("Error handling authorization:", err)
 		return nil, err
@@ -267,4 +266,51 @@ func (s *CategoryService) SubmitCategories(ctx *gin.Context, submissionID types.
 
 	response.Executed = true
 	return response, nil
+}
+func (s *CategoryService) GetCategoriesForSubmission(ctx *gin.Context, submissionID types.SubmissionIDType) (*models.SubmissionWithCategoryList, error) {
+	_, err := s.handleAuthorization(ctx)
+	if err != nil {
+		log.Println("Error handling authorization:", err)
+		return nil, err
+	}
+	// First, it would validate all the provided data
+	// first fetch the submission, round, campaign, and user
+	conn, close, err := repository.GetDB(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer close()
+	// here all the removed categories would be calculated, these are actually categories that are present in the page
+	response, submission, _, _, catMap, err := s.calculateCategoryDifference(conn, ctx, submissionID, []string{})
+	if err != nil {
+		return nil, err
+	}
+	// fetch all the suggested categories from the campaign
+	q := query.Use(conn)
+	suggestedCategories, err := q.Category.Where(q.Category.SubmissionID.Eq(submissionID.String())).Find()
+	if err != nil {
+		log.Println("Error fetching suggested categories:", err)
+		return nil, err
+	}
+	result := &models.SubmissionWithCategoryList{
+		Submission: *submission,
+		Categories: []models.PageCategory{},
+	}
+	for _, category := range response.Removed {
+		result.Categories = append(result.Categories, models.PageCategory{
+			Name:  category,
+			Fixed: true, // Already present in the page, so it is fixed
+		})
+	}
+	for _, category := range suggestedCategories {
+		if _, ok := catMap[models.ToCanonicalName(category.CategoryName)]; ok {
+			// If the category is already present in the page, we don't add it again
+			continue
+		}
+		result.Categories = append(result.Categories, models.PageCategory{
+			Name:  category.CategoryName,
+			Fixed: false, // Not present in the page, so it is not fixed
+		})
+	}
+	return result, nil
 }

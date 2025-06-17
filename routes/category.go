@@ -129,3 +129,46 @@ func SubmitCategoriesPreview(ctx *gin.Context, sess *cache.Session) {
 
 	ctx.JSON(200, models.ResponseSingle[*models.CategoryResponse]{Data: resp})
 }
+
+// GetSubmissionWithCategoryList godoc
+// @Summary Get categories for a submission
+// @Description Get categories for a submission
+// @Produce json
+// @Success 200 {object} models.ResponseSingle[models.SubmissionWithCategoryList]
+// @Router /category/{submissionId} [get]
+// @Param submissionId path string true "The submission ID"
+// @Tags Categories
+// @Security ApiKeyAuth
+// @Error 400 {object} models.ResponseError
+// @Error 500 {object} models.ResponseError
+func GetSubmissionWithCategoryList(ctx *gin.Context, sess *cache.Session) {
+	submissionID := ctx.Param("submissionId")
+	if submissionID == "" {
+		ctx.JSON(400, models.ResponseError{Detail: "Submission ID is required"})
+		return
+	}
+	categoryService := services.NewCategoryService()
+	resp, err := categoryService.GetCategoriesForSubmission(ctx, types.SubmissionIDType(submissionID))
+	if err != nil {
+		// Handle different types of errors with appropriate HTTP status codes
+		switch err.Error() {
+		case "authenticationRequired":
+			ctx.JSON(401, models.ResponseError{
+				Detail: "Authentication required. Please login with Wikimedia OAuth2 again.",
+			})
+		case "refreshTokenInvalid":
+			ctx.JSON(401, models.ResponseError{
+				Detail: "Authentication expired. Please login again.",
+			})
+		case "noCookieFound":
+			ctx.JSON(401, models.ResponseError{
+				Detail: "No authentication found. Please login with Wikimedia OAuth2.",
+			})
+		default:
+			ctx.JSON(400, models.ResponseError{Detail: err.Error()})
+		}
+		return
+	}
+
+	ctx.JSON(200, models.ResponseSingle[*models.SubmissionWithCategoryList]{Data: resp})
+}

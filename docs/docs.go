@@ -290,6 +290,38 @@ const docTemplate = `{
             }
         },
         "/category/{submissionId}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get categories for a submission",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Get categories for a submission",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The submission ID",
+                        "name": "submissionId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResponseSingle-models_SubmissionWithCategoryList"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -2333,6 +2365,19 @@ const docTemplate = `{
                 "MediaTypePDF"
             ]
         },
+        "models.PageCategory": {
+            "type": "object",
+            "properties": {
+                "fixed": {
+                    "description": "Whether the category is fixed and cannot be removed",
+                    "type": "boolean"
+                },
+                "name": {
+                    "description": "The name of the category, Without the namespace",
+                    "type": "string"
+                }
+            }
+        },
         "models.Project": {
             "type": "object",
             "properties": {
@@ -2601,6 +2646,14 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/models.Submission"
+                }
+            }
+        },
+        "models.ResponseSingle-models_SubmissionWithCategoryList": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/models.SubmissionWithCategoryList"
                 }
             }
         },
@@ -3011,6 +3064,123 @@ const docTemplate = `{
                 },
                 "type": {
                     "$ref": "#/definitions/models.MediaType"
+                }
+            }
+        },
+        "models.SubmissionWithCategoryList": {
+            "type": "object",
+            "properties": {
+                "assignmentCount": {
+                    "description": "The number of times the submission has been assigned to the juries",
+                    "type": "integer"
+                },
+                "author": {
+                    "description": "The Actual Author in the Wikimedia",
+                    "type": "string"
+                },
+                "bitrate": {
+                    "description": "in kbps",
+                    "type": "integer"
+                },
+                "campaignId": {
+                    "type": "string"
+                },
+                "categories": {
+                    "description": "List of categories associated with the submission",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.PageCategory"
+                    }
+                },
+                "createdAtServer": {
+                    "type": "string"
+                },
+                "creditHTML": {
+                    "type": "string"
+                },
+                "currentRoundId": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "distributionTaskId": {
+                    "type": "string"
+                },
+                "duration": {
+                    "description": "in milliseconds",
+                    "type": "integer"
+                },
+                "evaluationCount": {
+                    "description": "The number of times the submission has been evaluated by the juries",
+                    "type": "integer"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "importTaskId": {
+                    "type": "string"
+                },
+                "license": {
+                    "type": "string"
+                },
+                "mediatype": {
+                    "$ref": "#/definitions/models.MediaType"
+                },
+                "metadata": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "pageId": {
+                    "type": "integer"
+                },
+                "participantId": {
+                    "type": "string"
+                },
+                "resolution": {
+                    "type": "integer"
+                },
+                "score": {
+                    "description": "The Average Score of the submission",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.ScoreType"
+                        }
+                    ]
+                },
+                "size": {
+                    "description": "in bytes",
+                    "type": "integer"
+                },
+                "submissionId": {
+                    "type": "string"
+                },
+                "submittedAt": {
+                    "type": "string"
+                },
+                "submittedById": {
+                    "description": "The User who submitted the article on behalf of the participant",
+                    "type": "string"
+                },
+                "thumbheight": {
+                    "type": "integer"
+                },
+                "thumburl": {
+                    "type": "string"
+                },
+                "thumbwidth": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                },
+                "width": {
+                    "type": "integer"
                 }
             }
         },

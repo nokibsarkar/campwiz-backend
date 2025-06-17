@@ -115,6 +115,11 @@ func LoadConfig() {
 
 const META_OAUTH_AUTHORIZE_URL = "https://meta.wikimedia.org/w/rest.php/oauth2/authorize"
 const META_OAUTH_ACCESS_TOKEN_URL = "https://meta.wikimedia.org/w/rest.php/oauth2/access_token"
+const AuthenticationCookieName = "c-auth"
+const ReadWriteAuthenticationCookieName = "c-auth-rw"   // This is used for read-write access
+const ReadWriteRefreshCookieName = "X-Refresh-Token-RW" // This is used for read-write access to refresh token
+const RefreshCookieName = "X-Refresh-Token"
+const SESSION_KEY = "session"
 
 func init() {
 	// Load the config file
@@ -149,6 +154,5 @@ func (authConfig *AuthenticationConfiguration) GetOAuth2ReadWriteOauthConfig() *
 			AuthURL:  META_OAUTH_AUTHORIZE_URL,
 			TokenURL: META_OAUTH_ACCESS_TOKEN_URL,
 		},
-		// APIURL: authConfig.Oauth2ReadWrite.APIURL,
 	}
 }

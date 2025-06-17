@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"nokib/campwiz/consts"
@@ -17,7 +19,7 @@ import (
 	"github.com/st3fan/html2text"
 )
 
-const COMMONS_API = "http://commons.wikimedia.org/w/api.php"
+const COMMONS_API = "https://commons.wikimedia.org/w/api.php"
 const CAMPWIZ_USER_AGENT = "Campwiz/1.0 (https://campwiz.nokib.com; +https://github.com/nokibsarkar/campwiz)"
 
 var COMMONS_AUDIO_THUMB = "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png"
@@ -29,8 +31,22 @@ type CommonsRepository struct {
 	endpoint    string
 	accessToken string
 	cl          *http.Client
+	csrf        string // CSRF token for editing
 }
 
+// NewCommonsRepository returns a new instance of CommonsRepository
+func NewCommonsRepository(cl *http.Client) *CommonsRepository {
+	accessToken := ""
+	if cl == nil {
+		cl = &http.Client{}
+		accessToken = consts.Config.Auth.AccessToken
+	}
+	return &CommonsRepository{
+		endpoint:    COMMONS_API,
+		accessToken: accessToken,
+		cl:          cl,
+	}
+}
 func (c *CommonsRepository) Get(values url.Values) (_ io.ReadCloser, err error) {
 	// Get values from commons
 	url := fmt.Sprintf("%s?%s", c.endpoint, values.Encode())
@@ -38,7 +54,12 @@ func (c *CommonsRepository) Get(values url.Values) (_ io.ReadCloser, err error) 
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.accessToken))
+	if c.accessToken != "" {
+		// Set the access token in the header
+		// This is used for authenticated requests
+		// If the access token is not set, it will be a public request
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.accessToken))
+	}
 	// Set the user agent to commons
 	req.Header.Set("User-Agent", CAMPWIZ_USER_AGENT)
 	resp, err := c.cl.Do(req)
@@ -47,26 +68,26 @@ func (c *CommonsRepository) Get(values url.Values) (_ io.ReadCloser, err error) 
 	}
 	return resp.Body, nil
 }
-func (c *CommonsRepository) POST(values url.Values, body map[string]any) (_ io.ReadCloser, err error) {
-	// Post values to commons
-	url := fmt.Sprintf("%s?%s", c.endpoint, values.Encode())
-	body["format"] = "json" // Ensure format is set to json
-	if body["action"] == nil {
-		body["action"] = "query" // Default action if not set
-	}
-	// Convert body to JSON
+func (c *CommonsRepository) POST(values url.Values, body map[string]string) (_ io.ReadCloser, err error) {
+
 	buf := bytes.NewBuffer(nil)
-	enc := json.NewEncoder(buf)
-	err = enc.Encode(body)
-	if err != nil {
-		return nil, err
+
+	url := fmt.Sprintf("%s?%s", c.endpoint, values.Encode())
+
+	mp := multipart.NewWriter(buf)
+	for k, v := range body {
+		mp.WriteField(k, v)
 	}
+	mp.Close()
+
 	req, err := http.NewRequest("POST", url, buf)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.accessToken))
-	req.Header.Set("Content-Type", "application/json")
+	if c.accessToken != "" {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.accessToken))
+	}
+	req.Header.Set("Content-Type", "multipart/form-data; boundary="+mp.Boundary())
 	// Set the user agent to commons
 	req.Header.Set("User-Agent", CAMPWIZ_USER_AGENT)
 	resp, err := c.cl.Do(req)
@@ -96,9 +117,6 @@ func (c *CommonsRepository) GetImagesFromCommonsCategories(category string) ([]m
 		"gcmtype":   {"file"},
 		"iiprop":    {"timestamp|user|url|size|mediatype|dimensions|canonicaltitle"},
 		"gcmlimit":  {"max"},
-		// "iiurlwidth":          {"640"},
-		// "iiurlheight":         {"480"},
-		// "iiextmetadatafilter": {"License|ImageDescription|Credit|Artist|LicenseShortName|UsageTerms|AttributionRequired|Copyrighted"},
 	}
 	images, err := paginator.Query(params)
 	if err != nil {
@@ -400,25 +418,54 @@ func (c *CommonsRepository) GetImageMetadata() {
 func (c *CommonsRepository) GetImageCategories() {
 	// Get image categories
 }
-func (c *CommonsRepository) GetCsrfToken() {
-	// Get csrf token
+
+type tokensResponse struct {
+	Tokens struct {
+		CSRF *string `json:"csrftoken"`
+	} `json:"tokens"`
 }
-func (c *CommonsRepository) GetEditToken() {
+
+func (c *CommonsRepository) GetCsrfToken() (string, error) {
+	if c.csrf != "" {
+		return c.csrf, nil
+	}
+	data := url.Values{
+		"action": {"query"},
+		"meta":   {"tokens"},
+		"format": {"json"},
+	}
+	resp, err := c.Get(data)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Close()
+	decoder := json.NewDecoder(resp)
+	var response BaseQueryResponse[tokensResponse, map[string]string]
+	if err := decoder.Decode(&response); err != nil {
+		return "", fmt.Errorf("failed to decode response: %w", err)
+	}
+	if response.Error != nil {
+		return "", fmt.Errorf("error from commons API: %s - %s", response.Error.Code, response.Error.Info)
+	}
+	if response.Query.Tokens.CSRF == nil {
+		return "", errors.New("noCSRF")
+	}
+	c.csrf = *response.Query.Tokens.CSRF
+	return *response.Query.Tokens.CSRF, nil
+}
+func (c *CommonsRepository) GetEditToken() (string, error) {
 	// Get edit token
+	return c.GetCsrfToken()
 }
 func (c *CommonsRepository) GetUserInfo() {
 	// Get user info
 }
 
 type BaseQueryResponse[QueryType any, ContinueType map[string]string] struct {
-	BatchComplete string        `json:"batchcomplete"`
+	models.WikiMediaBaseResponse
+	BatchComplete *string       `json:"batchcomplete"`
 	Next          *ContinueType `json:"continue"`
 	Query         QueryType     `json:"query"`
-	Error         *struct {
-		Code    string `json:"code"`
-		Info    string `json:"info"`
-		Details string `json:"details"`
-	} `json:"error"`
 }
 type PageQueryResponse[PageType any] = BaseQueryResponse[struct {
 	Normalized []struct {
@@ -431,15 +478,6 @@ type PageQueryResponse[PageType any] = BaseQueryResponse[struct {
 type UserListQueryResponse = BaseQueryResponse[struct {
 	Users []models.WikimediaUser `json:"users"`
 }, map[string]string]
-
-// NewCommonsRepository returns a new instance of CommonsRepository
-func NewCommonsRepository() *CommonsRepository {
-	return &CommonsRepository{
-		endpoint:    COMMONS_API,
-		accessToken: consts.Config.Auth.AccessToken,
-		cl:          &http.Client{},
-	}
-}
 
 func (c *CommonsRepository) GetLatestPageRevisionByPageID(ctx context.Context, pageID uint64) (*models.Revision, error) {
 	qs := url.Values{
@@ -478,4 +516,41 @@ func (c *CommonsRepository) GetLatestPageRevisionByPageID(ctx context.Context, p
 	revision := &page.Revisions[0]
 	revision.Page = page.Page
 	return revision, nil
+}
+func (c *CommonsRepository) EditPageContent(ctx context.Context, pageID uint64, content string, summary string) error {
+	csrfToken, err := c.GetCsrfToken()
+	if err != nil {
+		return fmt.Errorf("failed to get CSRF token: %w", err)
+	}
+	data := map[string]string{
+		"pageid":  fmt.Sprintf("%d", pageID),
+		"text":    content,
+		"summary": summary,
+		"token":   csrfToken,
+	}
+	qs := url.Values{
+		"action": {"edit"},
+		"format": {"json"},
+		"assert": {"user"}, // Ensure the user is authenticated
+		"pageid": {fmt.Sprintf("%d", pageID)},
+	}
+	resp, err := c.POST(qs, data)
+	if err != nil {
+		return err
+	}
+	defer resp.Close()
+	response := &models.BaseEditResponse{}
+	if err := json.NewDecoder(resp).Decode(response); err != nil {
+		return fmt.Errorf("decode-err-%w", err)
+	}
+	if response.Error != nil {
+		log.Printf("Error editing page %d: %s - %s", pageID, response.Error.Code, response.Error.Info)
+		return fmt.Errorf("wikimediaAPI.%s", response.Error.Code)
+	}
+	if response.Edit.NoChange != nil {
+		log.Printf("No change made to page %d: %s", pageID, response.Edit.Title)
+		return nil // No change made, but not an error
+	}
+	log.Printf("Successfully edited page %d with summary: %s", pageID, summary)
+	return nil
 }

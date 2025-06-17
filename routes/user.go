@@ -2,6 +2,7 @@ package routes
 
 import (
 	"log"
+	"nokib/campwiz/consts"
 	"nokib/campwiz/models"
 	"nokib/campwiz/repository/cache"
 	"nokib/campwiz/services"
@@ -58,8 +59,8 @@ func Logout(c *gin.Context) {
 			return
 		}
 	}
-	c.SetCookie(AuthenticationCookieName, "", -1, "/", "", false, true)
-	c.SetCookie(RefreshCookieName, "", -1, "/", "", false, true)
+	c.SetCookie(consts.AuthenticationCookieName, "", -1, "/", "", false, true)
+	c.SetCookie(consts.RefreshCookieName, "", -1, "/", "", false, true)
 	log.Println("Logged out")
 	c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
 	c.Header("Location", redirect)

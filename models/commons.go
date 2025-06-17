@@ -1,10 +1,6 @@
 package models
 
 import (
-	"fmt"
-	"log"
-	"regexp"
-	"strings"
 	"time"
 )
 
@@ -27,6 +23,13 @@ type MediaResult struct {
 	ThumbURL         *string
 	ThumbWidth       *uint64
 	ThumbHeight      *uint64
+}
+type WikiMediaBaseResponse struct {
+	Error *struct {
+		Code    string `json:"code"`
+		Info    string `json:"info"`
+		Details string `json:"details"`
+	} `json:"error"`
 }
 type GContinue struct {
 	Gcmcontinue string `json:"gcmcontinue"`
@@ -51,6 +54,18 @@ type Thumbnail struct {
 	ThumbURL    string `json:"thumburl"`
 	ThumbWidth  uint64 `json:"thumbwidth"`
 	ThumbHeight uint64 `json:"thumbheight"`
+}
+
+// {"edit":{"result":"Success","pageid":161628663,"title":"File:Cobbler repairing shoes in old workshop (Bazaar in Bitola, Macedonia, 2025).jpg","contentmodel":"wikitext","oldrevid":1044733089,"newrevid":1044733280,"newtimestamp":"2025-06-16T22:47:19Z"}}
+type EditResponse struct {
+	Result   string  `json:"result"`
+	PageID   uint64  `json:"pageid"`
+	Title    string  `json:"title"`
+	Content  string  `json:"contentmodel"`
+	OldRev   uint64  `json:"oldrevid"`
+	NewRev   uint64  `json:"newrevid"`
+	NewTS    string  `json:"newtimestamp"`
+	NoChange *string `json:"nochange,omitempty"` // Optional, may not be present if there was no change
 }
 type ImageInfo struct {
 	Info []struct {
@@ -122,174 +137,7 @@ type PageCategory struct {
 	// Whether the category is fixed and cannot be removed
 	Fixed bool `json:"fixed"` // Whether the category is fixed and cannot be removed
 }
-type Token struct {
-	Start   int
-	End     int
-	Content string
-	Entity  any // This can be used to store additional information about the token, like a category name or sort key
-	Type    TokenType
-}
-type CategoryMap map[string]Token
-
-func (c *CategoryMap) GetContent() *PageContent {
-	return (*c)[" "].Entity.(*PageContent)
-}
-func (c *CategoryMap) GetTokens() []Token {
-	return (*c)[""].Entity.([]Token)
-}
-func (c *CategoryMap) Add(category string) (*CategoryMap, bool) {
-	pageContent := c.GetContent()
-	if pageContent == nil {
-		return c, false
-	}
-	if category == "" {
-		return c, false
-	}
-	if _, ok := (*c)[category]; ok {
-		return c, false
-	}
-	// add the category at the end of the content
-	tokens := c.GetTokens()
-	formattedCategory := strings.TrimSpace(category)
-	formattedCategory = fmt.Sprintf("[[Category:%s]]", formattedCategory)
-	(*pageContent) = PageContent(
-		string(*pageContent) + "\n" + formattedCategory,
-	)
-	newToken := Token{
-		Start:   len(string(*pageContent)) - len(formattedCategory),
-		End:     len(string(*pageContent)),
-		Content: formattedCategory,
-		Type:    TokenTypeCategory,
-		Entity: PageCategory{
-			Name: category,
-		},
-	}
-	(*c)[category] = newToken
-	// update the token list
-	tokens = append(tokens, newToken)
-	(*c)[""] = Token{
-		Start:   0,
-		End:     len(string(*pageContent)),
-		Content: "TokenListRef$",
-		Type:    TokenTypeOther,
-		Entity:  tokens,
-	}
-	(*c)[" "] = Token{
-		Start:   0,
-		End:     0,
-		Content: "PageContentRef$",
-		Type:    TokenTypeOther,
-		Entity:  pageContent,
-	}
-	log.Printf("Added category: %s, new content length: %d", category, len(string(*pageContent)))
-	log.Printf("New token: %+v", newToken)
-	log.Printf("New category map: %+v", *c)
-	return c, true
-}
-func (con *PageContent) GetCategoryMappingFromTokenList(tokens []Token) *CategoryMap {
-	if con == nil || tokens == nil {
-		return nil
-	}
-	categoryMap := make(CategoryMap)
-	categoryMap[" "] = Token{
-		Start:   0,
-		End:     0,
-		Content: "PageContentRef$",
-		Type:    TokenTypeOther,
-		Entity:  con,
-	}
-	categoryMap[""] = Token{
-		Start:   0,
-		End:     0,
-		Content: "TokenListRef$",
-		Type:    TokenTypeOther,
-		Entity:  tokens,
-	}
-	for _, token := range tokens {
-		if token.Type == TokenTypeCategory {
-			if category, ok := token.Entity.(PageCategory); ok {
-				categoryMap[category.Name] = token
-			}
-		}
-	}
-	return &categoryMap
-}
-
-func (con *PageContent) SplitIntoTokens() []Token {
-	if con == nil {
-		return nil
-	}
-	content := string(*con)
-	tokens := make([]Token, 0)
-	patt := regexp.MustCompile(`\[\[ *?[Cc]ategory *?:(?P<categoryName>[^\]\|]+?)(?:\|(?P<sortKey>[^\]]+?))?\]\]`)
-	if patt == nil {
-		log.Println("Failed to compile regex pattern for categories")
-		return nil
-	}
-	matches := patt.FindAllStringSubmatchIndex(content, -1)
-	if matches == nil {
-		return nil
-	}
-	lastEnd := 0
-	for _, match := range matches {
-		if len(match) < 4 {
-			continue
-		}
-		startPosition := match[0]
-		endPosition := match[1]
-		if startPosition > lastEnd {
-			// add a text token for the content before the category
-			tokens = append(tokens, Token{
-				Start:   lastEnd,
-				End:     startPosition,
-				Content: content[lastEnd:startPosition],
-				Type:    TokenTypeOther,
-			})
-		}
-		name := content[match[2]:match[3]]
-		sortKey := ""
-		if len(match) > 4 && match[4] != -1 {
-			sortKey = content[match[4]:match[5]]
-		}
-		tokens = append(tokens, Token{
-			Start:   startPosition,
-			End:     endPosition,
-			Content: content[startPosition:endPosition],
-			Type:    TokenTypeCategory,
-			Entity: PageCategory{
-				Name:    strings.TrimSpace(name),
-				SortKey: strings.TrimSpace(sortKey),
-			},
-		})
-		lastEnd = endPosition
-	}
-	return tokens
-}
-func (con *PageContent) GetCategoriesWithoutNamepace() []string {
-	if con == nil {
-		return nil
-
-	}
-	patt := regexp.MustCompile(CATEGORY_PATTERN_WITH_SORTKEY)
-	if patt == nil {
-		log.Println("Failed to compile regex pattern for categories")
-		return nil
-	}
-	content := string(*con)
-	matches := patt.FindAllStringSubmatch(content, -1)
-	if matches == nil {
-		return nil
-	}
-	categories := make([]string, 0, len(matches))
-	for _, match := range matches {
-		if len(match) < 2 {
-			continue
-		}
-		category := strings.TrimSpace(match[1])
-		if category == "" {
-			continue
-		}
-		categories = append(categories, category)
-	}
-	return categories
+type BaseEditResponse struct {
+	WikiMediaBaseResponse
+	Edit EditResponse `json:"edit"`
 }

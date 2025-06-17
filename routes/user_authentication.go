@@ -73,8 +73,8 @@ func HandleOAuth2IdentityVerificationCallback(c *gin.Context) {
 		})
 		return
 	}
-	c.SetCookie(AuthenticationCookieName, newAccessToken, consts.Config.Auth.Expiry*60, "/", "", false, false)
-	c.SetCookie(RefreshCookieName, newRefreshToken, consts.Config.Auth.Refresh*60, "/", "", false, false)
+	c.SetCookie(consts.AuthenticationCookieName, newAccessToken, consts.Config.Auth.Expiry*60, "/", "", false, false)
+	c.SetCookie(consts.RefreshCookieName, newRefreshToken, consts.Config.Auth.Refresh*60, "/", "", false, false)
 	c.JSON(200, models.ResponseSingle[RedirectResponse]{Data: RedirectResponse{Redirect: state}})
 	tx.Commit()
 }
@@ -99,7 +99,7 @@ func WithSessionOptional(callback func(*gin.Context, *cache.Session)) gin.Handle
 	}
 }
 func GetSession(c *gin.Context) *cache.Session {
-	sess, ok := c.Get(SESSION_KEY)
+	sess, ok := c.Get(consts.SESSION_KEY)
 	if !ok {
 		return nil
 	}
@@ -195,8 +195,8 @@ func HandleOAuth2ReadWriteCallback(c *gin.Context) {
 	}
 	// we can assume that the user is created
 	expiresIn := int(newAccessToken.Expiry.UTC().Unix() - time.Now().UTC().Unix())
-	c.SetCookie(ReadWriteAuthenticationCookieName, newAccessToken.AccessToken, expiresIn, "/", "", false, false)
+	c.SetCookie(consts.ReadWriteAuthenticationCookieName, newAccessToken.AccessToken, expiresIn, "/", "", false, false)
 	// we can also set the refresh token, expires in 7 days
-	c.SetCookie(ReadWriteRefreshCookieName, newAccessToken.RefreshToken, expiresIn+7*24*3600, "/", "", false, false)
+	c.SetCookie(consts.ReadWriteRefreshCookieName, newAccessToken.RefreshToken, expiresIn+7*24*3600, "/", "", false, false)
 	c.JSON(200, models.ResponseSingle[RedirectResponse]{Data: RedirectResponse{Redirect: state}})
 }

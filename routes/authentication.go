@@ -23,12 +23,6 @@ type AuthenticationMiddleWare struct {
 	Config *consts.AuthenticationConfiguration
 }
 
-const AuthenticationCookieName = "c-auth"
-const ReadWriteAuthenticationCookieName = "c-auth-rw"   // This is used for read-write access
-const ReadWriteRefreshCookieName = "X-Refresh-Token-RW" // This is used for read-write access to refresh token
-const RefreshCookieName = "X-Refresh-Token"
-const SESSION_KEY = "session"
-
 func NewAuthenticationService() *AuthenticationMiddleWare {
 	return &AuthenticationMiddleWare{
 		Config: &consts.Config.Auth,
@@ -37,7 +31,7 @@ func NewAuthenticationService() *AuthenticationMiddleWare {
 
 // This function extracts the access token from the cookies or headers
 func (a *AuthenticationMiddleWare) extractAccessToken(c *gin.Context) (string, error) {
-	token, _ := c.Cookie(AuthenticationCookieName)
+	token, _ := c.Cookie(consts.AuthenticationCookieName)
 	if token != "" {
 		return token, nil
 	}
@@ -109,9 +103,9 @@ func (a *AuthenticationMiddleWare) Authenticate(c *gin.Context) {
 			} else {
 				if setCookie {
 					log.Println("Setting Authentication Cookie")
-					c.SetCookie(AuthenticationCookieName, accessToken, consts.Config.Auth.Expiry, "/", "", false, true)
+					c.SetCookie(consts.AuthenticationCookieName, accessToken, consts.Config.Auth.Expiry, "/", "", false, true)
 				}
-				c.Set(SESSION_KEY, session)
+				c.Set(consts.SESSION_KEY, session)
 			}
 		}
 		c.Next()
@@ -140,9 +134,9 @@ func (a *AuthenticationMiddleWare) Authenticate2(c *gin.Context) {
 		} else {
 			if setCookie {
 				log.Println("Setting Authentication Cookie")
-				c.SetCookie(AuthenticationCookieName, accessToken, consts.Config.Auth.Expiry, "/", "", false, true)
+				c.SetCookie(consts.AuthenticationCookieName, accessToken, consts.Config.Auth.Expiry, "/", "", false, true)
 			}
-			c.Set(SESSION_KEY, session)
+			c.Set(consts.SESSION_KEY, session)
 		}
 		if hub := sentrygin.GetHubFromContext(c); hub != nil && session != nil {
 			hub.Scope().SetUser(sentry.User{
@@ -154,8 +148,8 @@ func (a *AuthenticationMiddleWare) Authenticate2(c *gin.Context) {
 					"sessionId":         session.ID.String(),
 					"permission":        fmt.Sprintf("%d", session.Permission),
 					"expiresAt":         session.ExpiresAt.String(),
-					"sessionCookieName": AuthenticationCookieName,
-					"refreshCookieName": RefreshCookieName,
+					"sessionCookieName": consts.AuthenticationCookieName,
+					"refreshCookieName": consts.RefreshCookieName,
 					"baseURL":           consts.Config.Server.BaseURL,
 				},
 			})

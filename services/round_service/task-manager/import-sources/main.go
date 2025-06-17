@@ -304,7 +304,7 @@ func (t *ImporterServer) importDescriptions(ctx context.Context, round *models.R
 	}
 	defer close()
 	submission_repo := repository.NewSubmissionRepository()
-	commons_repo := repository.NewCommonsRepository()
+	commons_repo := repository.NewCommonsRepository(nil)
 	lastPageID := uint64(0)
 	batchSize := 1000
 	lastCount := batchSize

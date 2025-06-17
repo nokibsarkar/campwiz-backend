@@ -52,7 +52,23 @@ func SubmitCategories(ctx *gin.Context, sess *cache.Session) {
 	categoryService := services.NewCategoryService()
 	resp, err := categoryService.SubmitCategories(ctx, types.SubmissionIDType(submissionID), body.Categories, body.Summary, sess.UserID)
 	if err != nil {
-		ctx.JSON(400, models.ResponseError{Detail: err.Error()})
+		// Handle different types of errors with appropriate HTTP status codes
+		switch err.Error() {
+		case "authenticationRequired":
+			ctx.JSON(401, models.ResponseError{
+				Detail: "Authentication required. Please login with Wikimedia OAuth2 again.",
+			})
+		case "refreshTokenInvalid":
+			ctx.JSON(401, models.ResponseError{
+				Detail: "Authentication expired. Please login again.",
+			})
+		case "noCookieFound":
+			ctx.JSON(401, models.ResponseError{
+				Detail: "No authentication found. Please login with Wikimedia OAuth2.",
+			})
+		default:
+			ctx.JSON(400, models.ResponseError{Detail: err.Error()})
+		}
 		return
 	}
 
@@ -91,7 +107,23 @@ func SubmitCategoriesPreview(ctx *gin.Context, sess *cache.Session) {
 	categoryService := services.NewCategoryService()
 	resp, err := categoryService.SubmitCategoriesPreview(ctx, types.SubmissionIDType(submissionID), categories, sess.UserID)
 	if err != nil {
-		ctx.JSON(400, models.ResponseError{Detail: err.Error()})
+		// Handle different types of errors with appropriate HTTP status codes
+		switch err.Error() {
+		case "authenticationRequired":
+			ctx.JSON(401, models.ResponseError{
+				Detail: "Authentication required. Please login with Wikimedia OAuth2 again.",
+			})
+		case "refreshTokenInvalid":
+			ctx.JSON(401, models.ResponseError{
+				Detail: "Authentication expired. Please login again.",
+			})
+		case "noCookieFound":
+			ctx.JSON(401, models.ResponseError{
+				Detail: "No authentication found. Please login with Wikimedia OAuth2.",
+			})
+		default:
+			ctx.JSON(400, models.ResponseError{Detail: err.Error()})
+		}
 		return
 	}
 

@@ -62,7 +62,6 @@ func (s *CategoryService) calculateCategoryDifference(conn *gorm.DB, ctx *gin.Co
 		return nil, nil, nil, nil, nil, errors.New("latestRevisionNotFound")
 	}
 	content := latestRevision.Slots.Main.Content
-	log.Printf("Latest revision content:\n%s", content)
 	tokens := content.SplitIntoTokens()
 	categoryMap := content.GetCategoryMappingFromTokenList(tokens)
 	added := map[string]struct{}{}

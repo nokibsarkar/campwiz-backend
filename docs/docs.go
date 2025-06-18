@@ -289,6 +289,40 @@ const docTemplate = `{
                 }
             }
         },
+        "/category/uncategorized/{campaignId}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get a list of uncategorized submissions",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Get uncategorized submissions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The campaign ID",
+                        "name": "campaignId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResponseList-models_Submission"
+                        }
+                    }
+                }
+            }
+        },
         "/category/{submissionId}": {
             "get": {
                 "security": [

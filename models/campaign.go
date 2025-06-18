@@ -7,6 +7,21 @@ import (
 	"gorm.io/gorm"
 )
 
+type CampaignType string
+
+const (
+	// Commons Campaigns are campaigns that are used in Wikimedia Commons
+	CampaignTypeCommons CampaignType = "commons"
+	// Wikipedia Campaigns are campaigns that are used in Wikipedia
+	CampaignTypeWikipedia CampaignType = "wikipedia"
+	// Wikidata Campaigns are campaigns that are used in Wikidata
+	CampaignTypeWikidata CampaignType = "wikidata"
+	// Categorization is the type of campaigns whre categories are added or removed from submissions
+	CampaignTypeCategorization CampaignType = "categorization"
+	// Reference Campaigns are campaigns that are used to add references to articles
+	CampaignTypeReference CampaignType = "reference"
+)
+
 type CampaignWithWriteableFields struct {
 	Name        string          `json:"name" binding:"required"`
 	Description string          `json:"description"`
@@ -19,6 +34,8 @@ type CampaignWithWriteableFields struct {
 	IsPublic  bool        `json:"isPublic"`
 	ProjectID IDType      `json:"projectId"`
 	Status    RoundStatus `json:"status"`
+	// The type of the campaign, it should be one of the CampaignType constants
+	CampaignType CampaignType `json:"campaignType" gorm:"type:ENUM('commons', 'wikipedia', 'wikidata', 'categorization', 'reference');default:'commons';not null;index" binding:"required"`
 }
 type Campaign struct {
 	// A unique identifier for the campaign, it should be custom defined
@@ -70,4 +87,14 @@ type SingleCampaignFilter struct {
 type CampaignUpdateStatusRequest struct {
 	// The status of the campaign
 	IsArchived bool `json:"isArchived"`
+}
+
+func (t CampaignType) Value() (any, error) {
+	return t.String(), nil
+}
+func (t CampaignType) String() string {
+	if t == "" {
+		return "commons"
+	}
+	return string(t)
 }

@@ -28,6 +28,7 @@ func NewRoutes(nonAPIParent *gin.RouterGroup) *gin.RouterGroup {
 	NewTaskRoutes(r)
 	NewEvaluationRoutes(r)
 	NewProjectRoutes(r)
+	NewCategoryRoutes(r)
 	AccessReportRoutes(r)
 	return r
 }
@@ -68,7 +69,9 @@ func NewSubmissionRoutes(parent *gin.RouterGroup) {
 func NewUserAuthenticationRoutes(parent *gin.RouterGroup) {
 	user := parent.Group("/")
 	user.GET("/user/login", RedirectForLogin)
-	user.GET("/user/callback", HandleOAuth2Callback)
+	user.GET("/user/login/write", RedirectForLoginWrite)
+	user.GET("/user/callback", HandleOAuth2IdentityVerificationCallback)
+	user.GET("/user/callback/write", HandleOAuth2ReadWriteCallback)
 }
 func NewUserRoutes(parent *gin.RouterGroup) {
 	r := parent.Group("/user")
@@ -118,5 +121,13 @@ func NewProjectRoutes(parent *gin.RouterGroup) *gin.RouterGroup {
 	r.POST("/:projectId", WithPermission(consts.PermissionUpdateProject, UpdateProject))
 	r.GET("/:projectId", WithSession(GetSingleProject))
 
+	return r
+}
+
+func NewCategoryRoutes(parent *gin.RouterGroup) *gin.RouterGroup {
+	r := parent.Group("/category")
+	r.GET("/:submissionId", WithSession(GetSubmissionWithCategoryList))
+	r.POST("/:submissionId", WithSession(SubmitCategories))
+	r.POST("/:submissionId/preview", WithSession(SubmitCategoriesPreview))
 	return r
 }

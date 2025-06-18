@@ -4,16 +4,12 @@ import (
 	"log"
 	"nokib/campwiz/consts"
 	"nokib/campwiz/models"
-	"nokib/campwiz/repository"
 	"nokib/campwiz/repository/cache"
 	"nokib/campwiz/services"
-	idgenerator "nokib/campwiz/services/idGenerator"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	"gorm.io/gorm"
 )
 
 type RedirectResponse struct {
@@ -21,7 +17,7 @@ type RedirectResponse struct {
 	Redirect string `json:"redirect"`
 }
 
-// HandleOAuth2Callback godoc
+// HandleOAuth2IdentityVerificationCallback godoc
 // @Summary Handle the OAuth2 callback
 // @Description Handle the OAuth2 callback
 // @Produce  json
@@ -32,74 +28,14 @@ type RedirectResponse struct {
 // @Param state query string false "The state"
 // @Param baseURL query string false "The base URL"
 // @Error 400 {object} models.ResponseError
-func HandleOAuth2Callback(c *gin.Context) {
-	query := c.Request.URL.Query()
-	code := query.Get("code")
-	if code == "" {
-		c.JSON(400, models.ResponseError{
-			Detail: "No code found in the query",
-		})
-		return
-	}
-	state := query.Get("state")
-	if state == "" || strings.HasPrefix(state, "/user/login") {
-		state = "/"
-	}
-	baseURL := consts.Config.Server.BaseURL
-	baseURLRaw, ok := c.GetQuery("baseURL")
-	if ok {
-		baseURL = baseURLRaw
-	}
-	oauth2_service := services.NewOAuth2Service()
-	accessToken, err := oauth2_service.GetToken(code, baseURL+consts.Config.Auth.OAuth2.RedirectPath)
+func HandleOAuth2IdentityVerificationCallback(c *gin.Context) {
+	oauth2_service := services.NewOAuth2Service(c, consts.Config.Auth.GetOAuth2IdentityVerificationOauthConfig(), consts.Config.Auth.OAuth2IdentityVerification.RedirectPath)
+	db_user, state, _, err := oauth2_service.FetchTokenFromWikimediaServer()
 	if err != nil {
 		c.JSON(400, models.ResponseError{
 			Detail: err.Error(),
 		})
 		return
-	}
-	user, err := oauth2_service.GetUser(accessToken)
-	if err != nil {
-		c.JSON(400, models.ResponseError{
-			Detail: err.Error(),
-		})
-		return
-	}
-	conn, close, err := repository.GetDB(c)
-	if err != nil {
-		c.JSON(500, models.ResponseError{
-			Detail: err.Error(),
-		})
-		return
-	}
-	defer close()
-	user_service := services.NewUserService()
-	db_user, err := user_service.GetUserByUsername(conn, user.Name)
-	if err != nil {
-		log.Println("Error: ", err)
-		if err == gorm.ErrRecordNotFound {
-			// Create the user
-			db_user = &models.User{
-				UserID:       idgenerator.GenerateID("u"),
-				RegisteredAt: user.Registered,
-				Username:     user.Name,
-				Permission:   consts.PermissionGroupUSER,
-			}
-			trx := conn.Create(db_user)
-			if trx.Error != nil {
-				c.JSON(500, models.ResponseError{
-					Detail: trx.Error.Error(),
-				})
-				return
-			}
-			log.Println("User created: ", trx.RowsAffected)
-
-		} else {
-			c.JSON(500, models.ResponseError{
-				Detail: err.Error(),
-			})
-			return
-		}
 	}
 	// we can assume that the user is created
 	// we can now create the session
@@ -137,8 +73,8 @@ func HandleOAuth2Callback(c *gin.Context) {
 		})
 		return
 	}
-	c.SetCookie(AuthenticationCookieName, newAccessToken, consts.Config.Auth.Expiry*60, "/", "", false, false)
-	c.SetCookie(RefreshCookieName, newRefreshToken, consts.Config.Auth.Refresh*60, "/", "", false, false)
+	c.SetCookie(consts.AuthenticationCookieName, newAccessToken, consts.Config.Auth.Expiry*60, "/", "", false, false)
+	c.SetCookie(consts.RefreshCookieName, newRefreshToken, consts.Config.Auth.Refresh*60, "/", "", false, false)
 	c.JSON(200, models.ResponseSingle[RedirectResponse]{Data: RedirectResponse{Redirect: state}})
 	tx.Commit()
 }
@@ -163,7 +99,7 @@ func WithSessionOptional(callback func(*gin.Context, *cache.Session)) gin.Handle
 	}
 }
 func GetSession(c *gin.Context) *cache.Session {
-	sess, ok := c.Get(SESSION_KEY)
+	sess, ok := c.Get(consts.SESSION_KEY)
 	if !ok {
 		return nil
 	}
@@ -187,8 +123,8 @@ func GetCurrentUser(c *gin.Context) *models.User {
 }
 
 // RedirectForLogin godoc
-// @Summary Redirect to the OAuth2 login
-// @Description Redirect to the OAuth2 login
+// @Summary Redirect to the OAuth2 login ReadOnly scope
+// @Description Redirect to the OAuth2 login for ReadOnly scope
 // @Produce  json
 // @Success 200 {object} models.ResponseSingle[RedirectResponse]
 // @Router /user/login [get]
@@ -196,11 +132,71 @@ func GetCurrentUser(c *gin.Context) *models.User {
 // @Param callback query string false "The callback URL"
 // @Error 400 {object} models.ResponseError
 func RedirectForLogin(c *gin.Context) {
-	oauth2_service := services.NewOAuth2Service()
+	oauth2_service := services.NewOAuth2Service(c, consts.Config.Auth.GetOAuth2IdentityVerificationOauthConfig(), consts.Config.Auth.OAuth2IdentityVerification.RedirectPath)
 	callback, ok := c.GetQuery("next")
 	if !ok {
 		callback = "/"
 	}
 	redirect_uri := oauth2_service.Init(callback)
 	c.JSON(200, models.ResponseSingle[RedirectResponse]{Data: RedirectResponse{Redirect: redirect_uri}})
+}
+
+// RedirectForLogin godoc
+// @Summary Redirect to the OAuth2 login
+// @Description Redirect to the OAuth2 login for ReadWrite scope.
+// @Produce  json
+// @Success 200 {object} models.ResponseSingle[RedirectResponse]
+// @Router /user/login/write [get]
+// @Tags User
+// @Param callback query string false "The callback URL"
+// @Error 400 {object} models.ResponseError
+func RedirectForLoginWrite(c *gin.Context) {
+	if consts.Config.Auth.Oauth2WriteAccess == nil {
+		c.JSON(400, models.ResponseError{
+			Detail: "OAuth2 ReadWrite is not configured",
+		})
+		return
+	}
+	oauth2_service := services.NewOAuth2Service(c, consts.Config.Auth.GetOAuth2ReadWriteOauthConfig(), consts.Config.Auth.Oauth2WriteAccess.RedirectPath)
+	callback, ok := c.GetQuery("next")
+	if !ok {
+		callback = "/"
+	}
+	log.Printf("Redirecting to OAuth2 Write login with callback: %s", oauth2_service.Config.Endpoint.AuthURL)
+	redirect_uri := oauth2_service.Init(callback)
+	c.JSON(200, models.ResponseSingle[RedirectResponse]{Data: RedirectResponse{Redirect: redirect_uri}})
+}
+
+// HandleOAuth2ReadWriteCallback godoc
+// @Summary Handle the OAuth2 callback for ReadWrite scope
+// @Description Handle the OAuth2 callback for the ReadWrite scope. This endpoint would fetch an access token and set it as a cookie, it would not, by any means, store it on the server. Refresh Token would also be set as a cookie.
+// @Produce  json
+// @Success 200 {object} models.ResponseSingle[RedirectResponse]
+// @Router /user/callback/write [get]
+// @Tags User
+// @Param code query string true "The code from the OAuth2 provider"
+// @Param state query string false "The state"
+// @Param baseURL query string false "The base URL"
+// @Error 400 {object} models.ResponseError
+func HandleOAuth2ReadWriteCallback(c *gin.Context) {
+	if consts.Config.Auth.Oauth2WriteAccess == nil {
+		c.JSON(400, models.ResponseError{
+			Detail: "OAuth2 ReadWrite is not configured",
+		})
+		return
+	}
+	oauth_service := services.NewOAuth2Service(c, consts.Config.Auth.GetOAuth2ReadWriteOauthConfig(), consts.Config.Auth.Oauth2WriteAccess.RedirectPath)
+	_, state, newAccessToken, err := oauth_service.FetchTokenFromWikimediaServer()
+	if err != nil {
+		c.JSON(400, models.ResponseError{
+			Detail: err.Error(),
+		})
+		return
+	}
+	// we can assume that the user is created
+	expiresIn := int(newAccessToken.Expiry.UTC().Unix() - time.Now().UTC().Unix())
+	c.SetCookie(consts.ReadWriteAuthenticationCookieName, newAccessToken.AccessToken, expiresIn, "/", "", false, false)
+	// we can also set the refresh token, expires in 7 days
+	c.SetCookie(consts.ReadWriteRefreshCookieName, newAccessToken.RefreshToken, expiresIn+7*24*3600, "/", "", false, false)
+	c.JSON(200, models.ResponseSingle[RedirectResponse]{Data: RedirectResponse{Redirect: state}})
 }

@@ -60,6 +60,6 @@ func NewCommonsCategoryListSource(categories []string) *CommonsCategoryListSourc
 		Categories:           normalizedCategories,
 		currentCategoryIndex: 0,
 		lastPageID:           0,
-		commons_repo:         repository.NewCommonsRepository(),
+		commons_repo:         repository.NewCommonsRepository(nil),
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/spf13/viper"
+	"golang.org/x/oauth2"
 )
 
 var Version string
@@ -64,14 +65,15 @@ type OAuth2Configuration struct {
 	APIURL       string `mapstructure:"APIURL"`
 }
 type AuthenticationConfiguration struct {
-	Secret            string              `mapstructure:"Secret"`
-	Expiry            int                 `mapstructure:"Expiry"`
-	Refresh           int                 `mapstructure:"Refresh"`
-	Issuer            string              `mapstructure:"Issuer"`
-	OAuth2            OAuth2Configuration `mapstructure:"OAuth2"`
-	AccessToken       string              `mapstructure:"AccessToken"`
-	RSAPrivateKeyPath string              `mapstructure:"RSAPrivateKeyPath"`
-	RSAPublicKeyPath  string              `mapstructure:"RSAPublicKeyPath"`
+	Secret                     string               `mapstructure:"Secret"`
+	Expiry                     int                  `mapstructure:"Expiry"`
+	Refresh                    int                  `mapstructure:"Refresh"`
+	Issuer                     string               `mapstructure:"Issuer"`
+	OAuth2IdentityVerification OAuth2Configuration  `mapstructure:"OAuth2"`
+	Oauth2WriteAccess          *OAuth2Configuration `mapstructure:"OAuth2WriteAccess"`
+	AccessToken                string               `mapstructure:"AccessToken"`
+	RSAPrivateKeyPath          string               `mapstructure:"RSAPrivateKeyPath"`
+	RSAPublicKeyPath           string               `mapstructure:"RSAPublicKeyPath"`
 }
 type TaskManagerConfiguration struct {
 	Host string `mapstructure:"Host"`
@@ -110,9 +112,47 @@ func LoadConfig() {
 	}
 
 }
+
+const META_OAUTH_AUTHORIZE_URL = "https://meta.wikimedia.org/w/rest.php/oauth2/authorize"
+const META_OAUTH_ACCESS_TOKEN_URL = "https://meta.wikimedia.org/w/rest.php/oauth2/access_token"
+const AuthenticationCookieName = "c-auth"
+const ReadWriteAuthenticationCookieName = "c-auth-rw"   // This is used for read-write access
+const ReadWriteRefreshCookieName = "X-Refresh-Token-RW" // This is used for read-write access to refresh token
+const RefreshCookieName = "X-Refresh-Token"
+const SESSION_KEY = "session"
+
 func init() {
 	// Load the config file
 	LoadConfig()
 	// Set the release version
 	Release = Version
+}
+func (authConfig *AuthenticationConfiguration) GetOAuth2IdentityVerificationOauthConfig() *oauth2.Config {
+	if authConfig.OAuth2IdentityVerification.ClientID == "" {
+		return nil
+	}
+	return &oauth2.Config{
+		ClientID:     authConfig.OAuth2IdentityVerification.ClientID,
+		ClientSecret: authConfig.OAuth2IdentityVerification.ClientSecret,
+		RedirectURL:  Config.Server.BaseURL + authConfig.OAuth2IdentityVerification.RedirectPath,
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  META_OAUTH_AUTHORIZE_URL,
+			TokenURL: META_OAUTH_ACCESS_TOKEN_URL,
+		},
+		// APIURL: authConfig.OAuth2IdentityVerification.APIURL,
+	}
+}
+func (authConfig *AuthenticationConfiguration) GetOAuth2ReadWriteOauthConfig() *oauth2.Config {
+	if authConfig.Oauth2WriteAccess == nil {
+		return nil
+	}
+	return &oauth2.Config{
+		ClientID:     authConfig.Oauth2WriteAccess.ClientID,
+		ClientSecret: authConfig.Oauth2WriteAccess.ClientSecret,
+		RedirectURL:  Config.Server.BaseURL + authConfig.Oauth2WriteAccess.RedirectPath,
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  META_OAUTH_AUTHORIZE_URL,
+			TokenURL: META_OAUTH_ACCESS_TOKEN_URL,
+		},
+	}
 }

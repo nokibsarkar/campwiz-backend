@@ -282,6 +282,127 @@
                 }
             }
         },
+        "/category/{submissionId}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get categories for a submission",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Get categories for a submission",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The submission ID",
+                        "name": "submissionId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResponseSingle-models_SubmissionWithCategoryList"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Submit categories for a submission. The Tool would edit on commons usng the token provided in the session. But the token would never be stored in the database.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Submit categories for a submission",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The submission ID",
+                        "name": "submissionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "The categories to be set and the summary",
+                        "name": "Request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.ConfirmSubmitCategory"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResponseSingle-models_CategoryResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/category/{submissionId}/preview": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Submit categories preview for a submission",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Submit categories preview for a submission",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The submission ID",
+                        "name": "submissionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "The categories to preview",
+                        "name": "categories",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResponseSingle-models_CategoryResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/evaluation/": {
             "get": {
                 "security": [
@@ -1620,9 +1741,78 @@
                 }
             }
         },
+        "/user/callback/write": {
+            "get": {
+                "description": "Handle the OAuth2 callback for the ReadWrite scope. This endpoint would fetch an access token and set it as a cookie, it would not, by any means, store it on the server. Refresh Token would also be set as a cookie.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Handle the OAuth2 callback for ReadWrite scope",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The code from the OAuth2 provider",
+                        "name": "code",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "The state",
+                        "name": "state",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "The base URL",
+                        "name": "baseURL",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResponseSingle-routes_RedirectResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/user/login": {
             "get": {
-                "description": "Redirect to the OAuth2 login",
+                "description": "Redirect to the OAuth2 login for ReadOnly scope",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Redirect to the OAuth2 login ReadOnly scope",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The callback URL",
+                        "name": "callback",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResponseSingle-routes_RedirectResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/login/write": {
+            "get": {
+                "description": "Redirect to the OAuth2 login for ReadWrite scope.",
                 "produces": [
                     "application/json"
                 ],
@@ -1870,6 +2060,7 @@
         "models.Campaign": {
             "type": "object",
             "required": [
+                "campaignType",
                 "endDate",
                 "language",
                 "name",
@@ -1882,6 +2073,14 @@
                 "campaignId": {
                     "description": "A unique identifier for the campaign, it should be custom defined",
                     "type": "string"
+                },
+                "campaignType": {
+                    "description": "The type of the campaign, it should be one of the CampaignType constants",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.CampaignType"
+                        }
+                    ]
                 },
                 "createdAt": {
                     "description": "The time the campaign was created, it would be set automatically",
@@ -1938,6 +2137,7 @@
         "models.CampaignExtended": {
             "type": "object",
             "required": [
+                "campaignType",
                 "endDate",
                 "language",
                 "name",
@@ -1950,6 +2150,14 @@
                 "campaignId": {
                     "description": "A unique identifier for the campaign, it should be custom defined",
                     "type": "string"
+                },
+                "campaignType": {
+                    "description": "The type of the campaign, it should be one of the CampaignType constants",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.CampaignType"
+                        }
+                    ]
                 },
                 "coordinators": {
                     "type": "array",
@@ -2009,12 +2217,54 @@
                 }
             }
         },
+        "models.CampaignType": {
+            "type": "string",
+            "enum": [
+                "commons",
+                "wikipedia",
+                "wikidata",
+                "categorization",
+                "reference"
+            ],
+            "x-enum-varnames": [
+                "CampaignTypeCommons",
+                "CampaignTypeWikipedia",
+                "CampaignTypeWikidata",
+                "CampaignTypeCategorization",
+                "CampaignTypeReference"
+            ]
+        },
         "models.CampaignUpdateStatusRequest": {
             "type": "object",
             "properties": {
                 "isArchived": {
                     "description": "The status of the campaign",
                     "type": "boolean"
+                }
+            }
+        },
+        "models.CategoryResponse": {
+            "type": "object",
+            "properties": {
+                "added": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "executed": {
+                    "description": "Whether the categories were added or removed successfully",
+                    "type": "boolean"
+                },
+                "pageTitle": {
+                    "description": "PageTitle is the title of the page where the categories were added or removed",
+                    "type": "string"
+                },
+                "removed": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -2107,6 +2357,19 @@
                 "MediaTypeVideo",
                 "MediaTypePDF"
             ]
+        },
+        "models.PageCategory": {
+            "type": "object",
+            "properties": {
+                "fixed": {
+                    "description": "Whether the category is fixed and cannot be removed",
+                    "type": "boolean"
+                },
+                "name": {
+                    "description": "The name of the category, Without the namespace",
+                    "type": "string"
+                }
+            }
         },
         "models.Project": {
             "type": "object",
@@ -2331,6 +2594,14 @@
                 }
             }
         },
+        "models.ResponseSingle-models_CategoryResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/models.CategoryResponse"
+                }
+            }
+        },
         "models.ResponseSingle-models_Evaluation": {
             "type": "object",
             "properties": {
@@ -2368,6 +2639,14 @@
             "properties": {
                 "data": {
                     "$ref": "#/definitions/models.Submission"
+                }
+            }
+        },
+        "models.ResponseSingle-models_SubmissionWithCategoryList": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/models.SubmissionWithCategoryList"
                 }
             }
         },
@@ -2781,6 +3060,123 @@
                 }
             }
         },
+        "models.SubmissionWithCategoryList": {
+            "type": "object",
+            "properties": {
+                "assignmentCount": {
+                    "description": "The number of times the submission has been assigned to the juries",
+                    "type": "integer"
+                },
+                "author": {
+                    "description": "The Actual Author in the Wikimedia",
+                    "type": "string"
+                },
+                "bitrate": {
+                    "description": "in kbps",
+                    "type": "integer"
+                },
+                "campaignId": {
+                    "type": "string"
+                },
+                "categories": {
+                    "description": "List of categories associated with the submission",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.PageCategory"
+                    }
+                },
+                "createdAtServer": {
+                    "type": "string"
+                },
+                "creditHTML": {
+                    "type": "string"
+                },
+                "currentRoundId": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "distributionTaskId": {
+                    "type": "string"
+                },
+                "duration": {
+                    "description": "in milliseconds",
+                    "type": "integer"
+                },
+                "evaluationCount": {
+                    "description": "The number of times the submission has been evaluated by the juries",
+                    "type": "integer"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "importTaskId": {
+                    "type": "string"
+                },
+                "license": {
+                    "type": "string"
+                },
+                "mediatype": {
+                    "$ref": "#/definitions/models.MediaType"
+                },
+                "metadata": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "pageId": {
+                    "type": "integer"
+                },
+                "participantId": {
+                    "type": "string"
+                },
+                "resolution": {
+                    "type": "integer"
+                },
+                "score": {
+                    "description": "The Average Score of the submission",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.ScoreType"
+                        }
+                    ]
+                },
+                "size": {
+                    "description": "in bytes",
+                    "type": "integer"
+                },
+                "submissionId": {
+                    "type": "string"
+                },
+                "submittedAt": {
+                    "type": "string"
+                },
+                "submittedById": {
+                    "description": "The User who submitted the article on behalf of the participant",
+                    "type": "string"
+                },
+                "thumbheight": {
+                    "type": "integer"
+                },
+                "thumburl": {
+                    "type": "string"
+                },
+                "thumbwidth": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                },
+                "width": {
+                    "type": "integer"
+                }
+            }
+        },
         "models.Task": {
             "type": "object",
             "properties": {
@@ -2905,6 +3301,26 @@
                 }
             }
         },
+        "routes.ConfirmSubmitCategory": {
+            "type": "object",
+            "required": [
+                "categories",
+                "summary"
+            ],
+            "properties": {
+                "categories": {
+                    "description": "The Categories you want to set for the submission.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "summary": {
+                    "description": "The Summary to be added when your edit is submitted.\nThis is a required field.",
+                    "type": "string"
+                }
+            }
+        },
         "routes.RedirectResponse": {
             "type": "object",
             "properties": {
@@ -2933,12 +3349,21 @@
         "services.CampaignCreateRequest": {
             "type": "object",
             "required": [
+                "campaignType",
                 "endDate",
                 "language",
                 "name",
                 "startDate"
             ],
             "properties": {
+                "campaignType": {
+                    "description": "The type of the campaign, it should be one of the CampaignType constants",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.CampaignType"
+                        }
+                    ]
+                },
                 "coordinators": {
                     "type": "array",
                     "items": {
@@ -2987,12 +3412,21 @@
         "services.CampaignUpdateRequest": {
             "type": "object",
             "required": [
+                "campaignType",
                 "endDate",
                 "language",
                 "name",
                 "startDate"
             ],
             "properties": {
+                "campaignType": {
+                    "description": "The type of the campaign, it should be one of the CampaignType constants",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.CampaignType"
+                        }
+                    ]
+                },
                 "coordinators": {
                     "type": "array",
                     "items": {

@@ -87,7 +87,7 @@ func (u *UserService) EnsureExists(tx *gorm.DB, usernameSet sets.Set[models.Wiki
 	if len(nonExistentUsers) == 0 {
 		return userName2Id, nil
 	}
-	commons_repo := repository.NewCommonsRepository()
+	commons_repo := repository.NewCommonsRepository(nil)
 	users, err := commons_repo.GeUsersFromUsernames(nonExistentUsers)
 	if err != nil {
 		return nil, err

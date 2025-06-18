@@ -209,6 +209,11 @@ definitions:
       campaignId:
         description: A unique identifier for the campaign, it should be custom defined
         type: string
+      campaignType:
+        allOf:
+        - $ref: '#/definitions/models.CampaignType'
+        description: The type of the campaign, it should be one of the CampaignType
+          constants
       createdAt:
         description: The time the campaign was created, it would be set automatically
         type: string
@@ -244,6 +249,7 @@ definitions:
       status:
         $ref: '#/definitions/models.RoundStatus'
     required:
+    - campaignType
     - endDate
     - language
     - name
@@ -256,6 +262,11 @@ definitions:
       campaignId:
         description: A unique identifier for the campaign, it should be custom defined
         type: string
+      campaignType:
+        allOf:
+        - $ref: '#/definitions/models.CampaignType'
+        description: The type of the campaign, it should be one of the CampaignType
+          constants
       coordinators:
         items:
           type: string
@@ -295,16 +306,49 @@ definitions:
       status:
         $ref: '#/definitions/models.RoundStatus'
     required:
+    - campaignType
     - endDate
     - language
     - name
     - startDate
     type: object
+  models.CampaignType:
+    enum:
+    - commons
+    - wikipedia
+    - wikidata
+    - categorization
+    - reference
+    type: string
+    x-enum-varnames:
+    - CampaignTypeCommons
+    - CampaignTypeWikipedia
+    - CampaignTypeWikidata
+    - CampaignTypeCategorization
+    - CampaignTypeReference
   models.CampaignUpdateStatusRequest:
     properties:
       isArchived:
         description: The status of the campaign
         type: boolean
+    type: object
+  models.CategoryResponse:
+    properties:
+      added:
+        items:
+          type: string
+        type: array
+      executed:
+        description: Whether the categories were added or removed successfully
+        type: boolean
+      pageTitle:
+        description: PageTitle is the title of the page where the categories were
+          added or removed
+        type: string
+      removed:
+        items:
+          type: string
+        type: array
     type: object
   models.Evaluation:
     properties:
@@ -370,6 +414,15 @@ definitions:
     - MediaTypeAudio
     - MediaTypeVideo
     - MediaTypePDF
+  models.PageCategory:
+    properties:
+      fixed:
+        description: Whether the category is fixed and cannot be removed
+        type: boolean
+      name:
+        description: The name of the category, Without the namespace
+        type: string
+    type: object
   models.Project:
     properties:
       createdAt:
@@ -515,6 +568,11 @@ definitions:
       data:
         $ref: '#/definitions/models.CampaignExtended'
     type: object
+  models.ResponseSingle-models_CategoryResponse:
+    properties:
+      data:
+        $ref: '#/definitions/models.CategoryResponse'
+    type: object
   models.ResponseSingle-models_Evaluation:
     properties:
       data:
@@ -539,6 +597,11 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/models.Submission'
+    type: object
+  models.ResponseSingle-models_SubmissionWithCategoryList:
+    properties:
+      data:
+        $ref: '#/definitions/models.SubmissionWithCategoryList'
     type: object
   models.ResponseSingle-models_Task:
     properties:
@@ -822,6 +885,86 @@ definitions:
       type:
         $ref: '#/definitions/models.MediaType'
     type: object
+  models.SubmissionWithCategoryList:
+    properties:
+      assignmentCount:
+        description: The number of times the submission has been assigned to the juries
+        type: integer
+      author:
+        description: The Actual Author in the Wikimedia
+        type: string
+      bitrate:
+        description: in kbps
+        type: integer
+      campaignId:
+        type: string
+      categories:
+        description: List of categories associated with the submission
+        items:
+          $ref: '#/definitions/models.PageCategory'
+        type: array
+      createdAtServer:
+        type: string
+      creditHTML:
+        type: string
+      currentRoundId:
+        type: string
+      description:
+        type: string
+      distributionTaskId:
+        type: string
+      duration:
+        description: in milliseconds
+        type: integer
+      evaluationCount:
+        description: The number of times the submission has been evaluated by the
+          juries
+        type: integer
+      height:
+        type: integer
+      importTaskId:
+        type: string
+      license:
+        type: string
+      mediatype:
+        $ref: '#/definitions/models.MediaType'
+      metadata:
+        items:
+          type: integer
+        type: array
+      pageId:
+        type: integer
+      participantId:
+        type: string
+      resolution:
+        type: integer
+      score:
+        allOf:
+        - $ref: '#/definitions/models.ScoreType'
+        description: The Average Score of the submission
+      size:
+        description: in bytes
+        type: integer
+      submissionId:
+        type: string
+      submittedAt:
+        type: string
+      submittedById:
+        description: The User who submitted the article on behalf of the participant
+        type: string
+      thumbheight:
+        type: integer
+      thumburl:
+        type: string
+      thumbwidth:
+        type: integer
+      title:
+        type: string
+      url:
+        type: string
+      width:
+        type: integer
+    type: object
   models.Task:
     properties:
       campaignId:
@@ -912,6 +1055,22 @@ definitions:
       size:
         type: integer
     type: object
+  routes.ConfirmSubmitCategory:
+    properties:
+      categories:
+        description: The Categories you want to set for the submission.
+        items:
+          type: string
+        type: array
+      summary:
+        description: |-
+          The Summary to be added when your edit is submitted.
+          This is a required field.
+        type: string
+    required:
+    - categories
+    - summary
+    type: object
   routes.RedirectResponse:
     properties:
       redirect:
@@ -930,6 +1089,11 @@ definitions:
     type: object
   services.CampaignCreateRequest:
     properties:
+      campaignType:
+        allOf:
+        - $ref: '#/definitions/models.CampaignType'
+        description: The type of the campaign, it should be one of the CampaignType
+          constants
       coordinators:
         items:
           type: string
@@ -960,6 +1124,7 @@ definitions:
       status:
         $ref: '#/definitions/models.RoundStatus'
     required:
+    - campaignType
     - endDate
     - language
     - name
@@ -967,6 +1132,11 @@ definitions:
     type: object
   services.CampaignUpdateRequest:
     properties:
+      campaignType:
+        allOf:
+        - $ref: '#/definitions/models.CampaignType'
+        description: The type of the campaign, it should be one of the CampaignType
+          constants
       coordinators:
         items:
           type: string
@@ -997,6 +1167,7 @@ definitions:
       status:
         $ref: '#/definitions/models.RoundStatus'
     required:
+    - campaignType
     - endDate
     - language
     - name
@@ -1345,6 +1516,84 @@ paths:
       summary: Update a campaign
       tags:
       - Campaign
+  /category/{submissionId}:
+    get:
+      description: Get categories for a submission
+      parameters:
+      - description: The submission ID
+        in: path
+        name: submissionId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ResponseSingle-models_SubmissionWithCategoryList'
+      security:
+      - ApiKeyAuth: []
+      summary: Get categories for a submission
+      tags:
+      - Categories
+    post:
+      description: Submit categories for a submission. The Tool would edit on commons
+        usng the token provided in the session. But the token would never be stored
+        in the database.
+      parameters:
+      - description: The submission ID
+        in: path
+        name: submissionId
+        required: true
+        type: string
+      - description: The categories to be set and the summary
+        in: body
+        name: Request
+        required: true
+        schema:
+          $ref: '#/definitions/routes.ConfirmSubmitCategory'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ResponseSingle-models_CategoryResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Submit categories for a submission
+      tags:
+      - Categories
+  /category/{submissionId}/preview:
+    post:
+      description: Submit categories preview for a submission
+      parameters:
+      - description: The submission ID
+        in: path
+        name: submissionId
+        required: true
+        type: string
+      - description: The categories to preview
+        in: body
+        name: categories
+        required: true
+        schema:
+          items:
+            type: string
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ResponseSingle-models_CategoryResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Submit categories preview for a submission
+      tags:
+      - Categories
   /evaluation/:
     get:
       description: get all evaluations
@@ -2203,9 +2452,56 @@ paths:
       summary: Handle the OAuth2 callback
       tags:
       - User
+  /user/callback/write:
+    get:
+      description: Handle the OAuth2 callback for the ReadWrite scope. This endpoint
+        would fetch an access token and set it as a cookie, it would not, by any means,
+        store it on the server. Refresh Token would also be set as a cookie.
+      parameters:
+      - description: The code from the OAuth2 provider
+        in: query
+        name: code
+        required: true
+        type: string
+      - description: The state
+        in: query
+        name: state
+        type: string
+      - description: The base URL
+        in: query
+        name: baseURL
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ResponseSingle-routes_RedirectResponse'
+      summary: Handle the OAuth2 callback for ReadWrite scope
+      tags:
+      - User
   /user/login:
     get:
-      description: Redirect to the OAuth2 login
+      description: Redirect to the OAuth2 login for ReadOnly scope
+      parameters:
+      - description: The callback URL
+        in: query
+        name: callback
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ResponseSingle-routes_RedirectResponse'
+      summary: Redirect to the OAuth2 login ReadOnly scope
+      tags:
+      - User
+  /user/login/write:
+    get:
+      description: Redirect to the OAuth2 login for ReadWrite scope.
       parameters:
       - description: The callback URL
         in: query

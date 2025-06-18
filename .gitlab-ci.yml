@@ -59,6 +59,8 @@ deploy-beta:
     TOOLNAME: campwiz-backend-beta
   rules:
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
+    - when: delayed
+      start_in: 1d
   <<: *deploy-to-server
 deploy-production:
   stage: deploy
@@ -68,4 +70,5 @@ deploy-production:
     TOOLNAME: campwiz-backend
   rules:
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
+    - when: manual
   <<: *deploy-to-server

@@ -126,8 +126,10 @@ func NewProjectRoutes(parent *gin.RouterGroup) *gin.RouterGroup {
 
 func NewCategoryRoutes(parent *gin.RouterGroup) *gin.RouterGroup {
 	r := parent.Group("/category")
+	r.GET("/uncategorized/:campaignId", WithSession(GetUncategorizedSubmissions))
 	r.GET("/:submissionId", WithSession(GetSubmissionWithCategoryList))
 	r.POST("/:submissionId", WithSession(SubmitCategories))
 	r.POST("/:submissionId/preview", WithSession(SubmitCategoriesPreview))
+
 	return r
 }

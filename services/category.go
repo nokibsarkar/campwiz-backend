@@ -62,7 +62,6 @@ func (s *CategoryService) calculateCategoryDifference(conn *gorm.DB, ctx *gin.Co
 		return nil, nil, nil, nil, nil, errors.New("latestRevisionNotFound")
 	}
 	content := latestRevision.Slots.Main.Content
-	log.Printf("Latest revision content:\n%s", content)
 	tokens := content.SplitIntoTokens()
 	categoryMap := content.GetCategoryMappingFromTokenList(tokens)
 	added := map[string]struct{}{}
@@ -119,13 +118,14 @@ func (s *CategoryService) handleAuthorization(ctx *gin.Context) (cl *http.Client
 	authorizationCookie, err := ctx.Request.Cookie(consts.ReadWriteAuthenticationCookieName)
 	if err == nil && authorizationCookie != nil && authorizationCookie.Value != "" {
 		token.AccessToken = authorizationCookie.Value
+		log.Printf("Found access token in cookie: %s", token.AccessToken)
 		// Set expiry from cookie if available, otherwise assume it might be expired
-		if !authorizationCookie.Expires.IsZero() {
-			token.Expiry = authorizationCookie.Expires
-		} else {
-			// If no expiry set, assume token might be expired to trigger refresh
-			token.Expiry = time.Now().Add(-time.Hour)
-		}
+		// if !authorizationCookie.Expires.IsZero() {
+		// 	token.Expiry = authorizationCookie.Expires
+		// } else {
+		// 	// If no expiry set, assume token might be expired to trigger refresh
+		// 	token.Expiry = time.Now().Add(-time.Hour)
+		// }
 	}
 
 	refreshCookie, err := ctx.Request.Cookie(consts.ReadWriteRefreshCookieName)
@@ -163,7 +163,6 @@ func (s *CategoryService) handleAuthorization(ctx *gin.Context) (cl *http.Client
 	// Update cookies with fresh token if they were refreshed
 	if freshToken.AccessToken != token.AccessToken {
 		log.Println("Token was refreshed, updating cookies")
-
 		// Calculate expiry for cookie (OAuth2 tokens usually expire in 1 hour)
 		expiresIn := int(time.Until(freshToken.Expiry).Seconds())
 		// if expiresIn <= 0 {
@@ -268,11 +267,7 @@ func (s *CategoryService) SubmitCategories(ctx *gin.Context, submissionID types.
 	return response, nil
 }
 func (s *CategoryService) GetCategoriesForSubmission(ctx *gin.Context, submissionID types.SubmissionIDType) (*models.SubmissionWithCategoryList, error) {
-	_, err := s.handleAuthorization(ctx)
-	if err != nil {
-		log.Println("Error handling authorization:", err)
-		return nil, err
-	}
+
 	// First, it would validate all the provided data
 	// first fetch the submission, round, campaign, and user
 	conn, close, err := repository.GetDB(ctx)
@@ -297,6 +292,9 @@ func (s *CategoryService) GetCategoriesForSubmission(ctx *gin.Context, submissio
 		Categories: []models.PageCategory{},
 	}
 	for _, category := range response.Removed {
+		if category == "" {
+			continue // Skip empty categories
+		}
 		result.Categories = append(result.Categories, models.PageCategory{
 			Name:  category,
 			Fixed: true, // Already present in the page, so it is fixed
@@ -313,4 +311,34 @@ func (s *CategoryService) GetCategoriesForSubmission(ctx *gin.Context, submissio
 		})
 	}
 	return result, nil
+}
+
+func (s *CategoryService) GetUncategorizedSubmissions(ctx *gin.Context, campaignId string, limit int, lastSubmissionId string) ([]*models.Submission, error) {
+	_, err := s.handleAuthorization(ctx)
+	if err != nil {
+		log.Println("Error handling authorization:", err)
+		return nil, err
+	}
+	conn, close, err := repository.GetDB(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer close()
+
+	q := query.Use(conn)
+	submissions, err := q.Submission.Select(q.Submission.ALL.Distinct()).Join(q.Category, q.Submission.SubmissionID.EqCol(q.Category.SubmissionID)).
+		Where(q.Category.AddedByID.IsNull()).
+		Where(q.Submission.CampaignID.Eq(campaignId)).
+		Where(q.Submission.SubmissionID.Gt(lastSubmissionId)). // Only fetch submissions after the last submission ID
+		Limit(limit).                                          // Limit to 100 uncategorized submissions
+		Find()
+	if err != nil {
+		log.Println("Error fetching uncategorized submissions:", err)
+		return nil, err
+	}
+	if len(submissions) == 0 {
+		return nil, nil // No uncategorized submissions found
+	}
+
+	return submissions, nil
 }

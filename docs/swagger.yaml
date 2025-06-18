@@ -1594,6 +1594,27 @@ paths:
       summary: Submit categories preview for a submission
       tags:
       - Categories
+  /category/uncategorized/{campaignId}:
+    get:
+      description: Get a list of uncategorized submissions
+      parameters:
+      - description: The campaign ID
+        in: path
+        name: campaignId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ResponseList-models_Submission'
+      security:
+      - ApiKeyAuth: []
+      summary: Get uncategorized submissions
+      tags:
+      - Categories
   /evaluation/:
     get:
       description: get all evaluations

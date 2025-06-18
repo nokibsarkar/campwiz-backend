@@ -75,10 +75,15 @@ func (c *CommonsRepository) POST(values url.Values, body map[string]string) (_ i
 	url := fmt.Sprintf("%s?%s", c.endpoint, values.Encode())
 
 	mp := multipart.NewWriter(buf)
-	for k, v := range body {
-		mp.WriteField(k, v)
+	{
+		defer mp.Close() //nolint:errcheck
+		for k, v := range body {
+			if err := mp.WriteField(k, v); err != nil {
+				return nil, err
+			}
+		}
+
 	}
-	mp.Close()
 
 	req, err := http.NewRequest("POST", url, buf)
 	if err != nil {
@@ -95,8 +100,9 @@ func (c *CommonsRepository) POST(values url.Values, body map[string]string) (_ i
 		return nil, err
 	}
 	if resp.StatusCode != http.StatusOK {
+		defer resp.Body.Close() //nolint:errcheck
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		resp.Body.Close()
+
 		return nil, fmt.Errorf("failed to post to commons: %s, body: %s", resp.Status, string(bodyBytes))
 	}
 	return resp.Body, nil
@@ -438,7 +444,7 @@ func (c *CommonsRepository) GetCsrfToken() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer resp.Close()
+	defer resp.Close() //nolint:errcheck
 	decoder := json.NewDecoder(resp)
 	var response BaseQueryResponse[tokensResponse, map[string]string]
 	if err := decoder.Decode(&response); err != nil {
@@ -494,7 +500,7 @@ func (c *CommonsRepository) GetLatestPageRevisionByPageID(ctx context.Context, p
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Close()
+	defer resp.Close() //nolint:errcheck
 	decoder := json.NewDecoder(resp)
 	var response PageQueryResponse[models.RevisionPage]
 	if err := decoder.Decode(&response); err != nil {
@@ -538,7 +544,7 @@ func (c *CommonsRepository) EditPageContent(ctx context.Context, pageID uint64, 
 	if err != nil {
 		return err
 	}
-	defer resp.Close()
+	defer resp.Close() //nolint:errcheck
 	response := &models.BaseEditResponse{}
 	if err := json.NewDecoder(resp).Decode(response); err != nil {
 		return fmt.Errorf("decode-err-%w", err)

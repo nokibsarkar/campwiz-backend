@@ -182,6 +182,7 @@ type ICommonsSubmissionEntryDo interface {
 
 	FetchSubmissionsFromCommonsDBByCategoryOld(categoryName string, startPageID uint64, minimumTimestamp uint64, maximumTimestamp uint64, limit int, allowedMediaTypes []string) (result []models.CommonsSubmissionEntry, err error)
 	FetchSubmissionsFromCommonsDBByCategory(categoryName string, startPageID uint64, minimumTimestamp uint64, maximumTimestamp uint64, limit int, allowedMediaTypes []string) (result []models.CommonsSubmissionEntry, err error)
+	FetchSubmissionsFromCommonsDBByPageID(pageids []uint64, limit int) (result []models.CommonsSubmissionEntry, err error)
 }
 
 // SLOW OK
@@ -218,6 +219,56 @@ func (c commonsSubmissionEntryDo) FetchSubmissionsFromCommonsDBByCategory(catego
 	params = append(params, categoryName)
 	params = append(params, limit)
 	generateSQL.WriteString("SELECT page_id, page_title, user_name, fr_timestamp, fr_height, fr_width, fr_size, ft_media_type FROM categorylinks JOIN page JOIN file JOIN filerevision JOIN actor JOIN `user` JOIN filetypes ON ft_id = file_type AND fr_id=file_latest AND user_id=actor_user and cl_from=page_id and file_name=page_title and actor_id=fr_actor where ft_media_type IN (?) and cl_from > ? and ? <= fr_timestamp and fr_timestamp < ? and cl_to=? and fr_deleted = false and file_deleted=false ORDER BY `page_id` ASC LIMIT ?; ")
+
+	var executeSQL *gorm.DB
+	executeSQL = c.UnderlyingDB().Raw(generateSQL.String(), params...).Find(&result) // ignore_security_alert
+	err = executeSQL.Error
+
+	return
+}
+
+// SELECT
+//
+//	page_id, page_title, user_name, fr_timestamp, fr_height, fr_width, fr_size, ft_media_type
+//
+// FROM
+//
+//	page JOIN file JOIN filerevision JOIN actor JOIN `user` JOIN filetypes
+//
+// ON
+//
+//	ft_id = file_type AND fr_id=file_latest
+//
+// AND
+//
+//	user_id=actor_user
+//
+// AND
+//
+//	file_name=page_title
+//
+// AND
+//
+//	actor_id=fr_actor
+//
+// WHERE
+//
+//	page_id IN (@pageids)
+//
+// AND
+//
+//	fr_deleted = false
+//
+// AND
+//
+//	file_deleted=false ORDER BY `page_id` ASC LIMIT @limit;
+func (c commonsSubmissionEntryDo) FetchSubmissionsFromCommonsDBByPageID(pageids []uint64, limit int) (result []models.CommonsSubmissionEntry, err error) {
+	var params []interface{}
+
+	var generateSQL strings.Builder
+	params = append(params, pageids)
+	params = append(params, limit)
+	generateSQL.WriteString("SELECT page_id, page_title, user_name, fr_timestamp, fr_height, fr_width, fr_size, ft_media_type FROM page JOIN file JOIN filerevision JOIN actor JOIN `user` JOIN filetypes ON ft_id = file_type AND fr_id=file_latest AND user_id=actor_user AND file_name=page_title AND actor_id=fr_actor WHERE page_id IN (?) AND fr_deleted = false AND file_deleted=false ORDER BY `page_id` ASC LIMIT ?; ")
 
 	var executeSQL *gorm.DB
 	executeSQL = c.UnderlyingDB().Raw(generateSQL.String(), params...).Find(&result) // ignore_security_alert

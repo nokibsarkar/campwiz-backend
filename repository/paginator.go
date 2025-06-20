@@ -43,8 +43,11 @@ func (p *Paginator[PageType]) Query(params url.Values) (chan *PageType, error) {
 				log.Println("Error copying stream: ", err)
 				break
 			}
+			buf := bytes.Buffer{}
+			// Create a new reader from the copied stream
+			reader := io.MultiReader(streamCopy, &buf)
 			// Reset the stream to the beginning
-			stream = io.NopCloser(streamCopy)
+			stream = io.NopCloser(reader)
 			// Decode the response
 			// Create a new decoder with the copied stream
 			decoder := json.NewDecoder(stream)

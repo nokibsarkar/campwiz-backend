@@ -11,7 +11,6 @@ import (
 	"nokib/campwiz/services/round_service"
 	"strings"
 
-	"gorm.io/datatypes"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -156,9 +155,9 @@ func (t *ImporterServer) importFrom(ctx context.Context, source IImportSource, t
 		log.Printf("Received batch of images: %d success, %d failed\n", len(successBatch), len(*FailedImages))
 		if failedBatch != nil {
 			task.FailedCount = len(*failedBatch)
-			*task.FailedIds = datatypes.NewJSONType(*failedBatch)
+			// *task.FailedIds = datatypes.NewJSONType(*failedBatch)
 		}
-		if successBatch == nil {
+		if len(successBatch) == 0 {
 			break
 		}
 		images := []models.MediaResult{}
@@ -251,7 +250,7 @@ func (t *ImporterServer) importFrom(ctx context.Context, source IImportSource, t
 				return
 			}
 		}
-		*task.FailedIds = datatypes.NewJSONType(*failedBatch)
+		// *task.FailedIds = datatypes.NewJSONType(*failedBatch)
 		res := conn.Save(task)
 		if res.Error != nil {
 			log.Println("Error saving task: ", res.Error)
@@ -285,7 +284,7 @@ func (t *ImporterServer) importFrom(ctx context.Context, source IImportSource, t
 	// 	}
 	// }
 	// tx.Commit()
-	go t.importDescriptions(ctx, currentRound)
+	// go t.importDescriptions(ctx, currentRound)
 	{
 		task.Status = models.TaskStatusSuccess
 		currentRound.LatestDistributionTaskID = nil // Reset the latest task id

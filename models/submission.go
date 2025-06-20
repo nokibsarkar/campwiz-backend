@@ -153,6 +153,28 @@ type SubmissionFetcher interface {
 
 	// SELECT  page_id, page_title, user_name, fr_timestamp, fr_height, fr_width, fr_size, ft_media_type FROM categorylinks JOIN page JOIN file JOIN filerevision JOIN actor JOIN `user` JOIN filetypes ON ft_id = file_type AND fr_id=file_latest AND user_id=actor_user and cl_from=page_id and file_name=page_title and actor_id=fr_actor where ft_media_type IN (@allowedMediaTypes) and cl_from > @startPageID and @minimumTimestamp <= fr_timestamp and fr_timestamp < @maximumTimestamp and cl_to=@categoryName and fr_deleted = false and file_deleted=false ORDER BY `page_id` ASC LIMIT @limit;
 	FetchSubmissionsFromCommonsDBByCategory(categoryName string, startPageID uint64, minimumTimestamp uint64, maximumTimestamp uint64, limit int, allowedMediaTypes []string) ([]CommonsSubmissionEntry, error)
+
+	// FetchSubmissionsFromCommonsDBByPageID fetches submissions from the Commons database by PageID.
+
+	// SELECT
+	// 	page_id, page_title, user_name, fr_timestamp, fr_height, fr_width, fr_size, ft_media_type
+	// FROM
+	// 	page JOIN file JOIN filerevision JOIN actor JOIN `user` JOIN filetypes
+	// ON
+	// 	ft_id = file_type AND fr_id=file_latest
+	// AND
+	// 	user_id=actor_user
+	// AND
+	// 	file_name=page_title
+	// AND
+	// 	actor_id=fr_actor
+	// WHERE
+	// 	page_id IN (@pageids)
+	// AND
+	// 	fr_deleted = false
+	// AND
+	// 	file_deleted=false ORDER BY `page_id` ASC LIMIT @limit;
+	FetchSubmissionsFromCommonsDBByPageID(pageids []uint64, limit int) ([]CommonsSubmissionEntry, error)
 }
 
 func (c *CommonsSubmissionEntry) GetURL() string {

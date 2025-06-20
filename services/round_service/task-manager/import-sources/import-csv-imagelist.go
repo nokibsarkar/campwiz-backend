@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/csv"
+	"errors"
 	"io"
 	"log"
 	"nokib/campwiz/models"
 	"nokib/campwiz/repository"
 	"os"
-	"strings"
+	"strconv"
 )
 
 type CSVListSource struct {
@@ -17,26 +18,62 @@ type CSVListSource struct {
 	SubmissionIDColumn *string
 	PageIDColumn       *string
 	FileNameColumn     *string
+	index              int // index is used to track the current row being processed
+	data               any
 }
 
 func (t *ImporterServer) ImportFromCSV(ctx context.Context, req *models.ImportFromCSVRequest) (*models.ImportResponse, error) {
-	source := NewCSVListSource(req.FilePath, req.SubmissionIdColumn, req.PageIdColumn, req.FileNameColumn)
+	source, err := NewCSVListSource(req.FilePath, req.SubmissionIdColumn, req.PageIdColumn, req.FileNameColumn)
 	log.Printf("ImportFromCSV %v", req)
+	if err != nil {
+		log.Printf("Error creating CSVListSource: %s", err)
+		return nil, err
+	}
+	if source == nil {
+		log.Printf("CSVListSource is nil")
+		return nil, errors.New("CSVListSource is nil")
+	}
 	go t.importFrom(ctx, source, req.TaskId, req.RoundId)
 	return &models.ImportResponse{}, nil
 }
-func NewCSVListSource(csvFilePath string, submissionIDColumn string, pageIDColumn string, fileNameColumn string) *CSVListSource {
-	data := &CSVListSource{CSVFilePath: csvFilePath}
+func NewCSVListSource(csvFilePath string, submissionIDColumn string, pageIDColumn string, fileNameColumn string) (*CSVListSource, error) {
+	c := &CSVListSource{CSVFilePath: csvFilePath}
 	if submissionIDColumn != "" {
-		data.SubmissionIDColumn = &submissionIDColumn
+		c.SubmissionIDColumn = &submissionIDColumn
 	}
 	if pageIDColumn != "" {
-		data.PageIDColumn = &pageIDColumn
+		c.PageIDColumn = &pageIDColumn
 	}
 	if fileNameColumn != "" {
-		data.FileNameColumn = &fileNameColumn
+		c.FileNameColumn = &fileNameColumn
 	}
-	return data
+	if c.data == nil {
+		fp, err := os.Open(c.CSVFilePath)
+		if err != nil {
+			log.Printf("Error opening CSV file: %s", err)
+			return nil, err
+		}
+		defer fp.Close()               //nolint:errcheck
+		defer os.Remove(c.CSVFilePath) //nolint:errcheck
+		// Delete The file after we are done
+		// Read the CSV file
+		reader := csv.NewReader(fp)
+		if c.SubmissionIDColumn != nil {
+			c.data, err = c.readTargetColumns(reader, *c.SubmissionIDColumn)
+			if err != nil {
+				return nil, err
+			}
+		} else if c.PageIDColumn != nil {
+			c.data, err = c.readTargetColumns(reader, *c.PageIDColumn)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		c.index = 0
+
+	}
+	return c, nil
 }
 
 // We would Read the CSV file
@@ -51,19 +88,10 @@ func NewCSVListSource(csvFilePath string, submissionIDColumn string, pageIDColum
 // file name which is not indexed
 func (c *CSVListSource) ImportImageResults(ctx context.Context, currentRound *models.Round, failedImageReason *map[string]string) ([]models.MediaResult, *map[string]string) {
 	// Open the CSV file
-	fp, err := os.Open(c.CSVFilePath)
-	if err != nil {
-		(*failedImageReason)["*"] = err.Error()
-		log.Printf("Error opening CSV file: %s", err)
-		return nil, failedImageReason
-	}
-	defer fp.Close() //nolint:errcheck
-	// Delete The file after we are done
-	defer os.Remove(c.CSVFilePath) //nolint:errcheck
-	// Read the CSV file
-	reader := csv.NewReader(fp)
 	if c.SubmissionIDColumn != nil {
-		return c.importUsingSubmissionId(ctx, reader, failedImageReason)
+		return c.importUsingSubmissionId(ctx, currentRound, failedImageReason)
+	} else if c.PageIDColumn != nil {
+		return c.ImportImageResultsUsingPageId(ctx, currentRound, failedImageReason)
 	}
 	return nil, failedImageReason
 }
@@ -76,59 +104,107 @@ func removeBOMFromString(s string) string {
 	}
 	return s
 }
-func (c *CSVListSource) importUsingSubmissionId(ctx context.Context, reader *csv.Reader, failedImageReason *map[string]string) ([]models.MediaResult, *map[string]string) {
-	headers, err := reader.Read()
-	if err != nil {
-		(*failedImageReason)["*"] = err.Error()
-		log.Printf("Error reading CSV file: %s", err)
+func (c *CSVListSource) ImportImageResultsUsingPageId(ctx context.Context, currentRound *models.Round, failedImageReason *map[string]string) ([]models.MediaResult, *map[string]string) {
+	const batchSize = 15000
+	pageIds, ok := c.data.([]string)
+	if !ok {
+		log.Printf("Data is not a slice of strings")
+		(*failedImageReason)["*"] = "Data is not a slice of strings"
 		return nil, failedImageReason
 	}
-	submissionIDColumnIndex := -1
-	log.Printf("Headers: %v", headers)
+	endIndex := min(c.index+batchSize, len(pageIds))
+	log.Printf("Processing PageIDs from index %d to %d", c.index, endIndex)
+	tempPageID := []uint64{}
+	for c.index < endIndex {
+		p := pageIds[c.index]
+		c.index++
+		p = removeBOMFromString(p)
+		if p == "" {
+			log.Printf("Skipping empty PageID")
+			continue
+		}
+		d, err := strconv.Atoi(p)
+		if err != nil {
+			log.Printf("Error converting PageID to int: %s", err)
+			continue
+		}
+		tempPageID = append(tempPageID, uint64(d))
+		c.index++
+	}
+	result := []models.MediaResult{}
+	if len(tempPageID) != 0 {
+		q, close := repository.GetCommonsReplicaWithGen(ctx)
+		defer close()
+		data, err := q.CommonsSubmissionEntry.FetchSubmissionsFromCommonsDBByPageID(tempPageID, len(tempPageID))
+		if err != nil {
+			(*failedImageReason)["*"] = err.Error()
+			log.Printf("Error importing images by PageID: %s", err)
+			return nil, failedImageReason
+		}
+		for _, submission := range data {
+			thumbURL, thumbWidth, thumbHeight := submission.GetThumbURL()
+			result = append(result, models.MediaResult{
+				PageID:           submission.PageID,
+				Name:             submission.PageTitle,
+				URL:              submission.GetURL(),
+				UploaderUsername: models.WikimediaUsernameType(submission.UserName),
+				SubmittedAt:      submission.GetSubmittedAt(),
+				Height:           submission.FrHeight,
+				Width:            submission.FrWidth,
+				Size:             submission.FrSize,
+				MediaType:        submission.FtMediaType,
+				Resolution:       submission.FrWidth * submission.FrHeight,
+				ThumbURL:         &thumbURL,
+				ThumbWidth:       &thumbWidth,
+				ThumbHeight:      &thumbHeight,
+			})
+		}
+	}
+	return result, nil
+
+}
+func (c *CSVListSource) readTargetColumns(reader *csv.Reader, targetColumn string) ([]string, error) {
+	headers, err := reader.Read()
+	if err != nil {
+		log.Printf("Error reading CSV file: %s", err)
+		return nil, err
+	}
+	targetColumnIndex := -1
 	for i, header := range headers {
-		bytesHeader := []byte(strings.TrimSpace(header))
-		bh := []byte(*c.SubmissionIDColumn)
 		header = removeBOMFromString(header)
-		// h := strings.TrimSpace(*c.SubmissionIDColumn)
-		log.Printf("Header: %v, %v", bytesHeader, bh)
-		if *c.SubmissionIDColumn == header {
-			submissionIDColumnIndex = i
+		if targetColumn == header {
+			targetColumnIndex = i
 			break
 		}
 	}
-	if submissionIDColumnIndex == -1 {
-		(*failedImageReason)["*"] = "SubmissionID column not found : " + *c.SubmissionIDColumn
-		log.Printf("SubmissionID column not found: %s", *c.SubmissionIDColumn)
-		// return nil, failedImageReason
+	if targetColumnIndex == -1 {
+		log.Printf("Target column not found: %s", targetColumn)
+		return nil, errors.New("target column not found: " + targetColumn)
 	}
-	submissionIds := []string{}
+	var targetValues []string
 	for {
 		record, err := reader.Read()
 		if err == io.EOF {
 			break
 		} else if err == csv.ErrFieldCount {
-			(*failedImageReason)["*"] = "Incorrect number of fields"
 			log.Printf("Error: Incorrect number of fields")
-			return nil, failedImageReason
+			return nil, errors.New("incorrect number of fields")
 		} else if err != nil {
-			(*failedImageReason)["*"] = err.Error()
 			log.Printf("Error reading CSV file: %s", err)
-			return nil, failedImageReason
+			return nil, err
 		}
-
-		submissionID := record[submissionIDColumnIndex]
-		if submissionID == "" {
-			break
-		}
-		// Process the submissionID as needed
-		submissionIds = append(submissionIds, submissionID)
+		targetValues = append(targetValues, record[targetColumnIndex])
+	}
+	return targetValues, nil
+}
+func (c *CSVListSource) importUsingSubmissionId(ctx context.Context, currentRound *models.Round, failedImageReason *map[string]string) ([]models.MediaResult, *map[string]string) {
+	submissionIds, ok := c.data.([]string)
+	if !ok {
+		log.Printf("Data is not a slice of strings")
+		(*failedImageReason)["*"] = "Data is not a slice of strings"
+		return nil, failedImageReason
 	}
 	q, close := repository.GetDBWithGen(ctx)
-	// if err != nil {
-	// 	(*failedImageReason)["*"] = err.Error()
-	// 	log.Printf("Error getting DB connection: %s", err)
-	// 	return nil, failedImageReason
-	// }
 	defer close()
 	Submission := q.Submission
 	submissions, err := Submission.Select(Submission.ALL).Where(Submission.SubmissionID.In(submissionIds...)).Find()

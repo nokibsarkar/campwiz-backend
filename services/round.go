@@ -53,6 +53,7 @@ type ImportFromCSVRequest struct {
 	// The column name of the file name (if exists, it is the slowest way to import. **Not recommended**)
 	FileNameColumn string `form:"fileNameColumn"`
 }
+
 type Jury struct {
 	ID            uint64 `json:"id" gorm:"primaryKey"`
 	totalAssigned int
@@ -387,6 +388,60 @@ func (b *RoundService) ImportFromCSV(ctx context.Context, roundId models.IDType,
 		FileNameColumn:     req.FileNameColumn,
 		RoundId:            round.RoundID.String(),
 		TaskId:             task.TaskID.String(),
+	})
+	return task, err
+}
+func (b *RoundService) ImportFromFountain(ctx context.Context, roundId models.IDType, code string) (*models.Task, error) {
+	round_repo := repository.NewRoundRepository()
+	task_repo := repository.NewTaskRepository()
+	conn, close, err := repository.GetDB(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer close()
+	tx := conn.Begin()
+	round, err := round_repo.FindByID(tx.Preload("Campaign"), roundId)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	} else if round == nil {
+		tx.Rollback()
+		return nil, fmt.Errorf("round not found")
+	} else if round.Campaign == nil {
+		tx.Rollback()
+		return nil, fmt.Errorf("campaign not found")
+	}
+
+	taskReq := &models.Task{
+		TaskID:               idgenerator.GenerateID("t"),
+		Type:                 models.TaskTypeImportFromCSV,
+		Status:               models.TaskStatusPending,
+		AssociatedRoundID:    &roundId,
+		AssociatedUserID:     &round.CreatedByID,
+		CreatedByID:          round.CreatedByID,
+		AssociatedCampaignID: &round.CampaignID,
+		SuccessCount:         0,
+		FailedCount:          0,
+		FailedIds:            &datatypes.JSONType[map[string]string]{},
+		RemainingCount:       0,
+	}
+	task, err := task_repo.Create(tx, taskReq)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	tx.Commit()
+	grpcClient, err := round_service.NewGrpcClient()
+	if err != nil {
+		return nil, err
+	}
+	log.Println("GRPC client created")
+	defer grpcClient.Close() //nolint:errcheck
+	importClient := models.NewImporterClient(grpcClient)
+	_, err = importClient.ImportFromFountain(cache.WithGRPCContext(ctx), &models.ImportFromFountainRequest{
+		Code:    code,
+		RoundId: round.RoundID.String(),
+		TaskId:  task.TaskID.String(),
 	})
 	return task, err
 }

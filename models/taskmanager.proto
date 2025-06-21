@@ -7,6 +7,7 @@ service Importer {
     rpc ImportFromCommonsCategory(ImportFromCommonsCategoryRequest) returns (ImportResponse);
     rpc ImportFromPreviousRound(ImportFromPreviousRoundRequest) returns (ImportResponse);
     rpc ImportFromCSV(ImportFromCSVRequest) returns (ImportResponse);
+    rpc ImportFromFountain(ImportFromFountainRequest) returns (ImportResponse);
 }
 
 
@@ -29,6 +30,11 @@ message ImportFromCSVRequest {
     string fileNameColumn = 4;
     string round_id = 5;
     string task_id = 6;
+}
+message ImportFromFountainRequest {
+    string round_id = 1;
+    string task_id = 2;
+    string code = 3;
 }
 message ImportResponse {
    string task_id = 1;

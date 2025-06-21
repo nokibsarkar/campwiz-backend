@@ -1071,6 +1071,13 @@ definitions:
     - categories
     - summary
     type: object
+  routes.ImportFromFountainRequest:
+    properties:
+      code:
+        type: string
+    required:
+    - code
+    type: object
   routes.RedirectResponse:
     properties:
       redirect:
@@ -2330,6 +2337,34 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Import images from CSV
+      tags:
+      - Round
+  /round/import/{roundId}/fountain:
+    post:
+      description: The user would provide a round ID and a code and the system would
+        import images from that Fountain
+      parameters:
+      - description: The round ID
+        in: path
+        name: roundId
+        required: true
+        type: string
+      - description: The import from Fountain request
+        in: body
+        name: ImportFromFountainRequest
+        required: true
+        schema:
+          $ref: '#/definitions/routes.ImportFromFountainRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ResponseSingle-models_Task'
+      security:
+      - ApiKeyAuth: []
+      summary: Import images from Fountain
       tags:
       - Round
   /round/import/{targetRoundId}/previous:

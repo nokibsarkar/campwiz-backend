@@ -1164,6 +1164,49 @@ const docTemplate = `{
                 }
             }
         },
+        "/round/import/{roundId}/fountain": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "The user would provide a round ID and a code and the system would import images from that Fountain",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Round"
+                ],
+                "summary": "Import images from Fountain",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The round ID",
+                        "name": "roundId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "The import from Fountain request",
+                        "name": "ImportFromFountainRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.ImportFromFountainRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResponseSingle-models_Task"
+                        }
+                    }
+                }
+            }
+        },
         "/round/import/{targetRoundId}/previous": {
             "post": {
                 "security": [
@@ -3358,6 +3401,17 @@ const docTemplate = `{
                 },
                 "summary": {
                     "description": "The Summary to be added when your edit is submitted.\nThis is a required field.",
+                    "type": "string"
+                }
+            }
+        },
+        "routes.ImportFromFountainRequest": {
+            "type": "object",
+            "required": [
+                "code"
+            ],
+            "properties": {
+                "code": {
                     "type": "string"
                 }
             }

@@ -199,6 +199,48 @@ func ImportFromCSV(c *gin.Context, sess *cache.Session) {
 	c.JSON(200, models.ResponseSingle[*models.Task]{Data: task})
 }
 
+type ImportFromFountainRequest struct {
+	Code string `json:"code" binding:"required"`
+}
+
+// ImportFromFountain godoc
+// @Summary Import images from Fountain
+// @Description The user would provide a round ID and a code and the system would import images from that Fountain
+// @Produce  json
+// @Success 200 {object} models.ResponseSingle[models.Task]
+// @Router /round/import/{roundId}/fountain [post]
+// @Param roundId path string true "The round ID"
+// @Param ImportFromFountainRequest body ImportFromFountainRequest true "The import from Fountain request"
+// @Tags Round
+// @Security ApiKeyAuth
+// @Error 400 {object} models.ResponseError
+func ImportFromFountain(c *gin.Context, sess *cache.Session) {
+	roundId := c.Param("roundId")
+	if roundId == "" {
+		c.JSON(400, models.ResponseError{Detail: "Invalid request : Round ID is required"})
+		return
+	}
+	req := &ImportFromFountainRequest{}
+	err := c.ShouldBind(req)
+	if err != nil {
+		c.JSON(400, models.ResponseError{Detail: "Error Decoding : " + err.Error()})
+		return
+	}
+	code := req.Code
+	if code == "" {
+		c.JSON(400, models.ResponseError{Detail: "Invalid request : No code provided"})
+		return
+	}
+
+	round_service := services.NewRoundService()
+	task, err := round_service.ImportFromFountain(c, models.IDType(roundId), code)
+	if err != nil {
+		c.JSON(400, models.ResponseError{Detail: "Failed to import images : " + err.Error()})
+		return
+	}
+	c.JSON(200, models.ResponseSingle[*models.Task]{Data: task})
+}
+
 // UpdateRoundDetails godoc
 // @Summary Update the details of a round
 // @Description Update the details of a round

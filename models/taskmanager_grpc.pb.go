@@ -22,6 +22,7 @@ const (
 	Importer_ImportFromCommonsCategory_FullMethodName = "/models.Importer/ImportFromCommonsCategory"
 	Importer_ImportFromPreviousRound_FullMethodName   = "/models.Importer/ImportFromPreviousRound"
 	Importer_ImportFromCSV_FullMethodName             = "/models.Importer/ImportFromCSV"
+	Importer_ImportFromFountain_FullMethodName        = "/models.Importer/ImportFromFountain"
 )
 
 // ImporterClient is the client API for Importer service.
@@ -31,6 +32,7 @@ type ImporterClient interface {
 	ImportFromCommonsCategory(ctx context.Context, in *ImportFromCommonsCategoryRequest, opts ...grpc.CallOption) (*ImportResponse, error)
 	ImportFromPreviousRound(ctx context.Context, in *ImportFromPreviousRoundRequest, opts ...grpc.CallOption) (*ImportResponse, error)
 	ImportFromCSV(ctx context.Context, in *ImportFromCSVRequest, opts ...grpc.CallOption) (*ImportResponse, error)
+	ImportFromFountain(ctx context.Context, in *ImportFromFountainRequest, opts ...grpc.CallOption) (*ImportResponse, error)
 }
 
 type importerClient struct {
@@ -71,6 +73,16 @@ func (c *importerClient) ImportFromCSV(ctx context.Context, in *ImportFromCSVReq
 	return out, nil
 }
 
+func (c *importerClient) ImportFromFountain(ctx context.Context, in *ImportFromFountainRequest, opts ...grpc.CallOption) (*ImportResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ImportResponse)
+	err := c.cc.Invoke(ctx, Importer_ImportFromFountain_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ImporterServer is the server API for Importer service.
 // All implementations must embed UnimplementedImporterServer
 // for forward compatibility.
@@ -78,6 +90,7 @@ type ImporterServer interface {
 	ImportFromCommonsCategory(context.Context, *ImportFromCommonsCategoryRequest) (*ImportResponse, error)
 	ImportFromPreviousRound(context.Context, *ImportFromPreviousRoundRequest) (*ImportResponse, error)
 	ImportFromCSV(context.Context, *ImportFromCSVRequest) (*ImportResponse, error)
+	ImportFromFountain(context.Context, *ImportFromFountainRequest) (*ImportResponse, error)
 	mustEmbedUnimplementedImporterServer()
 }
 
@@ -96,6 +109,9 @@ func (UnimplementedImporterServer) ImportFromPreviousRound(context.Context, *Imp
 }
 func (UnimplementedImporterServer) ImportFromCSV(context.Context, *ImportFromCSVRequest) (*ImportResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ImportFromCSV not implemented")
+}
+func (UnimplementedImporterServer) ImportFromFountain(context.Context, *ImportFromFountainRequest) (*ImportResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ImportFromFountain not implemented")
 }
 func (UnimplementedImporterServer) mustEmbedUnimplementedImporterServer() {}
 func (UnimplementedImporterServer) testEmbeddedByValue()                  {}
@@ -172,6 +188,24 @@ func _Importer_ImportFromCSV_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Importer_ImportFromFountain_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ImportFromFountainRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ImporterServer).ImportFromFountain(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Importer_ImportFromFountain_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ImporterServer).ImportFromFountain(ctx, req.(*ImportFromFountainRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Importer_ServiceDesc is the grpc.ServiceDesc for Importer service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -190,6 +224,10 @@ var Importer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ImportFromCSV",
 			Handler:    _Importer_ImportFromCSV_Handler,
+		},
+		{
+			MethodName: "ImportFromFountain",
+			Handler:    _Importer_ImportFromFountain_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

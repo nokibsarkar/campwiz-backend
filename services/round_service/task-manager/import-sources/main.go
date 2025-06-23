@@ -39,13 +39,17 @@ type IDistributionStrategy interface {
 	AssignJuries(tx *gorm.DB, round *models.Round, juries []models.Role) (success int, fail int, err error)
 }
 
-func (imp *ImporterServer) updateStatistics(tx *gorm.DB, round *models.Round, successCount, failedCount int) error {
+func (imp *ImporterServer) updateRoundStatistics(tx *gorm.DB, round *models.Round, successCount, failedCount int) error {
 	type Result struct {
 		TotalSubmissions          int
 		TotalEvaluatedSubmissions int
 	}
 	var result Result
 	q := query.Use(tx)
+	if err := q.SubmissionStatistics.TriggerByRoundId(round.RoundID.String()); err != nil {
+		log.Println("Error triggering submission statistics: ", err)
+		return err
+	}
 	Submission := q.Submission
 	err := Submission.Select(Submission.SubmissionID.Count().As("TotalSubmissions"), Submission.AssignmentCount.Sum().
 		As("TotalEvaluatedSubmissions")).Where(Submission.RoundID.Eq(round.RoundID.String())).Scan(&result)
@@ -58,6 +62,7 @@ func (imp *ImporterServer) updateStatistics(tx *gorm.DB, round *models.Round, su
 		TotalEvaluatedSubmissions: result.TotalEvaluatedSubmissions,
 	})
 	return res.Error
+
 }
 func NewImporterServer() *ImporterServer {
 	return &ImporterServer{}
@@ -346,7 +351,7 @@ func (t *ImporterServer) importFrom(ctx context.Context, source IImportSource, t
 	// go t.importDescriptions(ctx, currentRound)
 	task.Status = models.TaskStatusSuccess
 	currentRound.LatestDistributionTaskID = nil // Reset the latest task id
-	err = t.updateStatistics(tx, currentRound, successCount, failedCount)
+	err = t.updateRoundStatistics(tx, currentRound, successCount, failedCount)
 	if err != nil {
 		log.Println("Error updating statistics: ", err)
 		task.Status = models.TaskStatusFailed

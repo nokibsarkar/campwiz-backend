@@ -23,6 +23,7 @@ const (
 	Importer_ImportFromPreviousRound_FullMethodName   = "/models.Importer/ImportFromPreviousRound"
 	Importer_ImportFromCSV_FullMethodName             = "/models.Importer/ImportFromCSV"
 	Importer_ImportFromFountain_FullMethodName        = "/models.Importer/ImportFromFountain"
+	Importer_ImportFromCampWizV1_FullMethodName       = "/models.Importer/ImportFromCampWizV1"
 )
 
 // ImporterClient is the client API for Importer service.
@@ -33,6 +34,7 @@ type ImporterClient interface {
 	ImportFromPreviousRound(ctx context.Context, in *ImportFromPreviousRoundRequest, opts ...grpc.CallOption) (*ImportResponse, error)
 	ImportFromCSV(ctx context.Context, in *ImportFromCSVRequest, opts ...grpc.CallOption) (*ImportResponse, error)
 	ImportFromFountain(ctx context.Context, in *ImportFromFountainRequest, opts ...grpc.CallOption) (*ImportResponse, error)
+	ImportFromCampWizV1(ctx context.Context, in *ImportFromCampWizV1Request, opts ...grpc.CallOption) (*ImportResponse, error)
 }
 
 type importerClient struct {
@@ -83,6 +85,16 @@ func (c *importerClient) ImportFromFountain(ctx context.Context, in *ImportFromF
 	return out, nil
 }
 
+func (c *importerClient) ImportFromCampWizV1(ctx context.Context, in *ImportFromCampWizV1Request, opts ...grpc.CallOption) (*ImportResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ImportResponse)
+	err := c.cc.Invoke(ctx, Importer_ImportFromCampWizV1_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ImporterServer is the server API for Importer service.
 // All implementations must embed UnimplementedImporterServer
 // for forward compatibility.
@@ -91,6 +103,7 @@ type ImporterServer interface {
 	ImportFromPreviousRound(context.Context, *ImportFromPreviousRoundRequest) (*ImportResponse, error)
 	ImportFromCSV(context.Context, *ImportFromCSVRequest) (*ImportResponse, error)
 	ImportFromFountain(context.Context, *ImportFromFountainRequest) (*ImportResponse, error)
+	ImportFromCampWizV1(context.Context, *ImportFromCampWizV1Request) (*ImportResponse, error)
 	mustEmbedUnimplementedImporterServer()
 }
 
@@ -112,6 +125,9 @@ func (UnimplementedImporterServer) ImportFromCSV(context.Context, *ImportFromCSV
 }
 func (UnimplementedImporterServer) ImportFromFountain(context.Context, *ImportFromFountainRequest) (*ImportResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ImportFromFountain not implemented")
+}
+func (UnimplementedImporterServer) ImportFromCampWizV1(context.Context, *ImportFromCampWizV1Request) (*ImportResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ImportFromCampWizV1 not implemented")
 }
 func (UnimplementedImporterServer) mustEmbedUnimplementedImporterServer() {}
 func (UnimplementedImporterServer) testEmbeddedByValue()                  {}
@@ -206,6 +222,24 @@ func _Importer_ImportFromFountain_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Importer_ImportFromCampWizV1_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ImportFromCampWizV1Request)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ImporterServer).ImportFromCampWizV1(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Importer_ImportFromCampWizV1_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ImporterServer).ImportFromCampWizV1(ctx, req.(*ImportFromCampWizV1Request))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Importer_ServiceDesc is the grpc.ServiceDesc for Importer service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -228,6 +262,10 @@ var Importer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ImportFromFountain",
 			Handler:    _Importer_ImportFromFountain_Handler,
+		},
+		{
+			MethodName: "ImportFromCampWizV1",
+			Handler:    _Importer_ImportFromCampWizV1_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -8,6 +8,7 @@ service Importer {
     rpc ImportFromPreviousRound(ImportFromPreviousRoundRequest) returns (ImportResponse);
     rpc ImportFromCSV(ImportFromCSVRequest) returns (ImportResponse);
     rpc ImportFromFountain(ImportFromFountainRequest) returns (ImportResponse);
+    rpc ImportFromCampWizV1(ImportFromCampWizV1Request) returns (ImportResponse);
 }
 
 
@@ -35,6 +36,13 @@ message ImportFromFountainRequest {
     string round_id = 1;
     string task_id = 2;
     string code = 3;
+}
+message ImportFromCampWizV1Request {
+    string path = 1;
+    string round_id = 2;
+    // campaign id is a number that identifies the campaign
+    int32 campaign_id = 3;
+    string task_id = 4;
 }
 message ImportResponse {
    string task_id = 1;

@@ -6,3 +6,4 @@ campwiz
 __debug*
 coverage*
 taskmanager
+*.db

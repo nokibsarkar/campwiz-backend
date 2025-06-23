@@ -78,29 +78,12 @@ func (t *ImporterServer) importFrom(ctx context.Context, source IImportSource, t
 		return
 	}
 	defer close()
-	tx := conn.Begin()
-	if tx.Error != nil {
-		log.Println("Error starting transaction: ", tx.Error)
-		return
-	}
-	defer func() {
-		if err != nil {
-			log.Println("Rolling back transaction due to error: ", err)
-			if r := tx.Rollback(); r.Error != nil {
-				log.Println("Error rolling back transaction: ", r.Error)
-			}
-		} else {
-			log.Println("Committing transaction")
-			if r := tx.Commit(); r.Error != nil {
-				log.Println("Error committing transaction: ", r.Error)
-			}
-		}
-	}()
+
 	// define all the repositories
 	task_repo := repository.NewTaskRepository()
 	round_repo := repository.NewRoundRepository()
 	// Fetch the task
-	task, err := task_repo.FindByID(tx, models.IDType(taskId))
+	task, err := task_repo.FindByID(conn, models.IDType(taskId))
 	if err != nil {
 		log.Println("Error fetching task: ", err)
 		return
@@ -114,7 +97,7 @@ func (t *ImporterServer) importFrom(ctx context.Context, source IImportSource, t
 
 	log.Printf("Task found: %v\n", task)
 	// Fetch the currentRound
-	currentRound, err := round_repo.FindByID(tx.Preload("Campaign"), models.IDType(currentRoundId))
+	currentRound, err := round_repo.FindByID(conn.Preload("Campaign"), models.IDType(currentRoundId))
 	if err != nil {
 		log.Println("Error fetching round: ", err)
 		return
@@ -139,18 +122,17 @@ func (t *ImporterServer) importFrom(ctx context.Context, source IImportSource, t
 	// Update the round status to importing
 	currentRound.LatestDistributionTaskID = &task.TaskID
 	currentRound.Status = models.RoundStatusImporting
-	if res := tx.Updates(&models.Round{
+	if res := conn.Updates(&models.Round{
 		RoundID:                  currentRound.RoundID,
 		Status:                   models.RoundStatusImporting,
 		LatestDistributionTaskID: &task.TaskID,
 	}); res.Error != nil {
-		log.Println("Error updating round status: ", res.Error)
 		task.Status = models.TaskStatusFailed
 		return
 	}
 	defer func() {
 		log.Println("Finalizing task and round status")
-		res := tx.Updates(&models.Round{
+		res := conn.Updates(&models.Round{
 			RoundID: currentRound.RoundID,
 			Status:  currentRoundStatus,
 		})
@@ -160,7 +142,7 @@ func (t *ImporterServer) importFrom(ctx context.Context, source IImportSource, t
 			task.Status = models.TaskStatusFailed
 			return
 		}
-		res = tx.Updates(&models.Task{
+		res = conn.Updates(&models.Task{
 			TaskID:         task.TaskID,
 			Status:         task.Status,
 			SuccessCount:   successCount,
@@ -172,6 +154,24 @@ func (t *ImporterServer) importFrom(ctx context.Context, source IImportSource, t
 			log.Println("Error updating task status: ", res.Error)
 			task.Status = models.TaskStatusFailed
 			return
+		}
+	}()
+	tx := conn.Begin()
+	if tx.Error != nil {
+		log.Println("Error starting transaction: ", tx.Error)
+		return
+	}
+	defer func() {
+		if err != nil {
+			log.Println("Rolling back transaction due to error: ", err)
+			if r := tx.Rollback(); r.Error != nil {
+				log.Println("Error rolling back transaction: ", r.Error)
+			}
+		} else {
+			log.Println("Committing transaction")
+			if r := tx.Commit(); r.Error != nil {
+				log.Println("Error committing transaction: ", r.Error)
+			}
 		}
 	}()
 	FailedImages := &map[string]string{}
@@ -227,7 +227,6 @@ func (t *ImporterServer) importFrom(ctx context.Context, source IImportSource, t
 		for _, image := range images {
 			uploaderId := username2IdMap[image.UploaderUsername]
 			newlyCreatedUsers[image.UploaderUsername] = uploaderId
-
 			sId := types.SubmissionIDType(idgenerator.GenerateID("s"))
 			submission := models.Submission{
 				SubmissionID:      sId,
@@ -268,9 +267,8 @@ func (t *ImporterServer) importFrom(ctx context.Context, source IImportSource, t
 			submissions = append(submissions, submission)
 			submissionCount++
 			if submissionCount%1000 == 0 {
-
 				log.Println("Saving batch of submissions")
-				res := tx.Clauses(clause.Insert{Modifier: "IGNORE"}).Create(submissions)
+				res := tx.Create(submissions)
 				if res.Error != nil {
 					err = res.Error
 					task.Status = models.TaskStatusFailed

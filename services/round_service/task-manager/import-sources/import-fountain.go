@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type FountainListSource struct {
@@ -197,7 +198,7 @@ func (t *FountainListSource) PostProcess(ctx context.Context, tx *gorm.DB, curre
 			evaluations = append(evaluations, ev)
 		}
 	}
-	if res := tx.CreateInBatches(evaluations, 1000); res.Error != nil {
+	if res := tx.Clauses(clause.Insert{Modifier: "IGNORE"}).CreateInBatches(evaluations, 1000); res.Error != nil {
 		return fmt.Errorf("failed to create evaluations: %w", res.Error)
 	}
 	return nil

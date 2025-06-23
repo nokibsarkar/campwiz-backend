@@ -140,7 +140,7 @@ func (t *FountainListSource) ImportImageResults(ctx context.Context, currentRoun
 	return data, nil
 }
 
-func (t *FountainListSource) PostProcess(ctx context.Context, tx *gorm.DB, currentRound *models.Round, task *models.Task, importMap map[uint64]types.SubmissionIDType) error {
+func (t *FountainListSource) PostProcess(ctx context.Context, tx *gorm.DB, currentRound *models.Round, task *models.Task, importMap map[uint64]types.SubmissionIDType, newlyCreatedUsers map[models.WikimediaUsernameType]models.IDType) error {
 	fmt.Printf("Post-processing for round %s, task %s\n", currentRound.RoundID, task.TaskID)
 
 	role_repo := repository.NewRoleRepository()
@@ -166,6 +166,12 @@ func (t *FountainListSource) PostProcess(ctx context.Context, tx *gorm.DB, curre
 	markingPolicy := t.json.Marks
 	for _, article := range t.json.Articles {
 		pageId := article.ID
+		uploaderId, ok := newlyCreatedUsers[models.WikimediaUsernameType(article.User)]
+		if !ok {
+			// If the user is not in newlyCreatedUsers, we might need to handle this
+			log.Printf("User %s not found in newlyCreatedUsers, skipping evaluation for submission %d", article.User, pageId)
+			continue
+		}
 		for _, evaluation := range article.Marks {
 			actualMark := 0
 			for markSegment, markIndex := range evaluation.Marks {
@@ -176,20 +182,22 @@ func (t *FountainListSource) PostProcess(ctx context.Context, tx *gorm.DB, curre
 			roleID := roleMap[nameMap[user]]
 			score := models.ScoreType(float64(actualMark) * 100.0)
 			now := time.Now()
+
 			ev := models.Evaluation{
-				SubmissionID: submissionId,
-				EvaluationID: idgenerator.GenerateID("e"),
-				JudgeID:      &roleID,
-				RoundID:      currentRound.RoundID,
-				Comment:      evaluation.Comment,
-				Type:         models.EvaluationTypeScore,
-				Score:        &score, // Assuming the score is a percentage
-				EvaluatedAt:  &now,
+				SubmissionID:  submissionId,
+				EvaluationID:  idgenerator.GenerateID("e"),
+				JudgeID:       &roleID,
+				RoundID:       currentRound.RoundID,
+				Comment:       evaluation.Comment,
+				Type:          models.EvaluationTypeScore,
+				Score:         &score, // Assuming the score is a percentage
+				EvaluatedAt:   &now,
+				ParticipantID: uploaderId,
 			}
 			evaluations = append(evaluations, ev)
 		}
 	}
-	if res := tx.CreateInBatches(evaluations[:1], 1000); res.Error != nil {
+	if res := tx.CreateInBatches(evaluations, 1000); res.Error != nil {
 		return fmt.Errorf("failed to create evaluations: %w", res.Error)
 	}
 	return nil

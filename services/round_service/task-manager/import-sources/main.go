@@ -32,7 +32,7 @@ type IImportSource interface {
 type IImportSourceWithPostProcessing interface {
 	IImportSource
 	// This method is called after the import is done to perform any post-processing
-	PostProcess(ctx context.Context, conn *gorm.DB, round *models.Round, task *models.Task, pageIdMap map[uint64]types.SubmissionIDType) error
+	PostProcess(ctx context.Context, conn *gorm.DB, round *models.Round, task *models.Task, pageIdMap map[uint64]types.SubmissionIDType, newlyCreatedUsers map[models.WikimediaUsernameType]models.IDType) error
 }
 
 type IDistributionStrategy interface {
@@ -179,6 +179,7 @@ func (t *ImporterServer) importFrom(ctx context.Context, source IImportSource, t
 	}
 	user_repo := repository.NewUserRepository()
 	pageIdMap := map[uint64]types.SubmissionIDType{}
+	newlyCreatedUsers := map[models.WikimediaUsernameType]models.IDType{}
 	var username2IdMap map[models.WikimediaUsernameType]models.IDType
 	for {
 		log.Println("Importing images from source")
@@ -220,6 +221,8 @@ func (t *ImporterServer) importFrom(ctx context.Context, source IImportSource, t
 		submissions := []models.Submission{}
 		for _, image := range images {
 			uploaderId := username2IdMap[image.UploaderUsername]
+			newlyCreatedUsers[image.UploaderUsername] = uploaderId
+
 			sId := types.SubmissionIDType(idgenerator.GenerateID("s"))
 			submission := models.Submission{
 				SubmissionID:      sId,
@@ -308,7 +311,7 @@ func (t *ImporterServer) importFrom(ctx context.Context, source IImportSource, t
 
 	if p, ok := source.(IImportSourceWithPostProcessing); ok {
 		log.Println("Post-processing import")
-		err = p.PostProcess(ctx, tx, currentRound, task, pageIdMap)
+		err = p.PostProcess(ctx, tx, currentRound, task, pageIdMap, newlyCreatedUsers)
 		if err != nil {
 			log.Println("Error in post-processing import: ", err)
 			task.Status = models.TaskStatusFailed

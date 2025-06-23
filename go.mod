@@ -10,6 +10,7 @@ require (
 	github.com/go-gorm/caches/v4 v4.0.5
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/golang/protobuf v1.5.4
+	github.com/m-m-f/gowiki v0.0.0-20180103212159-93aa7513fb32
 	github.com/spf13/viper v1.20.1
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0

@@ -80,7 +80,7 @@ func (r *RoleRepository) FindRolesByUsername(tx *gorm.DB, usernames []models.Wik
 	}
 	q := query.Use(tx)
 	Role := q.Role
-	stmt := Role.Join(q.User, q.User.UserID.EqCol(Role.UserID)).
+	stmt := Role.Preload(Role.User).Join(q.User, q.User.UserID.EqCol(Role.UserID)).
 		Where(q.User.Username.In(Usernames...))
 	if filter != nil {
 		// if filter.IncludeDeleted != nil {

@@ -2,6 +2,7 @@ package importsources
 
 import (
 	"context"
+	"errors"
 	"log"
 	"nokib/campwiz/models"
 	"nokib/campwiz/models/types"
@@ -28,6 +29,12 @@ type IImportSource interface {
 	// If there are failed images it should return the reason as a map
 	ImportImageResults(ctx context.Context, round *models.Round, failedImageReason *map[string]string) ([]models.MediaResult, *map[string]string)
 }
+type IImportSourceWithPostProcessing interface {
+	IImportSource
+	// This method is called after the import is done to perform any post-processing
+	PostProcess(ctx context.Context, conn *gorm.DB, round *models.Round, task *models.Task, pageIdMap map[uint64]types.SubmissionIDType) error
+}
+
 type IDistributionStrategy interface {
 	AssignJuries(tx *gorm.DB, round *models.Round, juries []models.Role) (success int, fail int, err error)
 }
@@ -55,6 +62,7 @@ func (imp *ImporterServer) updateStatistics(tx *gorm.DB, round *models.Round, su
 func NewImporterServer() *ImporterServer {
 	return &ImporterServer{}
 }
+
 func (t *ImporterServer) importFrom(ctx context.Context, source IImportSource, taskId string, currentRoundId string) {
 
 	log.Printf("Importing from source for task %s in round %s\n", taskId, currentRoundId)
@@ -65,24 +73,43 @@ func (t *ImporterServer) importFrom(ctx context.Context, source IImportSource, t
 		return
 	}
 	defer close()
+	tx := conn.Begin()
+	if tx.Error != nil {
+		log.Println("Error starting transaction: ", tx.Error)
+		return
+	}
+	defer func() {
+		if err != nil {
+			log.Println("Rolling back transaction due to error: ", err)
+			if r := tx.Rollback(); r.Error != nil {
+				log.Println("Error rolling back transaction: ", r.Error)
+			}
+		} else {
+			log.Println("Committing transaction")
+			if r := tx.Commit(); r.Error != nil {
+				log.Println("Error committing transaction: ", r.Error)
+			}
+		}
+	}()
 	// define all the repositories
 	task_repo := repository.NewTaskRepository()
 	round_repo := repository.NewRoundRepository()
 	// Fetch the task
-	task, err := task_repo.FindByID(conn, models.IDType(taskId))
+	task, err := task_repo.FindByID(tx, models.IDType(taskId))
 	if err != nil {
 		log.Println("Error fetching task: ", err)
 		return
 	}
 	log.Printf("Task fetched: %s %v\n", taskId, task)
 	if task == nil {
+		err = errors.New("task.notFound")
 		log.Println("Task not found")
 		return
 	}
 
 	log.Printf("Task found: %v\n", task)
 	// Fetch the currentRound
-	currentRound, err := round_repo.FindByID(conn.Preload("Campaign"), models.IDType(currentRoundId))
+	currentRound, err := round_repo.FindByID(tx.Preload("Campaign"), models.IDType(currentRoundId))
 	if err != nil {
 		log.Println("Error fetching round: ", err)
 		return
@@ -95,6 +122,7 @@ func (t *ImporterServer) importFrom(ctx context.Context, source IImportSource, t
 	// }
 
 	if source == nil {
+		err = errors.New("source.notFound")
 		log.Println("Error creating commons category lister")
 		task.Status = models.TaskStatusFailed
 		return
@@ -102,53 +130,56 @@ func (t *ImporterServer) importFrom(ctx context.Context, source IImportSource, t
 	successCount := 0
 	failedCount := 0
 	currentRoundStatus := currentRound.Status
-	{
-		log.Printf("Starting import for round %s with task %s\n", currentRound.RoundID, task.TaskID)
-		// Update the round status to importing
-		currentRound.LatestDistributionTaskID = &task.TaskID
-		currentRound.Status = models.RoundStatusImporting
-		if res := conn.Updates(&models.Round{
-			RoundID:                  currentRound.RoundID,
-			Status:                   models.RoundStatusImporting,
-			LatestDistributionTaskID: &task.TaskID,
-		}); res.Error != nil {
+	log.Printf("Starting import for round %s with task %s\n", currentRound.RoundID, task.TaskID)
+	// Update the round status to importing
+	currentRound.LatestDistributionTaskID = &task.TaskID
+	currentRound.Status = models.RoundStatusImporting
+	if res := tx.Updates(&models.Round{
+		RoundID:                  currentRound.RoundID,
+		Status:                   models.RoundStatusImporting,
+		LatestDistributionTaskID: &task.TaskID,
+	}); res.Error != nil {
+		log.Println("Error updating round status: ", res.Error)
+		task.Status = models.TaskStatusFailed
+		return
+	}
+	defer func() {
+		log.Println("Finalizing task and round status")
+		res := tx.Updates(&models.Round{
+			RoundID: currentRound.RoundID,
+			Status:  currentRoundStatus,
+		})
+		if res.Error != nil {
+			err = res.Error
 			log.Println("Error updating round status: ", res.Error)
 			task.Status = models.TaskStatusFailed
 			return
 		}
-		defer func() {
-			log.Println("Finalizing task and round status")
-			res := conn.Updates(&models.Round{
-				RoundID: currentRound.RoundID,
-				Status:  currentRoundStatus,
-			})
-			if res.Error != nil {
-				log.Println("Error updating round status: ", res.Error)
-				task.Status = models.TaskStatusFailed
-				return
-			}
-			res = conn.Updates(&models.Task{
-				TaskID:         task.TaskID,
-				Status:         task.Status,
-				SuccessCount:   successCount,
-				FailedCount:    failedCount,
-				RemainingCount: 0,
-			})
-			if res.Error != nil {
-				log.Println("Error updating task status: ", res.Error)
-				task.Status = models.TaskStatusFailed
-				return
-			}
-		}()
-	}
+		res = tx.Updates(&models.Task{
+			TaskID:         task.TaskID,
+			Status:         task.Status,
+			SuccessCount:   successCount,
+			FailedCount:    failedCount,
+			RemainingCount: 0,
+		})
+		if res.Error != nil {
+			err = res.Error
+			log.Println("Error updating task status: ", res.Error)
+			task.Status = models.TaskStatusFailed
+			return
+		}
+	}()
 	FailedImages := &map[string]string{}
 	technicalJudge := round_service.NewTechnicalJudgeService(currentRound, currentRound.Campaign)
 	if technicalJudge == nil {
+		err = errors.New("technicalJudgeServicenotFound")
 		log.Println("Error creating technical judge service")
 		task.Status = models.TaskStatusFailed
 		return
 	}
 	user_repo := repository.NewUserRepository()
+	pageIdMap := map[uint64]types.SubmissionIDType{}
+	var username2IdMap map[models.WikimediaUsernameType]models.IDType
 	for {
 		log.Println("Importing images from source")
 		successBatch, failedBatch := source.ImportImageResults(ctx, currentRound, FailedImages)
@@ -166,6 +197,7 @@ func (t *ImporterServer) importFrom(ctx context.Context, source IImportSource, t
 			// not allowed to submit images
 			reason := technicalJudge.RejectReason(image)
 			if reason != "" {
+
 				log.Printf("File %s not allowed to submit: %s\n", image.Name, reason)
 				(*FailedImages)[image.Name] = reason
 				continue
@@ -178,10 +210,9 @@ func (t *ImporterServer) importFrom(ctx context.Context, source IImportSource, t
 		for _, image := range images {
 			participants[image.UploaderUsername] = idgenerator.GenerateID("u")
 		}
-		username2IdMap, err := user_repo.EnsureExists(conn, participants)
+		username2IdMap, err = user_repo.EnsureExists(tx, participants)
 		if err != nil {
 			log.Println("Error ensuring users exist: ", err)
-			conn.Rollback()
 			task.Status = models.TaskStatusFailed
 			return
 		}
@@ -225,14 +256,15 @@ func (t *ImporterServer) importFrom(ctx context.Context, source IImportSource, t
 				submission.ThumbWidth = *image.ThumbWidth
 				submission.ThumbHeight = *image.ThumbHeight
 			}
+			pageIdMap[image.PageID] = sId
 			submissions = append(submissions, submission)
 			submissionCount++
 			if submissionCount%1000 == 0 {
-				log.Println("Saving batch of submissions")
 
-				res := conn.Clauses(clause.Insert{Modifier: "IGNORE"}).Create(submissions)
+				log.Println("Saving batch of submissions")
+				res := tx.Clauses(clause.Insert{Modifier: "IGNORE"}).Create(submissions)
 				if res.Error != nil {
-					conn.Rollback()
+					err = res.Error
 					task.Status = models.TaskStatusFailed
 					log.Println("Error saving submissions: ", res.Error)
 					return
@@ -241,21 +273,45 @@ func (t *ImporterServer) importFrom(ctx context.Context, source IImportSource, t
 			}
 		}
 		if len(submissions) > 0 {
+			submissionIds := make([]string, 0, len(pageIdMap))
+			for _, submissionId := range submissions {
+				submissionIds = append(submissionIds, string(submissionId.SubmissionID))
+			}
+			log.Printf("Total submissions imported: %d, failed: %d\n", successCount, len(*FailedImages))
+			q := query.Use(tx)
+			RES, err := q.Submission.Where(q.Submission.SubmissionID.In(submissionIds...)).Find()
+			if err != nil {
+				log.Println("Error fetching submissions: ", err)
+				task.Status = models.TaskStatusFailed
+				return
+			}
+			log.Printf("Fetched %d submissions from the database\n", len(RES))
 			log.Println("Saving remaining submissions")
-			res := conn.Clauses(clause.Insert{Modifier: "IGNORE"}).Create(submissions)
+			res := tx.Clauses(clause.Insert{Modifier: "IGNORE"}).Create(submissions)
 			if res.Error != nil {
-				conn.Rollback()
 				task.Status = models.TaskStatusFailed
 				log.Println("Error saving submissions: ", res.Error)
 				return
 			}
 		}
+
 		// *task.FailedIds = datatypes.NewJSONType(*failedBatch)
-		res := conn.Save(task)
+		res := tx.Save(task)
 		if res.Error != nil {
+			err = res.Error
 			log.Println("Error saving task: ", res.Error)
 			task.Status = models.TaskStatusFailed
-			conn.Rollback()
+			return
+		}
+
+	}
+
+	if p, ok := source.(IImportSourceWithPostProcessing); ok {
+		log.Println("Post-processing import")
+		err = p.PostProcess(ctx, tx, currentRound, task, pageIdMap)
+		if err != nil {
+			log.Println("Error in post-processing import: ", err)
+			task.Status = models.TaskStatusFailed
 			return
 		}
 	}
@@ -285,15 +341,15 @@ func (t *ImporterServer) importFrom(ctx context.Context, source IImportSource, t
 	// }
 	// tx.Commit()
 	// go t.importDescriptions(ctx, currentRound)
-	{
-		task.Status = models.TaskStatusSuccess
-		currentRound.LatestDistributionTaskID = nil // Reset the latest task id
-	}
-	if err := t.updateStatistics(conn, currentRound, successCount, failedCount); err != nil {
+	task.Status = models.TaskStatusSuccess
+	currentRound.LatestDistributionTaskID = nil // Reset the latest task id
+	err = t.updateStatistics(tx, currentRound, successCount, failedCount)
+	if err != nil {
 		log.Println("Error updating statistics: ", err)
 		task.Status = models.TaskStatusFailed
 	}
 	log.Printf("Round %s imported successfully\n", currentRound.RoundID)
+	err = nil
 }
 func (t *ImporterServer) importDescriptions(ctx context.Context, round *models.Round) {
 	conn, close, err := repository.GetDB(ctx)

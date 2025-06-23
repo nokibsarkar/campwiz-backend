@@ -33,3 +33,24 @@ So, David Caro helped me setup the architecture I wanted. What I wanted was to r
     - Then we run the webservice using our hackish `heroku-php-nginx` image.
         - Now the nginx is forwarding the requests to the main server on port 8080 and the read-only server on port 8081. The GRPC server is running on port 50051.
 But my current issue is that, I see some performance hit after this change. I am not sure if it is because of the nginx reverse proxy or something else.
+
+
+
+# Statwiz
+## Per Campaign Basis
+- [] How many new articles were created during this campaign
+- [] How many articles were expanded during this campaign
+- [] What are the points of those articles
+- [] How many users created their since the previous month of the campaign
+### Advanced
+- [] How many articles were created by the users who created their account during the campaign (New Comers articles Newly Created)
+- [] How many articles were expanded by the users who created their account during the campaign (New Comers articles Expanded)
+- [] What is the retention rate of the new users
+## Per User Basis
+- [] How many articles did the user create during the campaign(s)
+- [] How many articles did the user expand during the campaign(s)
+- [] What are the points of those articles
+- [] How many campaigns did the user participate in
+### Advanced
+- [] If the user is a new user, how many articles did the user create during the campaign(s) which were not submitted in any of the campaign (Offline contributions)
+- [] As year basis, what is the growth rate of that user (The increase of the number of articles created by the user in the current year compared to the previous year)

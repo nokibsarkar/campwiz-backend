@@ -5,14 +5,25 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"nokib/campwiz/models"
+	"nokib/campwiz/models/types"
+	"nokib/campwiz/repository"
+	idgenerator "nokib/campwiz/services/idGenerator"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type FountainListSource struct {
 	code string
 	done bool
+	// @Key: Page ID
+	// @Value: Given Mark
+	participants map[models.WikimediaUsernameType]struct{}
+	jury         []models.WikimediaUsernameType
+	json         *FountainJSON
 }
 type fountainMark struct {
 	Type   string `json:"type"`
@@ -32,7 +43,7 @@ type GivenMarks struct {
 	Comment string         `json:"comment"`
 }
 type fountainArticle struct {
-	ID        int          `json:"id"`
+	ID        uint64       `json:"id"`
 	DateAdded time.Time    `json:"dateAdded"`
 	Name      string       `json:"name"`
 	User      string       `json:"user"`
@@ -81,10 +92,15 @@ func (t *FountainListSource) parseFountain(reader io.Reader) []models.MediaResul
 		// Handle error, e.g., log it or return it
 		return nil
 	}
+	t.participants = map[models.WikimediaUsernameType]struct{}{}
+	t.json = fountain
+	t.jury = []models.WikimediaUsernameType{}
+	for _, juryMember := range fountain.Jury {
+		t.jury = append(t.jury, models.WikimediaUsernameType(juryMember))
+	}
 	data := []models.MediaResult{}
 	// Process the fountain data as needed.
-	markingPolicy := fountain.Marks
-	for _, article := range fountain.Articles {
+	for _, article := range t.json.Articles {
 		pageId := article.ID
 		data = append(data, models.MediaResult{
 			PageID:           uint64(pageId),
@@ -93,12 +109,6 @@ func (t *FountainListSource) parseFountain(reader io.Reader) []models.MediaResul
 			UploaderUsername: models.WikimediaUsernameType(article.User),
 			MediaType:        string(models.MediaTypeArticle),
 		})
-		for _, evaluation := range article.Marks {
-			for markSegment, markIndex := range evaluation.Marks {
-				actualMark := markingPolicy[markSegment].Values[markIndex].Value
-				fmt.Printf("\tUser: %s, Mark: %d, Comment: %s\n", evaluation.User, actualMark, evaluation.Comment)
-			}
-		}
 	}
 	fmt.Printf("Fountain Code: %s, Name: %s, Description: %s\n", fountain.Code, fountain.Name, fountain.Description)
 	fmt.Printf("Start: %s, Finish: %s, Wiki: %s\n", fountain.Start, fountain.Finish, fountain.Wiki)
@@ -128,4 +138,59 @@ func (t *FountainListSource) ImportImageResults(ctx context.Context, currentRoun
 	data := t.parseFountain(resp.Body)
 	t.done = true
 	return data, nil
+}
+
+func (t *FountainListSource) PostProcess(ctx context.Context, tx *gorm.DB, currentRound *models.Round, task *models.Task, importMap map[uint64]types.SubmissionIDType) error {
+	fmt.Printf("Post-processing for round %s, task %s\n", currentRound.RoundID, task.TaskID)
+
+	role_repo := repository.NewRoleRepository()
+	juryRoleType := models.RoleTypeJury
+	juryRoles, err := role_repo.FindRolesByUsername(tx.Preload("User"), t.jury, &models.RoleFilter{
+		RoundID: &currentRound.RoundID,
+		Type:    &juryRoleType,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to find jury roles: %w", err)
+	}
+	user_repo := repository.NewUserRepository()
+	nameMap, err := user_repo.FetchExistingUsernames(tx, t.jury)
+	if err != nil {
+		return fmt.Errorf("failed to fetch existing usernames: %w", err)
+	}
+	roleMap := map[models.IDType]models.IDType{}
+	for _, role := range juryRoles {
+		roleMap[role.UserID] = role.RoleID
+	}
+	log.Printf("Found %d jury roles for fountain code %s\n", len(juryRoles), t.code)
+	evaluations := []models.Evaluation{}
+	markingPolicy := t.json.Marks
+	for _, article := range t.json.Articles {
+		pageId := article.ID
+		for _, evaluation := range article.Marks {
+			actualMark := 0
+			for markSegment, markIndex := range evaluation.Marks {
+				actualMark = markingPolicy[markSegment].Values[markIndex].Value
+			}
+			submissionId := importMap[pageId]
+			user := models.WikimediaUsernameType(evaluation.User)
+			roleID := roleMap[nameMap[user]]
+			score := models.ScoreType(float64(actualMark) * 100.0)
+			now := time.Now()
+			ev := models.Evaluation{
+				SubmissionID: submissionId,
+				EvaluationID: idgenerator.GenerateID("e"),
+				JudgeID:      &roleID,
+				RoundID:      currentRound.RoundID,
+				Comment:      evaluation.Comment,
+				Type:         models.EvaluationTypeScore,
+				Score:        &score, // Assuming the score is a percentage
+				EvaluatedAt:  &now,
+			}
+			evaluations = append(evaluations, ev)
+		}
+	}
+	if res := tx.CreateInBatches(evaluations[:1], 1000); res.Error != nil {
+		return fmt.Errorf("failed to create evaluations: %w", res.Error)
+	}
+	return nil
 }

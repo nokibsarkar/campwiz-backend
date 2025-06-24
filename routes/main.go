@@ -49,6 +49,7 @@ func NewRoundRoutes(parent *gin.RouterGroup) {
 	r.POST("/import/:roundId/previous", WithSession(ImportFromPreviousRound))
 	r.POST("/import/:roundId/csv", WithSession(ImportFromCSV))
 	r.POST("/import/:roundId/fountain", WithSession(ImportFromFountain))
+	r.POST("/import/:roundId/campwizv1", WithSession(ImportFromCampWizV1))
 	r.POST("/distribute/:roundId", WithSession(DistributeEvaluations))
 
 }

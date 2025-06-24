@@ -241,6 +241,59 @@ func ImportFromFountain(c *gin.Context, sess *cache.Session) {
 	c.JSON(200, models.ResponseSingle[*models.Task]{Data: task})
 }
 
+type ImportFromCampWizV1Request struct {
+	// The path to the CampWiz V1 database file, must be accessible by the server
+	FromFile string `json:"fromFile" binding:"required"`
+	// From Which Campaign ID to import
+	FromCampaignId int32 `json:"fromCampaignId" binding:"required"`
+	// To which round in our system to import the images
+	ToRoundId models.IDType `json:"toRoundId" binding:"required"`
+}
+
+// ImportFromCampWizV1 godoc
+// @Summary Import images from CampWiz V1
+// @Description The user would provide a round ID and a CampWiz V1 database file and the system would import images from that file
+// @Produce  json
+// @Success 200 {object} models.ResponseSingle[models.Task]
+// @Router /round/import/{roundId}/campwizv1 [post]
+// @Param roundId path string true "The round ID"
+// @Param ImportFromCampWizV1Request body ImportFromCampWizV1Request true "The import from CampWiz V1 request"
+// @Tags Round
+// @Security ApiKeyAuth
+// @Error 400 {object} models.ResponseError
+func ImportFromCampWizV1(c *gin.Context, sess *cache.Session) {
+	roundId := c.Param("roundId")
+	if roundId == "" {
+		c.JSON(400, models.ResponseError{Detail: "Invalid request : Round ID is required"})
+		return
+	}
+	req := &ImportFromCampWizV1Request{}
+	err := c.ShouldBind(req)
+	if err != nil {
+		c.JSON(400, models.ResponseError{Detail: "Error Decoding : " + err.Error()})
+		return
+	}
+	if req.FromFile == "" {
+		c.JSON(400, models.ResponseError{Detail: "Invalid request : No file provided"})
+		return
+	}
+	if req.FromCampaignId <= 0 {
+		c.JSON(400, models.ResponseError{Detail: "Invalid request : From Campaign ID must be positive"})
+		return
+	}
+	if req.ToRoundId == "" {
+		c.JSON(400, models.ResponseError{Detail: "Invalid request : No To Round ID provided"})
+		return
+	}
+	round_service := services.NewRoundService()
+	task, err := round_service.ImportFromCampWizV1(c, req.FromFile, req.FromCampaignId, req.ToRoundId)
+	if err != nil {
+		c.JSON(400, models.ResponseError{Detail: "Failed to import images : " + err.Error()})
+		return
+	}
+	c.JSON(200, models.ResponseSingle[*models.Task]{Data: task})
+}
+
 // UpdateRoundDetails godoc
 // @Summary Update the details of a round
 // @Description Update the details of a round

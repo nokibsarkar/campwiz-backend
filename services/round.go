@@ -445,6 +445,60 @@ func (b *RoundService) ImportFromFountain(ctx context.Context, roundId models.ID
 	})
 	return task, err
 }
+func (b *RoundService) ImportFromCampWizV1(ctx context.Context, dbFileName string, fromCampaignId int32, toRoundId models.IDType) (*models.Task, error) {
+	round_repo := repository.NewRoundRepository()
+	task_repo := repository.NewTaskRepository()
+	conn, close, err := repository.GetDB(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer close()
+	tx := conn.Begin()
+	round, err := round_repo.FindByID(tx.Preload("Campaign"), toRoundId)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	} else if round == nil {
+		tx.Rollback()
+		return nil, fmt.Errorf("round not found")
+	} else if round.Campaign == nil {
+		tx.Rollback()
+		return nil, fmt.Errorf("campaign not found")
+	}
+
+	taskReq := &models.Task{
+		TaskID:               idgenerator.GenerateID("t"),
+		Type:                 models.TaskTypeImportFromCSV,
+		Status:               models.TaskStatusPending,
+		AssociatedRoundID:    &toRoundId,
+		AssociatedUserID:     &round.CreatedByID,
+		CreatedByID:          round.CreatedByID,
+		AssociatedCampaignID: &round.CampaignID,
+		SuccessCount:         0,
+		FailedCount:          0,
+		FailedIds:            &datatypes.JSONType[map[string]string]{},
+		RemainingCount:       0,
+	}
+	task, err := task_repo.Create(tx, taskReq)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	tx.Commit()
+	grpcClient, err := round_service.NewGrpcClient()
+	if err != nil {
+		return nil, err
+	}
+	defer grpcClient.Close() //nolint:errcheck
+	importClient := models.NewImporterClient(grpcClient)
+	_, err = importClient.ImportFromCampWizV1(cache.WithGRPCContext(ctx), &models.ImportFromCampWizV1Request{
+		Path:       dbFileName,
+		RoundId:    toRoundId.String(),
+		CampaignId: fromCampaignId,
+		TaskId:     task.TaskID.String(),
+	})
+	return task, err
+}
 
 func (b *RoundService) GetById(ctx context.Context, roundId models.IDType) (*models.Round, error) {
 	round_repo := repository.NewRoundRepository()

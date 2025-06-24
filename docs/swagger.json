@@ -1055,6 +1055,49 @@
                 }
             }
         },
+        "/round/import/{roundId}/campwizv1": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "The user would provide a round ID and a CampWiz V1 database file and the system would import images from that file",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Round"
+                ],
+                "summary": "Import images from CampWiz V1",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The round ID",
+                        "name": "roundId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "The import from CampWiz V1 request",
+                        "name": "ImportFromCampWizV1Request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.ImportFromCampWizV1Request"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResponseSingle-models_Task"
+                        }
+                    }
+                }
+            }
+        },
         "/round/import/{roundId}/commons": {
             "post": {
                 "security": [
@@ -3394,6 +3437,28 @@
                 },
                 "summary": {
                     "description": "The Summary to be added when your edit is submitted.\nThis is a required field.",
+                    "type": "string"
+                }
+            }
+        },
+        "routes.ImportFromCampWizV1Request": {
+            "type": "object",
+            "required": [
+                "fromCampaignId",
+                "fromFile",
+                "toRoundId"
+            ],
+            "properties": {
+                "fromCampaignId": {
+                    "description": "From Which Campaign ID to import",
+                    "type": "integer"
+                },
+                "fromFile": {
+                    "description": "The path to the CampWiz V1 database file, must be accessible by the server",
+                    "type": "string"
+                },
+                "toRoundId": {
+                    "description": "To which round in our system to import the images",
                     "type": "string"
                 }
             }

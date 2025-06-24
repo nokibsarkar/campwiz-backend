@@ -1071,6 +1071,23 @@ definitions:
     - categories
     - summary
     type: object
+  routes.ImportFromCampWizV1Request:
+    properties:
+      fromCampaignId:
+        description: From Which Campaign ID to import
+        type: integer
+      fromFile:
+        description: The path to the CampWiz V1 database file, must be accessible
+          by the server
+        type: string
+      toRoundId:
+        description: To which round in our system to import the images
+        type: string
+    required:
+    - fromCampaignId
+    - fromFile
+    - toRoundId
+    type: object
   routes.ImportFromFountainRequest:
     properties:
       code:
@@ -2267,6 +2284,34 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Distribute evaluations to juries
+      tags:
+      - Round
+  /round/import/{roundId}/campwizv1:
+    post:
+      description: The user would provide a round ID and a CampWiz V1 database file
+        and the system would import images from that file
+      parameters:
+      - description: The round ID
+        in: path
+        name: roundId
+        required: true
+        type: string
+      - description: The import from CampWiz V1 request
+        in: body
+        name: ImportFromCampWizV1Request
+        required: true
+        schema:
+          $ref: '#/definitions/routes.ImportFromCampWizV1Request'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ResponseSingle-models_Task'
+      security:
+      - ApiKeyAuth: []
+      summary: Import images from CampWiz V1
       tags:
       - Round
   /round/import/{roundId}/commons:

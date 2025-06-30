@@ -7,3 +7,4 @@ __debug*
 coverage*
 taskmanager
 *.db
+network-tester

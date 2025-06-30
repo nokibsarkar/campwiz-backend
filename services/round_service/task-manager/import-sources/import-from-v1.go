@@ -7,6 +7,7 @@ import (
 	"nokib/campwiz/models/types"
 	"nokib/campwiz/repository"
 	idgenerator "nokib/campwiz/services/idGenerator"
+	"time"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -73,12 +74,13 @@ func (t *V1Source) ImportImageResults(ctx context.Context, currentRound *models.
 		}
 		t.conn = conn
 	}
+
 	startIndex := t.lastSubmissionId
 	raw_data := []models.CampWizV1Submission{}
 	results := []models.MediaResult{}
 	res := t.conn.Table("submission").
 		Where("campaign_id = ?", t.fromCampaignId).
-		Where("submission_id > ?", startIndex).
+		Where("id > ?", startIndex).
 		Order("id").Limit(batchSize).Scan(&raw_data)
 	if res.Error != nil && res.Error.Error() == "record not found" {
 		// No more submissions to process
@@ -117,7 +119,6 @@ func (t *V1Source) ImportImageResults(ctx context.Context, currentRound *models.
 
 func (t *V1Source) PostProcess(ctx context.Context, tx *gorm.DB, currentRound *models.Round, task *models.Task, importMap map[uint64]types.SubmissionIDType, newlyCreatedUsers map[models.WikimediaUsernameType]models.IDType) error {
 	conn := t.conn
-	lastEvaluationIndex := 0
 	type Jury struct {
 		UserID int                          `gorm:"column:user_id"`
 		Name   models.WikimediaUsernameType `gorm:"column:username"`
@@ -163,52 +164,78 @@ func (t *V1Source) PostProcess(ctx context.Context, tx *gorm.DB, currentRound *m
 		roleMap[role.UserID] = role.RoleID
 	}
 	// Get Submission ID to Page ID mapping
-	for {
-		evaluations := []models.Evaluation{}
-		previousEvaluations := []models.CampWizV1Evaluation{}
-		res := conn.Table("jury_vote").
-			Where("campaign_id = ?", t.fromCampaignId).
-			Where("id > ?", lastEvaluationIndex).
-			Order("id").Limit(batchSize).Scan(&previousEvaluations)
-		if res.Error != nil {
-			return res.Error
+	evaluations := []models.Evaluation{}
+
+	// Define a local struct that matches the SQLite schema exactly
+	type V1Evaluation struct {
+		SubmissionID int        `gorm:"column:submission_id"`
+		JuryID       int        `gorm:"column:jury_id"`
+		Vote         int        `gorm:"column:vote"`
+		CreatedAt    *time.Time `gorm:"column:created_at"` // Use string to handle SQLite date format
+	}
+
+	previousEvaluations := []V1Evaluation{}
+	res = conn.Table("jury_vote").
+		Select("submission_id, jury_id, vote, created_at").
+		Where("campaign_id = ?", t.fromCampaignId).Scan(&previousEvaluations)
+	if res.Error != nil {
+		return res.Error
+	}
+
+	for _, eval := range previousEvaluations {
+		pageId, exists := t.submissionId2pageId[eval.SubmissionID]
+		if !exists {
+			continue // Skip if the submission ID does not exist in the map
 		}
-		if len(previousEvaluations) == 0 {
-			break
+		ourSubmissionId, ok := importMap[uint64(pageId)]
+		if !ok {
+			continue // Skip if the page ID is not in the import map
 		}
-		for _, eval := range previousEvaluations {
-			pageId, exists := t.submissionId2pageId[eval.SubmissionID]
-			if !exists {
-				continue // Skip if the submission ID does not exist in the map
-			}
-			ourSubmissionId, ok := importMap[uint64(pageId)]
-			if !ok {
-				continue // Skip if the page ID is not in the import map
-			}
-			juryUsername, ok := juryId2NameMap[eval.JuryID]
-			if !ok {
-				continue // Skip if the jury ID does not exist in the map
-			}
-			score := models.ScoreType(float64(eval.Vote) * 100.0)
-			// asume the jury username is in the nameMap
-			juryUserId := nameMap[juryUsername]
-			juryRoleId := roleMap[juryUserId]
-			evaluation := models.Evaluation{
-				EvaluationID: idgenerator.GenerateID("e"),
-				SubmissionID: ourSubmissionId,
-				JudgeID:      &juryRoleId,
-				RoundID:      currentRound.RoundID,
-				Score:        &score,
-				AssignedAt:   &eval.CreatedAt,
-				EvaluatedAt:  &eval.CreatedAt,
-			}
-			evaluations = append(evaluations, evaluation)
+		juryUsername, ok := juryId2NameMap[eval.JuryID]
+		if !ok {
+			continue // Skip if the jury ID does not exist in the map
 		}
-		res = tx.Create(&evaluations)
-		if res.Error != nil {
-			return res.Error
+		score := models.ScoreType(float64(eval.Vote) * 100.0)
+		// assume the jury username is in the nameMap
+		juryUserId := nameMap[juryUsername]
+		juryRoleId := roleMap[juryUserId]
+
+		// Parse the date string to time.Time
+		evaluatedAt := time.Now() // Default fallback
+		// if eval.CreatedAt != "" {
+		// 	// Try common SQLite date formats
+		// 	if parsedTime, err := time.Parse("2006-01-02 15:04:05", eval.CreatedAt); err == nil {
+		// 		evaluatedAt = parsedTime
+		// 	} else if parsedTime, err := time.Parse("2006-01-02T15:04:05Z", eval.CreatedAt); err == nil {
+		// 		evaluatedAt = parsedTime
+		// 	} else if parsedTime, err := time.Parse(time.RFC3339, eval.CreatedAt); err == nil {
+		// 		evaluatedAt = parsedTime
+		// 	} else if parsedTime, err := time.Parse("2006-01-02T15:04:05.000Z", eval.CreatedAt); err == nil {
+		// 		evaluatedAt = parsedTime
+		// 	}
+		// 	// If all parsing fails, keep the default time.Now()
+		// }
+
+		evaluation := models.Evaluation{
+			EvaluationID: idgenerator.GenerateID("e"),
+			SubmissionID: ourSubmissionId,
+			JudgeID:      &juryRoleId,
+			RoundID:      currentRound.RoundID,
+			Score:        &score,
+			AssignedAt:   &evaluatedAt,
+			EvaluatedAt:  &evaluatedAt,
 		}
-		lastEvaluationIndex = previousEvaluations[len(previousEvaluations)-1].EvaluationId
+		evaluations = append(evaluations, evaluation)
+	}
+	if len(evaluations) == 0 {
+		// No evaluations to import
+		t.done = true
+		return nil
+	}
+	res = tx.Create(&evaluations)
+	if res.Error != nil {
+		return res.Error
+
 	}
 	return nil
 }

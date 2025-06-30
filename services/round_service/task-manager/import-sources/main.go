@@ -268,7 +268,7 @@ func (t *ImporterServer) importFrom(ctx context.Context, source IImportSource, t
 			submissionCount++
 			if submissionCount%1000 == 0 {
 				log.Println("Saving batch of submissions")
-				res := tx.Create(submissions)
+				res := tx.Clauses(clause.Insert{Modifier: "IGNORE"}).Create(submissions)
 				if res.Error != nil {
 					err = res.Error
 					task.Status = models.TaskStatusFailed

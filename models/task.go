@@ -82,28 +82,28 @@ type CampWizV1Submission struct {
 	// ID is the primary key of the submission
 	SubmissionID int `json:"id" gorm:"primaryKey"`
 	// PageID is the page ID of the submission on the target wiki
-	PageID int `json:"pageId" gorm:"index;not null"`
+	PageID int `json:"pageId" gorm:"index;not null;column:pageid"` // Use `column:pageid` to match the SQLite schema
 	// CampaignID is the ID of the campaign this submission belongs to
 	CampaignID          int       `json:"campaignId" gorm:"index;not null"`
 	Title               string    `json:"title" gorm:"not null"`
 	OldID               int       `json:"oldId" gorm:"not null"`
 	TargetWiki          string    `json:"targetWiki" gorm:"not null"`
-	SubmittedAt         time.Time `json:"submittedAt" gorm:"autoCreateTime"`
+	SubmittedAt         time.Time `json:"submittedAt"`
 	SubmittedByID       int       `json:"submittedById" gorm:"index;not null"`
 	SubmittedByUsername string    `json:"submittedByUsername" gorm:"not null"`
-	CreatedAt           time.Time `json:"createdAt" gorm:"autoCreateTime"`
-	CreatedByID         int       `json:"createdById" gorm:"index;not null"`
-	CreatedByUsername   string    `json:"createdByUsername" gorm:"not null"`
-	TotalBytes          int       `json:"totalBytes" gorm:"not null"`
-	TotalWords          int       `json:"totalWords" gorm:"default:NULL"`
-	AddedBytes          int       `json:"addedBytes" gorm:"default:NULL"`
-	AddedWords          int       `json:"addedWords" gorm:"default:NULL"`
-	PositiveVotes       int       `json:"positiveVotes" gorm:"default:0"`
-	NegativeVotes       int       `json:"negativeVotes" gorm:"default:0"`
-	TotalVotes          int       `json:"totalVotes" gorm:"default:0"`
-	Points              int       `json:"points" gorm:"default:0"`
-	Judgable            bool      `json:"judgable" gorm:"default:true"`
-	NewlyCreated        bool      `json:"newlyCreated" gorm:"default:false"`
+	// CreatedAt           time.Time `json:"createdAt" gorm:"not null;column:created_at"` // Use `column:created_at` to match the SQLite schema
+	CreatedByID       int    `json:"createdById" gorm:"index;not null"`
+	CreatedByUsername string `json:"createdByUsername" gorm:"not null"`
+	TotalBytes        int    `json:"totalBytes" gorm:"not null"`
+	TotalWords        int    `json:"totalWords" gorm:"default:NULL"`
+	AddedBytes        int    `json:"addedBytes" gorm:"default:NULL"`
+	AddedWords        int    `json:"addedWords" gorm:"default:NULL"`
+	PositiveVotes     int    `json:"positiveVotes" gorm:"default:0"`
+	NegativeVotes     int    `json:"negativeVotes" gorm:"default:0"`
+	TotalVotes        int    `json:"totalVotes" gorm:"default:0"`
+	Points            int    `json:"points" gorm:"default:0"`
+	Judgable          bool   `json:"judgable" gorm:"default:true"`
+	NewlyCreated      bool   `json:"newlyCreated" gorm:"default:false"`
 }
 
 // `jury_id`   INTEGER NOT NULL, -- user id of the jury

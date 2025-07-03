@@ -355,7 +355,6 @@ if __name__ == '__main__':
         119
     ]
 
-    UPDATE `submissions` JOIN (SELECT AVG(`evaluations`.`score`) As `Score`, COUNT(`evaluations`.`evaluation_id`) AS `AssignmentCount`, SUM(`evaluations`.`score` IS NOT NULL) AS `EvaluationCount`,`evaluations`.`submission_id`, evaluations.round_id as round_id FROM `evaluations` WHERE GROUP BY  evaluations.round_id, `evaluations`.`submission_id`) AS `e` ON `submissions`.`submission_id` = `e`.`submission_id` AND submissions.round_id=e.round_id SET `submissions`.`assignment_count` = `e`.`AssignmentCount`, `submissions`.`evaluation_count` = `e`.`EvaluationCount`, `submissions`.`score` = `e`.`Score` WHERE `submissions`.`round_id` = 'r2inkvjb95urk' 
     for campaign_id in campaign_ids:
         print(f'Importing campaign with ID: {campaign_id}')
         import_from_v1(project_id, campaign_id, 'data.db')

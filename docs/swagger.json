@@ -2251,6 +2251,12 @@
                 },
                 "status": {
                     "$ref": "#/definitions/models.RoundStatus"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Tag"
+                    }
                 }
             }
         },
@@ -2334,6 +2340,12 @@
                 },
                 "status": {
                     "$ref": "#/definitions/models.RoundStatus"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Tag"
+                    }
                 }
             }
         },
@@ -3297,6 +3309,17 @@
                 }
             }
         },
+        "models.Tag": {
+            "type": "object",
+            "properties": {
+                "campaignId": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "models.Task": {
             "type": "object",
             "properties": {
@@ -3559,6 +3582,12 @@
                 },
                 "status": {
                     "$ref": "#/definitions/models.RoundStatus"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Tag"
+                    }
                 }
             }
         },
@@ -3622,6 +3651,12 @@
                 },
                 "status": {
                     "$ref": "#/definitions/models.RoundStatus"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Tag"
+                    }
                 }
             }
         },

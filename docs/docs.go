@@ -2258,6 +2258,12 @@ const docTemplate = `{
                 },
                 "status": {
                     "$ref": "#/definitions/models.RoundStatus"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Tag"
+                    }
                 }
             }
         },
@@ -2341,6 +2347,12 @@ const docTemplate = `{
                 },
                 "status": {
                     "$ref": "#/definitions/models.RoundStatus"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Tag"
+                    }
                 }
             }
         },
@@ -3304,6 +3316,17 @@ const docTemplate = `{
                 }
             }
         },
+        "models.Tag": {
+            "type": "object",
+            "properties": {
+                "campaignId": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "models.Task": {
             "type": "object",
             "properties": {
@@ -3566,6 +3589,12 @@ const docTemplate = `{
                 },
                 "status": {
                     "$ref": "#/definitions/models.RoundStatus"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Tag"
+                    }
                 }
             }
         },
@@ -3629,6 +3658,12 @@ const docTemplate = `{
                 },
                 "status": {
                     "$ref": "#/definitions/models.RoundStatus"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Tag"
+                    }
                 }
             }
         },

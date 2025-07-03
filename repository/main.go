@@ -223,7 +223,7 @@ func InitDB(ctx context.Context, testing bool) {
 	db.Exec("ALTER DATABASE campwiz CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin;")
 	err = db.AutoMigrate(&models.Project{}, &models.User{}, &models.Campaign{}, &models.Round{},
 		&models.Task{}, &models.Role{}, &models.Submission{},
-		&models.Evaluation{}, &models.TaskData{}, &models.Category{})
+		&models.Evaluation{}, &models.TaskData{}, &models.Category{}, &models.Tag{})
 	if err != nil {
 		log.Printf("failed to migrate database %s", err.Error())
 		db.Rollback()
@@ -242,7 +242,7 @@ func InitDB(ctx context.Context, testing bool) {
 	db = conn.Begin()
 	err = db.AutoMigrate(&models.Project{}, &models.User{}, &models.Campaign{}, &models.Round{},
 		&models.Task{}, &models.Role{}, &models.Submission{},
-		&models.Evaluation{}, &models.TaskData{}, &models.Category{})
+		&models.Evaluation{}, &models.TaskData{}, &models.Category{}, &models.Tag{})
 	if err != nil {
 		log.Printf("failed to migrate database %s", err.Error())
 		db.Rollback()

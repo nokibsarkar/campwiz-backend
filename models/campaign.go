@@ -34,6 +34,7 @@ type CampaignWithWriteableFields struct {
 	IsPublic  bool        `json:"isPublic"`
 	ProjectID IDType      `json:"projectId"`
 	Status    RoundStatus `json:"status"`
+	Tags      []Tag       `json:"tags,omitempty" gorm:"null"`
 	// The type of the campaign, it should be one of the CampaignType constants
 	CampaignType CampaignType `json:"campaignType" gorm:"type:ENUM('commons', 'wikipedia', 'wikidata', 'categorization', 'reference');default:'commons';not null;index" binding:"required"`
 }

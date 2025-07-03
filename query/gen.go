@@ -29,6 +29,7 @@ var (
 	Submission             *submission
 	SubmissionResult       *submissionResult
 	SubmissionStatistics   *submissionStatistics
+	Tag                    *tag
 	Task                   *task
 	TaskData               *taskData
 	User                   *user
@@ -48,6 +49,7 @@ func SetDefault(db *gorm.DB, opts ...gen.DOOption) {
 	Submission = &Q.Submission
 	SubmissionResult = &Q.SubmissionResult
 	SubmissionStatistics = &Q.SubmissionStatistics
+	Tag = &Q.Tag
 	Task = &Q.Task
 	TaskData = &Q.TaskData
 	User = &Q.User
@@ -68,6 +70,7 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 		Submission:             newSubmission(db, opts...),
 		SubmissionResult:       newSubmissionResult(db, opts...),
 		SubmissionStatistics:   newSubmissionStatistics(db, opts...),
+		Tag:                    newTag(db, opts...),
 		Task:                   newTask(db, opts...),
 		TaskData:               newTaskData(db, opts...),
 		User:                   newUser(db, opts...),
@@ -89,6 +92,7 @@ type Query struct {
 	Submission             submission
 	SubmissionResult       submissionResult
 	SubmissionStatistics   submissionStatistics
+	Tag                    tag
 	Task                   task
 	TaskData               taskData
 	User                   user
@@ -111,6 +115,7 @@ func (q *Query) clone(db *gorm.DB) *Query {
 		Submission:             q.Submission.clone(db),
 		SubmissionResult:       q.SubmissionResult.clone(db),
 		SubmissionStatistics:   q.SubmissionStatistics.clone(db),
+		Tag:                    q.Tag.clone(db),
 		Task:                   q.Task.clone(db),
 		TaskData:               q.TaskData.clone(db),
 		User:                   q.User.clone(db),
@@ -140,6 +145,7 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 		Submission:             q.Submission.replaceDB(db),
 		SubmissionResult:       q.SubmissionResult.replaceDB(db),
 		SubmissionStatistics:   q.SubmissionStatistics.replaceDB(db),
+		Tag:                    q.Tag.replaceDB(db),
 		Task:                   q.Task.replaceDB(db),
 		TaskData:               q.TaskData.replaceDB(db),
 		User:                   q.User.replaceDB(db),
@@ -159,6 +165,7 @@ type queryCtx struct {
 	Submission             ISubmissionDo
 	SubmissionResult       ISubmissionResultDo
 	SubmissionStatistics   ISubmissionStatisticsDo
+	Tag                    ITagDo
 	Task                   ITaskDo
 	TaskData               ITaskDataDo
 	User                   IUserDo
@@ -178,6 +185,7 @@ func (q *Query) WithContext(ctx context.Context) *queryCtx {
 		Submission:             q.Submission.WithContext(ctx),
 		SubmissionResult:       q.SubmissionResult.WithContext(ctx),
 		SubmissionStatistics:   q.SubmissionStatistics.WithContext(ctx),
+		Tag:                    q.Tag.WithContext(ctx),
 		Task:                   q.Task.WithContext(ctx),
 		TaskData:               q.TaskData.WithContext(ctx),
 		User:                   q.User.WithContext(ctx),

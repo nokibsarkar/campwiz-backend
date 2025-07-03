@@ -142,17 +142,18 @@ func (c *CommonsRepository) GetImagesFromCommonsCategories(category string) ([]m
 		info := image.Info[0]
 		// log.Println("Image info: ", info.Title)
 		img := models.MediaResult{
-			PageID:           uint64(image.PageID),
-			Name:             image.Title,
-			URL:              info.URL,
-			UploaderUsername: info.User,
-			SubmittedAt:      info.Timestamp,
-			Height:           info.Height,
-			Width:            info.Width,
-			Size:             info.Size,
-			MediaType:        info.MediaType,
-			Duration:         uint64(info.Duration * 1e3), // Convert to milliseconds
-			Resolution:       info.Width * info.Height,
+			PageID:              uint64(image.PageID),
+			Name:                image.Title,
+			URL:                 info.URL,
+			CreatedByUsername:   info.User,
+			SubmittedByUsername: info.User,
+			SubmittedAt:         info.Timestamp,
+			Height:              info.Height,
+			Width:               info.Width,
+			Size:                info.Size,
+			MediaType:           info.MediaType,
+			Duration:            uint64(info.Duration * 1e3), // Convert to milliseconds
+			Resolution:          info.Width * info.Height,
 		}
 		if info.ExtMetadata != nil {
 			img.License = html2text.HTML2Text(info.ExtMetadata.GetLicense())
@@ -206,19 +207,20 @@ func (c *CommonsRepository) GetImagesFromCommonsCategories2(ctx context.Context,
 			}
 			thumbURL, thumbWidth, thumbHeight := submission.GetThumbURL()
 			result = append(result, models.MediaResult{
-				PageID:           submission.PageID,
-				Name:             submission.PageTitle,
-				URL:              submission.GetURL(),
-				UploaderUsername: models.WikimediaUsernameType(submission.UserName),
-				SubmittedAt:      submission.GetSubmittedAt(),
-				Height:           submission.FrHeight,
-				Width:            submission.FrWidth,
-				Size:             submission.FrSize,
-				MediaType:        submission.FtMediaType,
-				Resolution:       submission.FrWidth * submission.FrHeight,
-				ThumbURL:         &thumbURL,
-				ThumbWidth:       &thumbWidth,
-				ThumbHeight:      &thumbHeight,
+				PageID:              submission.PageID,
+				Name:                submission.PageTitle,
+				URL:                 submission.GetURL(),
+				CreatedByUsername:   models.WikimediaUsernameType(submission.UserName),
+				SubmittedByUsername: models.WikimediaUsernameType(submission.UserName),
+				SubmittedAt:         submission.GetSubmittedAt(),
+				Height:              submission.FrHeight,
+				Width:               submission.FrWidth,
+				Size:                submission.FrSize,
+				MediaType:           submission.FtMediaType,
+				Resolution:          submission.FrWidth * submission.FrHeight,
+				ThumbURL:            &thumbURL,
+				ThumbWidth:          &thumbWidth,
+				ThumbHeight:         &thumbHeight,
 			})
 		}
 		log.Println("Last Page ID: ", lastPageID)

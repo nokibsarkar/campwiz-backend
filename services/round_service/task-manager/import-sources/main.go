@@ -40,28 +40,12 @@ type IDistributionStrategy interface {
 }
 
 func (imp *ImporterServer) updateRoundStatistics(tx *gorm.DB, round *models.Round, successCount, failedCount int) error {
-	type Result struct {
-		TotalSubmissions          int
-		TotalEvaluatedSubmissions int
-	}
-	var result Result
 	q := query.Use(tx)
 	if err := q.SubmissionStatistics.TriggerByRoundId(round.RoundID.String()); err != nil {
 		log.Println("Error triggering submission statistics: ", err)
 		return err
 	}
-	Submission := q.Submission
-	err := Submission.Select(Submission.SubmissionID.Count().As("TotalSubmissions"), Submission.AssignmentCount.Sum().
-		As("TotalEvaluatedSubmissions")).Where(Submission.RoundID.Eq(round.RoundID.String())).Scan(&result)
-	if err != nil {
-		return err
-	}
-	res := tx.Updates(&models.Round{
-		RoundID:                   round.RoundID,
-		TotalSubmissions:          result.TotalSubmissions,
-		TotalEvaluatedSubmissions: result.TotalEvaluatedSubmissions,
-	})
-	return res.Error
+	return q.RoundStatistics.UpdateByRoundID(round.RoundID.String())
 
 }
 func NewImporterServer() *ImporterServer {
@@ -214,7 +198,8 @@ func (t *ImporterServer) importFrom(ctx context.Context, source IImportSource, t
 		task.SuccessCount = successCount
 		participants := map[models.WikimediaUsernameType]models.IDType{}
 		for _, image := range images {
-			participants[image.UploaderUsername] = idgenerator.GenerateID("u")
+			participants[image.CreatedByUsername] = idgenerator.GenerateID("u")
+			participants[image.SubmittedByUsername] = idgenerator.GenerateID("u")
 		}
 		username2IdMap, err = user_repo.EnsureExists(tx, participants)
 		if err != nil {
@@ -225,8 +210,10 @@ func (t *ImporterServer) importFrom(ctx context.Context, source IImportSource, t
 		submissionCount := 0
 		submissions := []models.Submission{}
 		for _, image := range images {
-			uploaderId := username2IdMap[image.UploaderUsername]
-			newlyCreatedUsers[image.UploaderUsername] = uploaderId
+			submitterId := username2IdMap[image.SubmittedByUsername]
+			creatorId := username2IdMap[image.CreatedByUsername]
+			newlyCreatedUsers[image.SubmittedByUsername] = submitterId
+			newlyCreatedUsers[image.CreatedByUsername] = creatorId
 			sId := types.SubmissionIDType(idgenerator.GenerateID("s"))
 			submission := models.Submission{
 				SubmissionID:      sId,
@@ -234,9 +221,9 @@ func (t *ImporterServer) importFrom(ctx context.Context, source IImportSource, t
 				Name:              image.Name,
 				CampaignID:        *task.AssociatedCampaignID,
 				URL:               image.URL,
-				Author:            image.UploaderUsername,
-				SubmittedByID:     uploaderId,
-				ParticipantID:     uploaderId,
+				Author:            image.CreatedByUsername,
+				SubmittedByID:     submitterId,
+				ParticipantID:     submitterId,
 				SubmittedAt:       image.SubmittedAt,
 				CreatedAtExternal: &image.SubmittedAt,
 				RoundID:           currentRound.RoundID,

@@ -101,16 +101,19 @@ func (t *V1Source) ImportImageResults(ctx context.Context, currentRound *models.
 		return nil, failedImageReason
 	}
 	for _, submission := range raw_data {
+		creator := models.WikimediaUsernameType(submission.CreatedByUsername)
+		Submitter := models.WikimediaUsernameType(submission.SubmittedByUsername)
 		result := models.MediaResult{
-			PageID:           uint64(submission.PageID),
-			Name:             submission.Title,
-			SubmittedAt:      submission.SubmittedAt,
-			UploaderUsername: models.WikimediaUsernameType(submission.CreatedByUsername),
-			Size:             uint64(submission.TotalBytes),
-			MediaType:        string(models.MediaTypeArticle),
+			PageID:              uint64(submission.PageID),
+			Name:                submission.Title,
+			SubmittedAt:         submission.SubmittedAt,
+			CreatedByUsername:   creator,
+			SubmittedByUsername: Submitter,
+			Size:                uint64(submission.TotalBytes),
+			MediaType:           string(models.MediaTypeArticle),
 		}
 		t.submissionId2pageId[submission.SubmissionID] = submission.PageID
-		t.participants[models.WikimediaUsernameType(submission.CreatedByUsername)] = struct{}{}
+		t.participants[Submitter] = struct{}{}
 		results = append(results, result)
 	}
 	t.done = len(results) < batchSize
@@ -168,71 +171,77 @@ func (t *V1Source) PostProcess(ctx context.Context, tx *gorm.DB, currentRound *m
 
 	// Define a local struct that matches the SQLite schema exactly
 	type V1Evaluation struct {
-		SubmissionID int        `gorm:"column:submission_id"`
-		JuryID       int        `gorm:"column:jury_id"`
-		Vote         int        `gorm:"column:vote"`
-		CreatedAt    *time.Time `gorm:"column:created_at"` // Use string to handle SQLite date format
+		SubmissionID        int        `gorm:"column:submission_id"`
+		JuryID              int        `gorm:"column:jury_id"`
+		Vote                int        `gorm:"column:vote"`
+		CreatedAt           *time.Time `gorm:"column:created_at"` // Use string to handle SQLite date format
+		SubmittedByUsername string     `gorm:"column:submitted_by_username"`
+		Note                string     `gorm:"column:note"` // Assuming there is a note column in the jury_vote table
 	}
 
 	previousEvaluations := []V1Evaluation{}
 	res = conn.Table("jury_vote").
-		Select("submission_id, jury_id, vote, created_at").
-		Where("campaign_id = ?", t.fromCampaignId).Scan(&previousEvaluations)
+		Select("submission_id, jury_id, vote, jury_vote.created_at, submitted_by_username").
+		Joins("LEFT JOIN submission ON jury_vote.submission_id = submission.id AND submission.campaign_id = ?", t.fromCampaignId).
+		Where("jury_vote.campaign_id = ?", t.fromCampaignId).Scan(&previousEvaluations)
 	if res.Error != nil {
 		return res.Error
 	}
-
 	for _, eval := range previousEvaluations {
 		pageId, exists := t.submissionId2pageId[eval.SubmissionID]
 		if !exists {
+			fmt.Printf("Skipping evaluation for submission ID %d: no corresponding page ID found\n", eval.SubmissionID)
 			continue // Skip if the submission ID does not exist in the map
 		}
 		ourSubmissionId, ok := importMap[uint64(pageId)]
 		if !ok {
+			fmt.Printf("Skipping evaluation for page ID %d: not found in import map\n", pageId)
 			continue // Skip if the page ID is not in the import map
 		}
 		juryUsername, ok := juryId2NameMap[eval.JuryID]
 		if !ok {
+			fmt.Printf("Skipping evaluation for jury ID %d: not found in jury name map\n", eval.JuryID)
 			continue // Skip if the jury ID does not exist in the map
 		}
+		submitterUsername := models.WikimediaUsernameType(eval.SubmittedByUsername)
+		participantId, exists := nameMap[submitterUsername]
+		if !exists {
+			participantId, ok = newlyCreatedUsers[submitterUsername]
+			if !ok {
+				// If the submitter is not found in either existing or newly created users, skip this evaluatio
+				return fmt.Errorf("submitter %s not found in existing or newly created users", submitterUsername)
+			}
+		}
+
 		score := models.ScoreType(float64(eval.Vote) * 100.0)
 		// assume the jury username is in the nameMap
 		juryUserId := nameMap[juryUsername]
 		juryRoleId := roleMap[juryUserId]
 
 		// Parse the date string to time.Time
-		evaluatedAt := time.Now() // Default fallback
-		// if eval.CreatedAt != "" {
-		// 	// Try common SQLite date formats
-		// 	if parsedTime, err := time.Parse("2006-01-02 15:04:05", eval.CreatedAt); err == nil {
-		// 		evaluatedAt = parsedTime
-		// 	} else if parsedTime, err := time.Parse("2006-01-02T15:04:05Z", eval.CreatedAt); err == nil {
-		// 		evaluatedAt = parsedTime
-		// 	} else if parsedTime, err := time.Parse(time.RFC3339, eval.CreatedAt); err == nil {
-		// 		evaluatedAt = parsedTime
-		// 	} else if parsedTime, err := time.Parse("2006-01-02T15:04:05.000Z", eval.CreatedAt); err == nil {
-		// 		evaluatedAt = parsedTime
-		// 	}
-		// 	// If all parsing fails, keep the default time.Now()
-		// }
+		evaluatedAt := time.Now()
 
 		evaluation := models.Evaluation{
-			EvaluationID: idgenerator.GenerateID("e"),
-			SubmissionID: ourSubmissionId,
-			JudgeID:      &juryRoleId,
-			RoundID:      currentRound.RoundID,
-			Score:        &score,
-			AssignedAt:   &evaluatedAt,
-			EvaluatedAt:  &evaluatedAt,
+			EvaluationID:  idgenerator.GenerateID("e"),
+			SubmissionID:  ourSubmissionId,
+			JudgeID:       &juryRoleId,
+			RoundID:       currentRound.RoundID,
+			Score:         &score,
+			AssignedAt:    &evaluatedAt,
+			EvaluatedAt:   &evaluatedAt,
+			ParticipantID: participantId,
+			Type:          models.EvaluationTypeBinary,
+			Comment:       eval.Note,
 		}
 		evaluations = append(evaluations, evaluation)
 	}
+	t.done = true
 	if len(evaluations) == 0 {
 		// No evaluations to import
-		t.done = true
+
 		return nil
 	}
-	res = tx.Create(&evaluations)
+	res = tx.CreateInBatches(&evaluations, 1000)
 	if res.Error != nil {
 		return res.Error
 

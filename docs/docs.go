@@ -18,26 +18,6 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api/v2/permisssions/": {
-            "get": {
-                "description": "Get the permission map",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Permissions"
-                ],
-                "summary": "Get the permission map",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.ResponseSingle-consts_PermissionMap"
-                        }
-                    }
-                }
-            }
-        },
         "/campaign/": {
             "get": {
                 "description": "get all campaigns",
@@ -758,6 +738,26 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/models.ResponseSingle-models_Evaluation"
+                        }
+                    }
+                }
+            }
+        },
+        "/permissions": {
+            "get": {
+                "description": "Get the permission map",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Permissions"
+                ],
+                "summary": "Get the permission map",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResponseSingle-consts_PermissionMap"
                         }
                     }
                 }

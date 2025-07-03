@@ -5,24 +5,25 @@ import (
 )
 
 type MediaResult struct {
-	PageID           uint64 `json:"pageid"`
-	SubmissionID     IDType `json:"-"`
-	Name             string `json:"title"`
-	URL              string
-	SubmittedAt      time.Time
-	UploaderUsername WikimediaUsernameType
-	Height           uint64
-	Width            uint64
-	Size             uint64
-	MediaType        string
-	Duration         uint64
-	License          string
-	Description      string
-	CreditHTML       string
-	Resolution       uint64
-	ThumbURL         *string
-	ThumbWidth       *uint64
-	ThumbHeight      *uint64
+	PageID              uint64 `json:"pageid"`
+	SubmissionID        IDType `json:"-"`
+	Name                string `json:"title"`
+	URL                 string
+	SubmittedAt         time.Time
+	CreatedByUsername   WikimediaUsernameType
+	SubmittedByUsername WikimediaUsernameType
+	Height              uint64
+	Width               uint64
+	Size                uint64
+	MediaType           string
+	Duration            uint64
+	License             string
+	Description         string
+	CreditHTML          string
+	Resolution          uint64
+	ThumbURL            *string
+	ThumbWidth          *uint64
+	ThumbHeight         *uint64
 }
 type WikiMediaBaseResponse struct {
 	Error *struct {

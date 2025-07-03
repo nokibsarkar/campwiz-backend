@@ -23,7 +23,7 @@ func WithPermission(requiredPermission consts.Permission, handler func(c *gin.Co
 // @Description Get the permission map
 // @Produce json
 // @Success 200 {object} models.ResponseSingle[consts.PermissionMap]
-// @Router /api/v2/permisssions/ [get]
+// @Router /permissions [get]
 // @Tags Permissions
 func GetPermissionMap(c *gin.Context) {
 	c.JSON(200, models.ResponseSingle[consts.PermissionMap]{
@@ -32,6 +32,6 @@ func GetPermissionMap(c *gin.Context) {
 }
 
 func NewPermissionRoutes(parent *gin.RouterGroup) {
-	r := parent.Group("/permisssions")
+	r := parent.Group("/permissions")
 	r.GET("/", GetPermissionMap)
 }

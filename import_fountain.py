@@ -6,18 +6,22 @@ import sqlite3
 import os
 # Load environment variables from .env file
 load_dotenv()
-sess = Session()
-sess.cookies.update({
+campwiz_sess = Session()
+campwiz_sess.cookies.update({
     'c-auth' : os.getenv('Auth'),
     'X-Refresh-Token' : os.getenv('Refresh')
 })
-
+campwiz_bot_sess = Session()
+campwiz_bot_sess.headers.update({
+    'User-Agent': 'CampWiz Bot/1.0 (https://campwiz.org/bot)',
+    'Authorization': f'Bearer {os.getenv("CampWizBotToken")}'
+})
 def import_fountain(code):
     """
     Import a fountain script into the database.
     """
     url = f'{FOUNTAIN_BASE}/{code}'
-    response = sess.get(url)
+    response = campwiz_sess.get(url)
     if response.status_code != 200:
         raise Exception(f'Error fetching fountain script: {response.status_code}')
     data = response.json()
@@ -43,9 +47,9 @@ def create_campaign(*, project_id, language, name, description, start_date, end_
         "startDate": start_date,
         "status": "PAUSED"
     }
-    response = sess.post(url, json=payload)
+    response = campwiz_sess.post(url, json=payload)
     if response.status_code != 200:
-        raise Exception(f'Error creating campaign: {response.status_code}')
+        raise Exception(f'Error creating campaign: {response.status_code} : {response.text}')
     return response.json()
 def create_round(*, campaign_id, name, description, start_date, end_date, jury):
     data = {
@@ -82,7 +86,7 @@ def create_round(*, campaign_id, name, description, start_date, end_date, jury):
         "videoMinimumSizeBytes": 0
         }
     url = f'{API_BASE}/round/'
-    response = sess.post(url, json=data)
+    response = campwiz_sess.post(url, json=data)
     if response.status_code != 200:
         raise Exception(f'Error creating round: {response.status_code}')
     return response.json()
@@ -94,10 +98,27 @@ def pause_round(round_id):
     data = {
         "status": "PAUSED"
     }
-    response = sess.post(url, json=data)
+    response = campwiz_sess.post(url, json=data)
     if response.status_code != 200:
         raise Exception(f'Error pausing round: {response.status_code}')
     return response.json()
+def check_import_task_status(task_id):
+    """ Check the status of an import task.
+    """
+    # Periodically check the task status
+    import time
+    status_url = f'{API_BASE}/task/{task_id}'
+    while True:
+        status_response = campwiz_sess.get(status_url)
+        if status_response.status_code != 200:
+            raise Exception(f'Error checking task status: {status_response.status_code}')
+        status_data = status_response.json()['data']
+        print(f'Task status: {status_data["status"]}')
+        if status_data['status'] != 'pending':
+            return status_data['status']
+        print('Import in progress...')
+        time.sleep(1)
+
 def _import_from_fountain(round_id, code):
     """
     Import a fountain script into a round.
@@ -106,24 +127,12 @@ def _import_from_fountain(round_id, code):
     data = {
         "code": code
     }
-    response = sess.post(url, json=data)
+    response = campwiz_sess.post(url, json=data)
     if response.status_code != 200:
         raise Exception(f'Error importing fountain script: {response.status_code}')
     task_id = response.json()['data']['taskId']
     print(f'Import task ID: {task_id}')
-    # Periodically check the task status
-    import time
-    while True:
-        status_url = f'{API_BASE}/task/{task_id}'
-        status_response = sess.get(status_url)
-        if status_response.status_code != 200:
-            raise Exception(f'Error checking task status: {status_response.status_code}')
-        status_data = status_response.json()['data']
-        print(f'Task status: {status_data["status"]}')
-        if status_data['status'] != 'pending':
-            break
-        print('Import in progress...')
-        time.sleep(1)
+    
 def import_fountain_script(project_id, code):
     """
     Import a fountain script into the database.
@@ -166,16 +175,64 @@ def import_fountain_script(project_id, code):
     print(f'Round ID: {round_id}')
     pause_round(round_id)
     _import_from_fountain(round_id, code)
+def create_campaign_from_v1(project_id, campaign_id_in_v1, path: str):
+    with sqlite3.connect(path) as conn:
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        campaign_raw = cursor.execute('SELECT * FROM campaign WHERE id = ?', (campaign_id_in_v1,)).fetchone()
+        jury_raw = cursor.execute('SELECT username FROM jury WHERE campaign_id = ?', (campaign_id_in_v1,)).fetchall()
+        jury = list(map(lambda x: x['username'], jury_raw))
+        start_at = campaign_raw['start_at'].replace(' ', 'T') + 'Z'
+        end_at = campaign_raw['end_at'].replace(' ', 'T') + 'Z'
+        campaign = create_campaign(
+            project_id=project_id,
+            language=campaign_raw['language'],
+            name=campaign_raw['name'],
+            description=f'Imported from v1 campaign ID: {campaign_id_in_v1}\n\n{campaign_raw["description"]}',
+            start_date=start_at,
+            end_date=end_at,
+            coordinators=jury,
+        )
+        print(f'Created campaign: {campaign["data"]["name"]} with ID: {campaign["data"]["campaignId"]}')
+        campaign_id = campaign['data']['campaignId']
+        round = create_round(
+            campaign_id=campaign_id,
+            name=campaign_raw['name'],
+            description=f'Imported from v1 campaign ID: {campaign_id_in_v1}\n\n{campaign_raw["description"]}',
+            start_date=start_at,
+            end_date=end_at,
+            jury=jury
+        )
+        print(f'Created round: {round["data"]["name"]} with ID: {round["data"]["roundId"]}')
+        return round['data']
+def import_from_v1(project_id, campaign_id_in_v1, path: str, *, to_round_id=None):
+    """
+    Import a campaign from the v1 API.
+    """
+    if not to_round_id:
+        round = create_campaign_from_v1(project_id, campaign_id_in_v1, path)
+        to_round_id = round['roundId']
+    url = f'{API_BASE}/round/import/{to_round_id}/campwizv1'
+    data = {
+        "fromCampaignId": campaign_id_in_v1,
+        "fromFile": path,
+        "toRoundId": to_round_id
+    }
+    response = campwiz_sess.post(url, json=data)
+    if response.status_code != 200:
+        raise Exception(f'Error importing campaign from v1: {response.status_code} : {response.text}')
+    task_id = response.json()['data']['taskId']
+    print(f'Import task ID: {task_id}')
+    import_status = check_import_task_status(task_id)
+    print(f'Import task completed with status: {import_status}')
+
+
 def get_jury_id(username):
     """
     Get the jury ID for a given username.
     """
-    with sqlite3.connect('data.db') as conn:
-        cursor = conn.cursor()
-        cursor.execute('SELECT id FROM user WHERE username = ?', (username,))
-        result = cursor.fetchone()
-        if result:
-            return result[0]
+   
 
 def import_jury_votes(code):
     campaign_id = get_campaign_id(code)
@@ -217,41 +274,100 @@ def get_campaign_id(code):
         'fnf2025-ur' : 162,
     }
     return mp.get(code, None)
+def resolve_redirects(language, page_titles):
+    """
+    Resolve redirects for a list of page titles in a given language.
+    """
+    url = f'https://{language}.wikipedia.org/w/api.php'
+    normalization_map = {}
+    redirect_map = {}
+    # convert these pages in a batch of 50
+    while page_titles:
+        batch = page_titles[:50]
+        page_titles = page_titles[50:]
+        params = {
+            "action": "query",
+            "format": "json",
+            "titles": '|'.join(batch),
+            "redirects": 1,
+            "formatversion": "2"
+        }
+        response = campwiz_bot_sess.get(url, params=params)
+        if response.status_code != 200:
+            raise Exception(f'Error fetching redirects: {response.status_code}')
+        data = response.json()
+        normalizations = data.get('query', {}).get('normalized', [])
+        redirects = data.get('query', {}).get('redirects', [])
+        for normalization in normalizations:
+            normalization_map[normalization['to']] = normalization['from']
+        for redirect in redirects:
+            from_title = redirect['from']
+            to_title = redirect['to']
+            if from_title in normalization_map:
+                redirect_map[normalization_map[from_title]] = normalization_map[to_title]
+            else:
+                redirect_map[from_title] = to_title
+    return redirect_map
+
 if __name__ == '__main__':
     # Example usage
-    # project_id = 'wiki-loves-folklore-international'
+    project_id = 'wiki-loves-folklore-international'
     
 
     codes = [
-        'fnf2025-bn',
+        # 'fnf2025-bn',
         'as-feminism-and-folklore-2025',
-        'fnf2025-ur',
-        'fnf2025-bs',
-        'fnf2025-ks',
-        'fnf2025-tcy',
+        # 'fnf2025-ur',
+        # 'fnf2025-bs',
+        # 'fnf2025-ks',
+        # 'fnf2025-tcy',
     ]
-    for code in codes:
-        print(f'Importing fountain script: {code}')
+    import_from_v1(project_id, 116, 'data.db')
+    # for code in codes:
+    #     print(f'Importing fountain script: {code}')
+    #     campaign = get_campaign_id(code)
+    #     if not campaign:
+    #         print(f'Campaign not found for code: {code}')
+    #         continue
+    #     _import_from_fountain(campaign, code)
         # import_fountain_script(project_id, code)
-        votes = import_jury_votes(code)
-        with sqlite3.connect('data.db') as conn:
-            cursor = conn.cursor()
-            cursor.execute('''
-                CREATE TEMP TABLE IF NOT EXISTS jury_vote_temp (
-                campaign_id INTEGER,
-                page_title TEXT NOT NULL,
-                jury_id INTEGER,
-                score INTEGER,
-                note TEXT DEFAULT '',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                PRIMARY KEY (campaign_id, page_title, jury_id)
-            );
-            ''')
-            cursor.executemany('''INSERT INTO jury_vote_temp (campaign_id, page_title, jury_id, score, note) VALUES (:campaign_id, :page_title, :jury_id, :score, :note)''', votes)
-            # select all from the temp table to verify
-            # cursor.execute('SELECT * FROM jury_vote_temp')
-            cursor.execute("INSERT OR IGNORE INTO jury_vote SELECT j.jury_id, s.id, j.campaign_id, j.created_at, j.score,  j.note FROM jury_vote_temp j JOIN submission s ON j.page_title = s.title AND j.campaign_id = s.campaign_id AND j.jury_id <> s.submitted_by_id")
-            conn.commit()
+        # votes = import_jury_votes(code)
+        # with sqlite3.connect('data.db') as conn:
+        #     cursor = conn.cursor()
+        #     cursor.execute('DROP TABLE IF EXISTS jury_vote_temp;')
+        #     cursor.execute('''
+        #         CREATE  TEMP TABLE IF NOT EXISTS jury_vote_temp (
+        #         campaign_id INTEGER,
+        #         page_title TEXT NOT NULL,
+        #         jury_id INTEGER,
+        #         score INTEGER,
+        #         note TEXT DEFAULT '',
+        #         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        #         PRIMARY KEY (campaign_id, page_title, jury_id)
+        #     );
+        #     ''')
+        #     j = cursor.executemany('''INSERT OR IGNORE INTO jury_vote_temp (campaign_id, page_title, jury_id, score, note) VALUES (:campaign_id, :page_title, :jury_id, :score, :note)''', votes)
+        #     print(j.rowcount, 'votes inserted into jury_vote_temp')
+        #     j = cursor.execute("INSERT OR IGNORE INTO jury_vote SELECT j.jury_id, s.id, s.campaign_id, j.created_at, j.score,  j.note FROM jury_vote_temp j LEFT JOIN submission s ON j.page_title = s.title AND j.campaign_id = s.campaign_id AND j.jury_id <> s.submitted_by_id")
+        #     print(j.rowcount, 'votes inserted into jury_vote')
+        #     if j.rowcount != len(votes):
+        #         print('Some votes were not inserted due to conflicts or duplicates.')
+        #         not_found_votes = "SELECT j.page_title FROM jury_vote_temp j LEFT JOIN submission s ON j.page_title = s.title AND j.campaign_id = s.campaign_id Where s.id IS NULL"
+        #         cursor.execute(not_found_votes)
+        #         missing_votes = [v[0] for v in cursor.fetchall()]
+        #         redirect_map = resolve_redirects('as', missing_votes)
+        #         newly_found_votes = []
+        #         for vote in votes:
+        #             if vote['page_title'] in redirect_map:
+        #                 new_title = redirect_map[vote['page_title']]
+        #                 newly_found_votes.append(vote)
+        #                 r = cursor.execute('UPDATE jury_vote_temp SET page_title = ? WHERE campaign_id = ? AND jury_id = ? AND page_title = ?', (new_title, vote['campaign_id'], vote['jury_id'], vote['page_title']))
+        #                 print('Updated', r.rowcount, 'votes with redirects for', vote['page_title'], 'to', new_title)
+        #         print(f'Found {len(newly_found_votes)} votes that can be resolved with redirects.')
+        #         j = cursor.executemany('''INSERT OR IGNORE INTO jury_vote SELECT j.jury_id, s.id, j.campaign_id, j.created_at, j.score,  j.note FROM jury_vote_temp j LEFT JOIN submission s ON j.page_title = s.title AND j.campaign_id = s.campaign_id AND j.jury_id <> s.submitted_by_id''', newly_found_votes)
+        #         print(j.rowcount, 'votes inserted into jury_vote after resolving redirects')
+
+        #     conn.commit()
     # You can also create a campaign using the imported data
     # create_campaign(project_id=project_id, language='en', name='Example Campaign', description='This is an example campaign.', start_date='2023-01-01', end_date='2023-12-31', coordinators=['User1', 'User2'])
 

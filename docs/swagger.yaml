@@ -1365,19 +1365,6 @@ info:
   title: Campwiz API
   version: "1"
 paths:
-  /api/v2/permisssions/:
-    get:
-      description: Get the permission map
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.ResponseSingle-consts_PermissionMap'
-      summary: Get the permission map
-      tags:
-      - Permissions
   /campaign/:
     get:
       description: get all campaigns
@@ -1840,6 +1827,19 @@ paths:
       summary: Submit a new public evaluation
       tags:
       - Evaluation
+  /permissions:
+    get:
+      description: Get the permission map
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ResponseSingle-consts_PermissionMap'
+      summary: Get the permission map
+      tags:
+      - Permissions
   /project/:
     get:
       description: List all projects

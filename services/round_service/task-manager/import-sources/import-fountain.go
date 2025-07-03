@@ -104,11 +104,12 @@ func (t *FountainListSource) parseFountain(reader io.Reader) []models.MediaResul
 	for _, article := range t.json.Articles {
 		pageId := article.ID
 		data = append(data, models.MediaResult{
-			PageID:           uint64(pageId),
-			Name:             article.Name,
-			SubmittedAt:      article.DateAdded,
-			UploaderUsername: models.WikimediaUsernameType(article.User),
-			MediaType:        string(models.MediaTypeArticle),
+			PageID:              uint64(pageId),
+			Name:                article.Name,
+			SubmittedAt:         article.DateAdded,
+			CreatedByUsername:   models.WikimediaUsernameType(article.User),
+			SubmittedByUsername: models.WikimediaUsernameType(article.User),
+			MediaType:           string(models.MediaTypeArticle),
 		})
 	}
 	fmt.Printf("Fountain Code: %s, Name: %s, Description: %s\n", fountain.Code, fountain.Name, fountain.Description)

@@ -80,7 +80,7 @@ type TaskData struct {
 //	`newly_created`     BOOLEAN NOT NULL DEFAULT FALSE, -- whether the submission is newly created
 type CampWizV1Submission struct {
 	// ID is the primary key of the submission
-	SubmissionID int `json:"id" gorm:"primaryKey"`
+	SubmissionID int `json:"id" gorm:"primaryKey;column:id"` // Use `column:id` to match the SQLite schema
 	// PageID is the page ID of the submission on the target wiki
 	PageID int `json:"pageId" gorm:"index;not null;column:pageid"` // Use `column:pageid` to match the SQLite schema
 	// CampaignID is the ID of the campaign this submission belongs to
@@ -89,10 +89,10 @@ type CampWizV1Submission struct {
 	OldID               int       `json:"oldId" gorm:"not null"`
 	TargetWiki          string    `json:"targetWiki" gorm:"not null"`
 	SubmittedAt         time.Time `json:"submittedAt"`
-	SubmittedByID       int       `json:"submittedById" gorm:"index;not null"`
-	SubmittedByUsername string    `json:"submittedByUsername" gorm:"not null"`
+	SubmittedByID       int       `json:"submittedById" gorm:"index;not null;column:submitted_by_id"`       // Use `column:submitted_by_id` to match the SQLite schema
+	SubmittedByUsername string    `json:"submittedByUsername" gorm:"not null;column:submitted_by_username"` // Use `column:submitted_by_username` to match the SQLite schema
 	// CreatedAt           time.Time `json:"createdAt" gorm:"not null;column:created_at"` // Use `column:created_at` to match the SQLite schema
-	CreatedByID       int    `json:"createdById" gorm:"index;not null"`
+	// CreatedByID       int64  `json:"createdById" gorm:"index;not null"`
 	CreatedByUsername string `json:"createdByUsername" gorm:"not null"`
 	TotalBytes        int    `json:"totalBytes" gorm:"not null"`
 	TotalWords        int    `json:"totalWords" gorm:"default:NULL"`

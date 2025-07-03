@@ -132,6 +132,8 @@ def _import_from_fountain(round_id, code):
         raise Exception(f'Error importing fountain script: {response.status_code}')
     task_id = response.json()['data']['taskId']
     print(f'Import task ID: {task_id}')
+    import_status = check_import_task_status(task_id)
+    print(f'Import task completed with status: {import_status}')
     
 def import_fountain_script(project_id, code):
     """
@@ -264,8 +266,7 @@ def import_jury_votes(code):
                 'note': mark.get('note', '')
             })
     return votes
-def get_campaign_id(code):
-    mp ={
+mp ={
         'fnf2025-bn' : 157,
         'fnf2025-tcy' : 158,
         'as-feminism-and-folklore-2025' : 160,
@@ -273,6 +274,7 @@ def get_campaign_id(code):
         'fnf2025-ks' : 163,
         'fnf2025-ur' : 162,
     }
+def get_campaign_id(code):
     return mp.get(code, None)
 def resolve_redirects(language, page_titles):
     """
@@ -314,23 +316,56 @@ if __name__ == '__main__':
     project_id = 'wiki-loves-folklore-international'
     
 
-    codes = [
-        # 'fnf2025-bn',
-        'as-feminism-and-folklore-2025',
-        # 'fnf2025-ur',
-        # 'fnf2025-bs',
-        # 'fnf2025-ks',
-        # 'fnf2025-tcy',
+    codes = mp
+    campaign_ids = [
+        116,
+        106,
+        126,
+        109,
+        120,
+        117,
+        113,
+        128,
+        97,
+        110,
+        137,
+        112,
+        98,
+        135,
+        130,
+        134,
+        111,
+        100,
+        99,
+        107,
+        143,
+        94,
+        115,
+        114,
+        133,
+        139,
+        103,
+        125,
+        118,
+        101,
+        121,
+        102,
+        141,
+        105,
+        119
     ]
-    import_from_v1(project_id, 116, 'data.db')
-    # for code in codes:
-    #     print(f'Importing fountain script: {code}')
-    #     campaign = get_campaign_id(code)
-    #     if not campaign:
-    #         print(f'Campaign not found for code: {code}')
-    #         continue
-    #     _import_from_fountain(campaign, code)
-        # import_fountain_script(project_id, code)
+
+    UPDATE `submissions` JOIN (SELECT AVG(`evaluations`.`score`) As `Score`, COUNT(`evaluations`.`evaluation_id`) AS `AssignmentCount`, SUM(`evaluations`.`score` IS NOT NULL) AS `EvaluationCount`,`evaluations`.`submission_id`, evaluations.round_id as round_id FROM `evaluations` WHERE GROUP BY  evaluations.round_id, `evaluations`.`submission_id`) AS `e` ON `submissions`.`submission_id` = `e`.`submission_id` AND submissions.round_id=e.round_id SET `submissions`.`assignment_count` = `e`.`AssignmentCount`, `submissions`.`evaluation_count` = `e`.`EvaluationCount`, `submissions`.`score` = `e`.`Score` WHERE `submissions`.`round_id` = 'r2inkvjb95urk' 
+    for campaign_id in campaign_ids:
+        print(f'Importing campaign with ID: {campaign_id}')
+        import_from_v1(project_id, campaign_id, 'data.db')
+    for code in codes:
+        print(f'Importing fountain script: {code}')
+        campaign = codes.get(code, None)
+        if not campaign:
+            print(f'Campaign not found for code: {code}')
+            continue
+        import_fountain_script(project_id, code)
         # votes = import_jury_votes(code)
         # with sqlite3.connect('data.db') as conn:
         #     cursor = conn.cursor()

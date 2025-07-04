@@ -3017,6 +3017,9 @@ const docTemplate = `{
                 "totalEvaluatedSubmissions": {
                     "type": "integer"
                 },
+                "totalScore": {
+                    "$ref": "#/definitions/models.ScoreType"
+                },
                 "totalSubmissions": {
                     "type": "integer"
                 },

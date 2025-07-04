@@ -179,14 +179,22 @@ func (r roundStatisticsDo) FetchByRoundID(round_id string) (result []models.Roun
 	return
 }
 
-// UPDATE rounds, (SELECT s.round_id, COUNT(*) AS TotalSubmissions, SUM(s.assignment_count) AS TotalAssignments, SUM(s.evaluation_count) AS TotalEvaluatedAssignments, SUM(CASE WHEN s.evaluation_count >= r.quorum THEN 1 ELSE 0 END) AS TotalEvaluatedSubmissions FROM submissions s FORCE INDEX (idx_submissions_round_id) JOIN rounds r ON s.round_id = r.round_id WHERE s.round_id = @round_id LIMIT 1) AS s_data SET rounds.total_submissions = s_data.TotalSubmissions, rounds.total_assignments = s_data.TotalAssignments, rounds.total_evaluated_assignments = s_data.TotalEvaluatedAssignments, rounds.total_evaluated_submissions = s_data.TotalEvaluatedSubmissions WHERE rounds.round_id = @round_id;
+// UPDATE rounds,
+// (SELECT s.round_id, COUNT(*) AS TotalSubmissions, SUM(s.assignment_count) AS TotalAssignments,
+// SUM(s.evaluation_count) AS TotalEvaluatedAssignments, SUM(CASE WHEN s.evaluation_count >= r.quorum THEN 1 ELSE 0 END)
+// AS TotalEvaluatedSubmissions, SUM(s.score) AS TotalScore FROM submissions s FORCE INDEX (idx_submissions_round_id)
+// JOIN rounds r ON s.round_id = r.round_id WHERE s.round_id = @round_id LIMIT 1) AS s_data
+// SET rounds.total_submissions = s_data.TotalSubmissions,
+// rounds.total_assignments = s_data.TotalAssignments, rounds.total_evaluated_assignments = s_data.TotalEvaluatedAssignments,
+// rounds.total_evaluated_submissions = s_data.TotalEvaluatedSubmissions, rounds.total_score = s_data.TotalScore
+// WHERE rounds.round_id = @round_id;
 func (r roundStatisticsDo) UpdateByRoundID(round_id string) (err error) {
 	var params []interface{}
 
 	var generateSQL strings.Builder
 	params = append(params, round_id)
 	params = append(params, round_id)
-	generateSQL.WriteString("UPDATE rounds, (SELECT s.round_id, COUNT(*) AS TotalSubmissions, SUM(s.assignment_count) AS TotalAssignments, SUM(s.evaluation_count) AS TotalEvaluatedAssignments, SUM(CASE WHEN s.evaluation_count >= r.quorum THEN 1 ELSE 0 END) AS TotalEvaluatedSubmissions FROM submissions s FORCE INDEX (idx_submissions_round_id) JOIN rounds r ON s.round_id = r.round_id WHERE s.round_id = ? LIMIT 1) AS s_data SET rounds.total_submissions = s_data.TotalSubmissions, rounds.total_assignments = s_data.TotalAssignments, rounds.total_evaluated_assignments = s_data.TotalEvaluatedAssignments, rounds.total_evaluated_submissions = s_data.TotalEvaluatedSubmissions WHERE rounds.round_id = ?; ")
+	generateSQL.WriteString("UPDATE rounds, (SELECT s.round_id, COUNT(*) AS TotalSubmissions, SUM(s.assignment_count) AS TotalAssignments, SUM(s.evaluation_count) AS TotalEvaluatedAssignments, SUM(CASE WHEN s.evaluation_count >= r.quorum THEN 1 ELSE 0 END) AS TotalEvaluatedSubmissions, SUM(s.score) AS TotalScore FROM submissions s FORCE INDEX (idx_submissions_round_id) JOIN rounds r ON s.round_id = r.round_id WHERE s.round_id = ? LIMIT 1) AS s_data SET rounds.total_submissions = s_data.TotalSubmissions, rounds.total_assignments = s_data.TotalAssignments, rounds.total_evaluated_assignments = s_data.TotalEvaluatedAssignments, rounds.total_evaluated_submissions = s_data.TotalEvaluatedSubmissions, rounds.total_score = s_data.TotalScore WHERE rounds.round_id = ?; ")
 
 	var executeSQL *gorm.DB
 	executeSQL = r.UnderlyingDB().Exec(generateSQL.String(), params...) // ignore_security_alert

@@ -34,16 +34,18 @@ type CampaignWithWriteableFields struct {
 	IsPublic  bool        `json:"isPublic"`
 	ProjectID IDType      `json:"projectId"`
 	Status    RoundStatus `json:"status"`
+	Tags      []string    `json:"tags,omitempty" gorm:"-"`
 	// The type of the campaign, it should be one of the CampaignType constants
 	CampaignType CampaignType `json:"campaignType" gorm:"type:ENUM('commons', 'wikipedia', 'wikidata', 'categorization', 'reference');default:'commons';not null;index" binding:"required"`
 }
 type Campaign struct {
 	// A unique identifier for the campaign, it should be custom defined
-	CampaignID IDType `gorm:"primaryKey" json:"campaignId"`
+	CampaignID IDType `gorm:"primaryKey;column:campaign_id;type:varchar(255)" json:"campaignId"`
 	// The time the campaign was created, it would be set automatically
 	CreatedAt   *time.Time `json:"createdAt" gorm:"-<-:create"`
 	CreatedByID IDType     `json:"createdById" gorm:"index"`
 	CampaignWithWriteableFields
+	CampaignTags  []Tag           `json:"-"`
 	CreatedBy     *User           `json:"-" gorm:"foreignKey:CreatedByID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
 	Roles         []Role          `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	Rounds        []Round         `json:"rounds" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
@@ -76,6 +78,9 @@ type CampaignFilter struct {
 	SortOrder SortOrder `form:"sortOrder"`
 	// Whether the campaign is closed (result have been finalized)
 	IsClosed *bool `form:"isClosed"`
+	// Tags are used to filter campaigns by tags
+	// If tags are provided, then only campaigns with the given tags will be returned
+	Tags []string `form:"tags,comma"` // Tags are used to filter campaigns by tags
 	CommonFilter
 }
 type SingleCampaignFilter struct {
@@ -97,4 +102,20 @@ func (t CampaignType) String() string {
 		return "commons"
 	}
 	return string(t)
+}
+
+type CampaignLatestRoundStatistics struct {
+	CampaignName              string      `json:"campaignName"`
+	CampaignId                IDType      `json:"campaignId"`
+	LatestRoundId             IDType      `json:"latestRoundId"`
+	LatestRoundName           string      `json:"latestRoundName"`
+	LatestRoundStartDate      string      `json:"latestRoundStartDate"`
+	LatestRoundEndDate        string      `json:"latestRoundEndDate"`
+	LatestRoundStatus         RoundStatus `json:"latestRoundStatus"`
+	CampaignStatus            RoundStatus `json:"campaignStatus"`
+	TotalSubmissions          int         `json:"totalSubmissions"`
+	TotalAssignments          int         `json:"totalAssignments"`
+	TotalEvaluatedAssignments int         `json:"totalEvaluatedAssignments"`
+	TotalEvaluatedSubmissions int         `json:"totalEvaluatedSubmissions"`
+	TotalScore                int         `json:"totalScore"`
 }

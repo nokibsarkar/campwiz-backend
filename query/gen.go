@@ -26,9 +26,11 @@ var (
 	Role                   *role
 	Round                  *round
 	RoundStatistics        *roundStatistics
+	RoundStatisticsView    *roundStatisticsView
 	Submission             *submission
 	SubmissionResult       *submissionResult
 	SubmissionStatistics   *submissionStatistics
+	Tag                    *tag
 	Task                   *task
 	TaskData               *taskData
 	User                   *user
@@ -45,9 +47,11 @@ func SetDefault(db *gorm.DB, opts ...gen.DOOption) {
 	Role = &Q.Role
 	Round = &Q.Round
 	RoundStatistics = &Q.RoundStatistics
+	RoundStatisticsView = &Q.RoundStatisticsView
 	Submission = &Q.Submission
 	SubmissionResult = &Q.SubmissionResult
 	SubmissionStatistics = &Q.SubmissionStatistics
+	Tag = &Q.Tag
 	Task = &Q.Task
 	TaskData = &Q.TaskData
 	User = &Q.User
@@ -65,9 +69,11 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 		Role:                   newRole(db, opts...),
 		Round:                  newRound(db, opts...),
 		RoundStatistics:        newRoundStatistics(db, opts...),
+		RoundStatisticsView:    newRoundStatisticsView(db, opts...),
 		Submission:             newSubmission(db, opts...),
 		SubmissionResult:       newSubmissionResult(db, opts...),
 		SubmissionStatistics:   newSubmissionStatistics(db, opts...),
+		Tag:                    newTag(db, opts...),
 		Task:                   newTask(db, opts...),
 		TaskData:               newTaskData(db, opts...),
 		User:                   newUser(db, opts...),
@@ -86,9 +92,11 @@ type Query struct {
 	Role                   role
 	Round                  round
 	RoundStatistics        roundStatistics
+	RoundStatisticsView    roundStatisticsView
 	Submission             submission
 	SubmissionResult       submissionResult
 	SubmissionStatistics   submissionStatistics
+	Tag                    tag
 	Task                   task
 	TaskData               taskData
 	User                   user
@@ -108,9 +116,11 @@ func (q *Query) clone(db *gorm.DB) *Query {
 		Role:                   q.Role.clone(db),
 		Round:                  q.Round.clone(db),
 		RoundStatistics:        q.RoundStatistics.clone(db),
+		RoundStatisticsView:    q.RoundStatisticsView.clone(db),
 		Submission:             q.Submission.clone(db),
 		SubmissionResult:       q.SubmissionResult.clone(db),
 		SubmissionStatistics:   q.SubmissionStatistics.clone(db),
+		Tag:                    q.Tag.clone(db),
 		Task:                   q.Task.clone(db),
 		TaskData:               q.TaskData.clone(db),
 		User:                   q.User.clone(db),
@@ -137,9 +147,11 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 		Role:                   q.Role.replaceDB(db),
 		Round:                  q.Round.replaceDB(db),
 		RoundStatistics:        q.RoundStatistics.replaceDB(db),
+		RoundStatisticsView:    q.RoundStatisticsView.replaceDB(db),
 		Submission:             q.Submission.replaceDB(db),
 		SubmissionResult:       q.SubmissionResult.replaceDB(db),
 		SubmissionStatistics:   q.SubmissionStatistics.replaceDB(db),
+		Tag:                    q.Tag.replaceDB(db),
 		Task:                   q.Task.replaceDB(db),
 		TaskData:               q.TaskData.replaceDB(db),
 		User:                   q.User.replaceDB(db),
@@ -156,9 +168,11 @@ type queryCtx struct {
 	Role                   IRoleDo
 	Round                  IRoundDo
 	RoundStatistics        IRoundStatisticsDo
+	RoundStatisticsView    IRoundStatisticsViewDo
 	Submission             ISubmissionDo
 	SubmissionResult       ISubmissionResultDo
 	SubmissionStatistics   ISubmissionStatisticsDo
+	Tag                    ITagDo
 	Task                   ITaskDo
 	TaskData               ITaskDataDo
 	User                   IUserDo
@@ -175,9 +189,11 @@ func (q *Query) WithContext(ctx context.Context) *queryCtx {
 		Role:                   q.Role.WithContext(ctx),
 		Round:                  q.Round.WithContext(ctx),
 		RoundStatistics:        q.RoundStatistics.WithContext(ctx),
+		RoundStatisticsView:    q.RoundStatisticsView.WithContext(ctx),
 		Submission:             q.Submission.WithContext(ctx),
 		SubmissionResult:       q.SubmissionResult.WithContext(ctx),
 		SubmissionStatistics:   q.SubmissionStatistics.WithContext(ctx),
+		Tag:                    q.Tag.WithContext(ctx),
 		Task:                   q.Task.WithContext(ctx),
 		TaskData:               q.TaskData.WithContext(ctx),
 		User:                   q.User.WithContext(ctx),

@@ -248,6 +248,10 @@ definitions:
         type: string
       status:
         $ref: '#/definitions/models.RoundStatus'
+      tags:
+        items:
+          type: string
+        type: array
     required:
     - campaignType
     - endDate
@@ -305,6 +309,10 @@ definitions:
         type: string
       status:
         $ref: '#/definitions/models.RoundStatus'
+      tags:
+        items:
+          type: string
+        type: array
     required:
     - campaignType
     - endDate
@@ -531,6 +539,17 @@ definitions:
       prev:
         type: string
     type: object
+  models.ResponseList-models_RoundStatisticsView:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/models.RoundStatisticsView'
+        type: array
+      next:
+        type: string
+      prev:
+        type: string
+    type: object
   models.ResponseList-models_Submission:
     properties:
       data:
@@ -746,6 +765,8 @@ definitions:
         type: integer
       totalEvaluatedSubmissions:
         type: integer
+      totalScore:
+        $ref: '#/definitions/models.ScoreType'
       totalSubmissions:
         type: integer
       type:
@@ -755,6 +776,21 @@ definitions:
       videoMinimumResolution:
         type: integer
       videoMinimumSizeBytes:
+        type: integer
+    type: object
+  models.RoundStatisticsView:
+    properties:
+      participantId:
+        type: string
+      participantName:
+        type: string
+      roundId:
+        type: string
+      roundName:
+        type: string
+      totalScore:
+        $ref: '#/definitions/models.ScoreType'
+      totalSubmissions:
         type: integer
     type: object
   models.RoundStatus:
@@ -1147,6 +1183,10 @@ definitions:
         type: string
       status:
         $ref: '#/definitions/models.RoundStatus'
+      tags:
+        items:
+          type: string
+        type: array
     required:
     - campaignType
     - endDate
@@ -1190,6 +1230,10 @@ definitions:
         type: string
       status:
         $ref: '#/definitions/models.RoundStatus'
+      tags:
+        items:
+          type: string
+        type: array
     required:
     - campaignType
     - endDate
@@ -1409,6 +1453,15 @@ paths:
         x-enum-varnames:
         - SortOrderAsc
         - SortOrderDesc
+      - collectionFormat: csv
+        description: |-
+          Tags are used to filter campaigns by tags
+          If tags are provided, then only campaigns with the given tags will be returned
+        in: query
+        items:
+          type: string
+        name: tags
+        type: array
       produces:
       - application/json
       responses:
@@ -1460,6 +1513,9 @@ paths:
         type: boolean
       - in: query
         name: includeRounds
+        type: boolean
+      - in: query
+        name: includeTags
         type: boolean
       produces:
       - application/json
@@ -1525,6 +1581,71 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Update a campaign
+      tags:
+      - Campaign
+  /campaign/statistics:
+    get:
+      description: Fetch campaign statistics
+      parameters:
+      - collectionFormat: csv
+        in: query
+        items:
+          type: string
+        name: ids
+        type: array
+      - description: Whether the campaign is closed (result have been finalized)
+        in: query
+        name: isClosed
+        type: boolean
+      - description: |-
+          Whether the campaign is hidden from the public list
+          If isHidden is true, then projectID is required
+        in: query
+        name: isHidden
+        type: boolean
+      - in: query
+        name: limit
+        type: integer
+      - in: query
+        name: next
+        type: string
+      - in: query
+        name: prev
+        type: string
+      - description: "This projectID is the project that campaigns belong to.then
+          ProjectID is required\n\t\tIf the person is not an admin, then the project
+          ID must match the project ID of the user"
+        in: query
+        name: projectId
+        type: string
+      - enum:
+        - asc
+        - desc
+        in: query
+        name: sortOrder
+        type: string
+        x-enum-varnames:
+        - SortOrderAsc
+        - SortOrderDesc
+      - collectionFormat: csv
+        description: |-
+          Tags are used to filter campaigns by tags
+          If tags are provided, then only campaigns with the given tags will be returned
+        in: query
+        items:
+          type: string
+        name: tags
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ResponseList-models_RoundStatisticsView'
+      security:
+      - ApiKeyAuth: []
+      summary: Fetch campaign statistics
       tags:
       - Campaign
   /category/{submissionId}:

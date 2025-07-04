@@ -102,6 +102,12 @@ func newEvaluation(db *gorm.DB, opts ...gen.DOOption) evaluation {
 					}
 				}
 			}
+			CampaignTags struct {
+				field.RelationField
+				Campaign struct {
+					field.RelationField
+				}
+			}
 			Roles struct {
 				field.RelationField
 			}
@@ -199,6 +205,19 @@ func newEvaluation(db *gorm.DB, opts ...gen.DOOption) evaluation {
 					}{
 						RelationField: field.NewRelation("Submission.Campaign.LatestRound.Roles.Project", "models.Project"),
 					},
+				},
+			},
+			CampaignTags: struct {
+				field.RelationField
+				Campaign struct {
+					field.RelationField
+				}
+			}{
+				RelationField: field.NewRelation("Submission.Campaign.CampaignTags", "models.Tag"),
+				Campaign: struct {
+					field.RelationField
+				}{
+					RelationField: field.NewRelation("Submission.Campaign.CampaignTags.Campaign", "models.Campaign"),
 				},
 			},
 			Roles: struct {
@@ -423,6 +442,12 @@ type evaluationBelongsToSubmission struct {
 				Project struct {
 					field.RelationField
 				}
+			}
+		}
+		CampaignTags struct {
+			field.RelationField
+			Campaign struct {
+				field.RelationField
 			}
 		}
 		Roles struct {

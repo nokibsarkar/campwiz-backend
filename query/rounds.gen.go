@@ -37,6 +37,7 @@ func newRound(db *gorm.DB, opts ...gen.DOOption) round {
 	_round.TotalAssignments = field.NewInt(tableName, "total_assignments")
 	_round.TotalEvaluatedAssignments = field.NewInt(tableName, "total_evaluated_assignments")
 	_round.TotalEvaluatedSubmissions = field.NewInt(tableName, "total_evaluated_submissions")
+	_round.TotalScore = field.NewFloat64(tableName, "total_score")
 	_round.Status = field.NewString(tableName, "status")
 	_round.LatestDistributionTaskID = field.NewString(tableName, "latest_distribution_task_id")
 	_round.Name = field.NewString(tableName, "name")
@@ -88,6 +89,12 @@ func newRound(db *gorm.DB, opts ...gen.DOOption) round {
 				LatestRound struct {
 					field.RelationField
 				}
+				CampaignTags struct {
+					field.RelationField
+					Campaign struct {
+						field.RelationField
+					}
+				}
 				Roles struct {
 					field.RelationField
 				}
@@ -120,6 +127,12 @@ func newRound(db *gorm.DB, opts ...gen.DOOption) round {
 				LatestRound struct {
 					field.RelationField
 				}
+				CampaignTags struct {
+					field.RelationField
+					Campaign struct {
+						field.RelationField
+					}
+				}
 				Roles struct {
 					field.RelationField
 				}
@@ -150,6 +163,19 @@ func newRound(db *gorm.DB, opts ...gen.DOOption) round {
 					field.RelationField
 				}{
 					RelationField: field.NewRelation("Roles.Round.Campaign.LatestRound", "models.Round"),
+				},
+				CampaignTags: struct {
+					field.RelationField
+					Campaign struct {
+						field.RelationField
+					}
+				}{
+					RelationField: field.NewRelation("Roles.Round.Campaign.CampaignTags", "models.Tag"),
+					Campaign: struct {
+						field.RelationField
+					}{
+						RelationField: field.NewRelation("Roles.Round.Campaign.CampaignTags.Campaign", "models.Campaign"),
+					},
 				},
 				Roles: struct {
 					field.RelationField
@@ -231,6 +257,7 @@ type round struct {
 	TotalAssignments                 field.Int
 	TotalEvaluatedAssignments        field.Int
 	TotalEvaluatedSubmissions        field.Int
+	TotalScore                       field.Float64
 	Status                           field.String
 	LatestDistributionTaskID         field.String
 	Name                             field.String
@@ -294,6 +321,7 @@ func (r *round) updateTableName(table string) *round {
 	r.TotalAssignments = field.NewInt(table, "total_assignments")
 	r.TotalEvaluatedAssignments = field.NewInt(table, "total_evaluated_assignments")
 	r.TotalEvaluatedSubmissions = field.NewInt(table, "total_evaluated_submissions")
+	r.TotalScore = field.NewFloat64(table, "total_score")
 	r.Status = field.NewString(table, "status")
 	r.LatestDistributionTaskID = field.NewString(table, "latest_distribution_task_id")
 	r.Name = field.NewString(table, "name")
@@ -341,7 +369,7 @@ func (r *round) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (r *round) fillFieldMap() {
-	r.fieldMap = make(map[string]field.Expr, 44)
+	r.fieldMap = make(map[string]field.Expr, 45)
 	r.fieldMap["round_id"] = r.RoundID
 	r.fieldMap["campaign_id"] = r.CampaignID
 	r.fieldMap["project_id"] = r.ProjectID
@@ -351,6 +379,7 @@ func (r *round) fillFieldMap() {
 	r.fieldMap["total_assignments"] = r.TotalAssignments
 	r.fieldMap["total_evaluated_assignments"] = r.TotalEvaluatedAssignments
 	r.fieldMap["total_evaluated_submissions"] = r.TotalEvaluatedSubmissions
+	r.fieldMap["total_score"] = r.TotalScore
 	r.fieldMap["status"] = r.Status
 	r.fieldMap["latest_distribution_task_id"] = r.LatestDistributionTaskID
 	r.fieldMap["name"] = r.Name
@@ -427,6 +456,12 @@ type roundHasManyRoles struct {
 			}
 			LatestRound struct {
 				field.RelationField
+			}
+			CampaignTags struct {
+				field.RelationField
+				Campaign struct {
+					field.RelationField
+				}
 			}
 			Roles struct {
 				field.RelationField

@@ -20,6 +20,12 @@ func (c *CampaignRepository) Create(conn *gorm.DB, campaign *models.Campaign) er
 func (c *CampaignRepository) FindByID(conn *gorm.DB, id models.IDType) (*models.Campaign, error) {
 	q := query.Use(conn)
 	campaign, err := q.Campaign.Where(q.Campaign.CampaignID.Eq(id.String())).First()
+	if campaign != nil && len(campaign.CampaignTags) > 0 {
+		campaign.Tags = make([]string, 0, len(campaign.CampaignTags))
+		for _, tag := range campaign.CampaignTags {
+			campaign.Tags = append(campaign.Tags, tag.Name)
+		}
+	}
 	return campaign, err
 }
 func (c *CampaignRepository) ListAllCampaigns(conn *gorm.DB, qry *models.CampaignFilter) ([]models.Campaign, error) {
@@ -31,6 +37,7 @@ func (c *CampaignRepository) ListAllCampaigns(conn *gorm.DB, qry *models.Campaig
 		if qry.Limit > 0 {
 			stmt = stmt.Limit(qry.Limit)
 		}
+
 		if len(qry.IDs) > 0 {
 			idCopies := []string{}
 			for _, id := range qry.IDs {
@@ -41,6 +48,20 @@ func (c *CampaignRepository) ListAllCampaigns(conn *gorm.DB, qry *models.Campaig
 				}
 			}
 			stmt = stmt.Where(Campaign.CampaignID.In(idCopies...))
+		}
+		if len(qry.Tags) > 0 {
+			tagCopies := []string{}
+			for _, tag := range qry.Tags {
+				if tag != "" && strings.Contains(tag, ",") {
+					tagCopies = append(tagCopies, strings.Split(tag, ",")...)
+				} else {
+					tagCopies = append(tagCopies, tag)
+				}
+			}
+			stmt = stmt.Join(q.Tag, Campaign.CampaignID.EqCol(q.Tag.CampaignID)).
+				Where(q.Tag.Name.In(tagCopies...)).
+				Group(Campaign.CampaignID).
+				Having(Campaign.CampaignID.Count().Eq(len(tagCopies))) // Ensure all tags are present
 		}
 		if qry.IsClosed != nil {
 			if *qry.IsClosed {

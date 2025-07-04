@@ -170,6 +170,19 @@ func newSubmission(db *gorm.DB, opts ...gen.DOOption) submission {
 				},
 			},
 		},
+		CampaignTags: struct {
+			field.RelationField
+			Campaign struct {
+				field.RelationField
+			}
+		}{
+			RelationField: field.NewRelation("Campaign.CampaignTags", "models.Tag"),
+			Campaign: struct {
+				field.RelationField
+			}{
+				RelationField: field.NewRelation("Campaign.CampaignTags.Campaign", "models.Campaign"),
+			},
+		},
 		Roles: struct {
 			field.RelationField
 		}{
@@ -594,6 +607,12 @@ type submissionBelongsToCampaign struct {
 			Project struct {
 				field.RelationField
 			}
+		}
+	}
+	CampaignTags struct {
+		field.RelationField
+		Campaign struct {
+			field.RelationField
 		}
 	}
 	Roles struct {

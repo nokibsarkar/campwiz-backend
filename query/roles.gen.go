@@ -58,6 +58,12 @@ func newRole(db *gorm.DB, opts ...gen.DOOption) role {
 			LatestRound struct {
 				field.RelationField
 			}
+			CampaignTags struct {
+				field.RelationField
+				Campaign struct {
+					field.RelationField
+				}
+			}
 			Roles struct {
 				field.RelationField
 				Round struct {
@@ -100,6 +106,19 @@ func newRole(db *gorm.DB, opts ...gen.DOOption) role {
 				field.RelationField
 			}{
 				RelationField: field.NewRelation("Round.Campaign.LatestRound", "models.Round"),
+			},
+			CampaignTags: struct {
+				field.RelationField
+				Campaign struct {
+					field.RelationField
+				}
+			}{
+				RelationField: field.NewRelation("Round.Campaign.CampaignTags", "models.Tag"),
+				Campaign: struct {
+					field.RelationField
+				}{
+					RelationField: field.NewRelation("Round.Campaign.CampaignTags.Campaign", "models.Campaign"),
+				},
 			},
 			Roles: struct {
 				field.RelationField
@@ -307,6 +326,12 @@ type roleBelongsToRound struct {
 		}
 		LatestRound struct {
 			field.RelationField
+		}
+		CampaignTags struct {
+			field.RelationField
+			Campaign struct {
+				field.RelationField
+			}
 		}
 		Roles struct {
 			field.RelationField

@@ -83,6 +83,16 @@ const docTemplate = `{
                         ],
                         "name": "sortOrder",
                         "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Tags are used to filter campaigns by tags\nIf tags are provided, then only campaigns with the given tags will be returned",
+                        "name": "tags",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -129,6 +139,98 @@ const docTemplate = `{
                 }
             }
         },
+        "/campaign/statistics": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Fetch campaign statistics",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Campaign"
+                ],
+                "summary": "Fetch campaign statistics",
+                "parameters": [
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "ids",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Whether the campaign is closed (result have been finalized)",
+                        "name": "isClosed",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Whether the campaign is hidden from the public list\nIf isHidden is true, then projectID is required",
+                        "name": "isHidden",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "next",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "prev",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "This projectID is the project that campaigns belong to.then ProjectID is required\n\t\tIf the person is not an admin, then the project ID must match the project ID of the user",
+                        "name": "projectId",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "asc",
+                            "desc"
+                        ],
+                        "type": "string",
+                        "x-enum-varnames": [
+                            "SortOrderAsc",
+                            "SortOrderDesc"
+                        ],
+                        "name": "sortOrder",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Tags are used to filter campaigns by tags\nIf tags are provided, then only campaigns with the given tags will be returned",
+                        "name": "tags",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResponseList-models_RoundStatisticsView"
+                        }
+                    }
+                }
+            }
+        },
         "/campaign/{campaignId}": {
             "get": {
                 "security": [
@@ -170,6 +272,11 @@ const docTemplate = `{
                     {
                         "type": "boolean",
                         "name": "includeRounds",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "name": "includeTags",
                         "in": "query"
                     }
                 ],
@@ -2258,6 +2365,12 @@ const docTemplate = `{
                 },
                 "status": {
                     "$ref": "#/definitions/models.RoundStatus"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -2341,6 +2454,12 @@ const docTemplate = `{
                 },
                 "status": {
                     "$ref": "#/definitions/models.RoundStatus"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -2653,6 +2772,23 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.Round"
+                    }
+                },
+                "next": {
+                    "type": "string"
+                },
+                "prev": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ResponseList-models_RoundStatisticsView": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.RoundStatisticsView"
                     }
                 },
                 "next": {
@@ -2990,6 +3126,9 @@ const docTemplate = `{
                 "totalEvaluatedSubmissions": {
                     "type": "integer"
                 },
+                "totalScore": {
+                    "$ref": "#/definitions/models.ScoreType"
+                },
                 "totalSubmissions": {
                     "type": "integer"
                 },
@@ -3003,6 +3142,29 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "videoMinimumSizeBytes": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.RoundStatisticsView": {
+            "type": "object",
+            "properties": {
+                "participantId": {
+                    "type": "string"
+                },
+                "participantName": {
+                    "type": "string"
+                },
+                "roundId": {
+                    "type": "string"
+                },
+                "roundName": {
+                    "type": "string"
+                },
+                "totalScore": {
+                    "$ref": "#/definitions/models.ScoreType"
+                },
+                "totalSubmissions": {
                     "type": "integer"
                 }
             }
@@ -3566,6 +3728,12 @@ const docTemplate = `{
                 },
                 "status": {
                     "$ref": "#/definitions/models.RoundStatus"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -3629,6 +3797,12 @@ const docTemplate = `{
                 },
                 "status": {
                     "$ref": "#/definitions/models.RoundStatus"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },

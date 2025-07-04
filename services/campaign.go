@@ -81,6 +81,14 @@ func (service *CampaignService) CreateCampaign(ctx context.Context, campaignRequ
 		tx.Rollback()
 		return nil, fmt.Errorf("user does not have permission to create campaign in other's project")
 	}
+	tags := []models.Tag{}
+	if len(campaignRequest.Tags) > 0 {
+		for _, tag := range campaignRequest.Tags {
+			tags = append(tags, models.Tag{
+				Name: tag,
+			})
+		}
+	}
 	campaign := &models.Campaign{
 		CampaignID: idgenerator.GenerateID("c"),
 		CampaignWithWriteableFields: models.CampaignWithWriteableFields{
@@ -95,7 +103,8 @@ func (service *CampaignService) CreateCampaign(ctx context.Context, campaignRequ
 			IsPublic:    campaignRequest.IsPublic,
 			Status:      models.RoundStatusActive,
 		},
-		CreatedByID: campaignRequest.CreatedByID,
+		CreatedByID:  campaignRequest.CreatedByID,
+		CampaignTags: tags,
 	}
 
 	err = campaign_repo.Create(tx.Preload("Roles"), campaign)
@@ -175,6 +184,7 @@ type SingleCampaignQuery struct {
 	IncludeRoles      bool `form:"includeRoles"`
 	IncludeProject    bool `form:"includeProject"`
 	IncludeRoundRoles bool `form:"includeRoundRoles"`
+	IncludeTags       bool `form:"includeTags"`
 }
 
 func (service *CampaignService) GetCampaignByID(ctx context.Context, id models.IDType, query *SingleCampaignQuery) (*models.Campaign, error) {
@@ -198,6 +208,10 @@ func (service *CampaignService) GetCampaignByID(ctx context.Context, id models.I
 		if query.IncludeProject {
 			conn = conn.Preload("Project")
 		}
+		if query.IncludeTags {
+			conn = conn.Preload("CampaignTags")
+			fmt.Println("Preloading tags")
+		}
 	}
 	campaign_repo := repository.NewCampaignRepository()
 	campaign, err := campaign_repo.FindByID(conn, id)
@@ -216,7 +230,7 @@ func (service *CampaignService) UpdateCampaign(ctx context.Context, ID models.ID
 	}
 	defer close()
 	campaign_repo := repository.NewCampaignRepository()
-	campaign, err := campaign_repo.FindByID(conn, ID)
+	campaign, err := campaign_repo.FindByID(conn.Preload("CampaignTags"), ID)
 	if err != nil {
 		return nil, err
 	}
@@ -225,9 +239,25 @@ func (service *CampaignService) UpdateCampaign(ctx context.Context, ID models.ID
 	campaign.Description = campaignRequest.Description
 	campaign.StartDate = campaignRequest.StartDate
 	campaign.EndDate = campaignRequest.EndDate
-	// campaign.Language = campaignRequest.Language
+	campaign.Language = campaignRequest.Language
 	campaign.Rules = campaignRequest.Rules
 	campaign.Image = campaignRequest.Image
+	// Calculate Tag difference
+	if len(campaign.CampaignTags) == 0 {
+		campaign.CampaignTags = make([]models.Tag, 0, len(campaignRequest.Tags))
+	}
+	for _, tag := range campaignRequest.Tags {
+		campaign.CampaignTags = append(campaign.CampaignTags, models.Tag{
+			Name: tag,
+		})
+	}
+	for i := len(campaign.CampaignTags) - 1; i >= 0; i-- {
+		tag := campaign.CampaignTags[i]
+		if tag.CampaignID != campaign.CampaignID || tag.Name == "" {
+			campaign.CampaignTags = append(campaign.CampaignTags[:i], campaign.CampaignTags[i+1:]...)
+		}
+	}
+
 	tx := conn.Begin()
 	err = campaign_repo.Update(tx, campaign)
 	if err != nil {
@@ -318,4 +348,16 @@ func (service *CampaignService) UpdateCampaignStatus(ctx context.Context, usrId 
 		return nil, err
 	}
 	return campaign, nil
+}
+
+func (service *CampaignService) FetchCampaignStatistics(ctx context.Context, roundIds []string) ([]models.RoundStatisticsView, error) {
+	conn, close, err := repository.GetDB(ctx)
+	if err != nil {
+		log.Println("Error: ", err)
+		return nil, err
+	}
+	defer close()
+	q := query.Use(conn)
+	return q.RoundStatisticsView.FetchUserStatisticsByRoundIDs(roundIds)
+
 }

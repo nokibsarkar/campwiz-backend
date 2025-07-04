@@ -92,8 +92,9 @@ NewCampaignRoutes will create all the routes for the /campaign endpoint
 func NewCampaignRoutes(parent *gin.RouterGroup) {
 	defer HandleError("/campaign")
 	r := parent.Group("/campaign")
-	r.GET("/", WithSessionOptional(ListAllCampaigns))
+	r.GET("/", ListAllCampaigns)
 	r.GET("/timeline2", GetAllCampaignTimeLine)
+	r.GET("/statistics", FetchCampaignStatistics)
 	r.GET("/:campaignId/result", GetCampaignResultSummary)
 	r.GET("/jury", ListAllJury)
 	r.POST("/", WithSession(CreateCampaign))

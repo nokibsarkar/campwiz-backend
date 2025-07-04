@@ -162,6 +162,7 @@ type IRoundStatisticsDo interface {
 
 	FetchByRoundID(round_id string) (result []models.RoundStatistics, err error)
 	UpdateByRoundID(round_id string) (err error)
+	FetchUserStatisticsByRoundIDs(round_ids []string) (result []models.RoundStatisticsView, err error)
 }
 
 // SELECT SUM(`assignment_count`) AS `AssignmentCount`, SUM(`evaluation_count`) AS EvaluationCount, `round_id` AS `round_id` FROM `submissions` WHERE `round_id` = @round_id
@@ -198,6 +199,35 @@ func (r roundStatisticsDo) UpdateByRoundID(round_id string) (err error) {
 
 	var executeSQL *gorm.DB
 	executeSQL = r.UnderlyingDB().Exec(generateSQL.String(), params...) // ignore_security_alert
+	err = executeSQL.Error
+
+	return
+}
+
+// SELECT
+// users.username AS participant_name,
+// rounds.name AS round_name,
+// rounds.round_id AS round_id,
+// submissions.participant_id AS participant_id,
+// COUNT(submissions.submission_id) AS total_submissions,
+// SUM(submissions.score) AS total_score
+// FROM `submissions`
+// LEFT JOIN rounds ON submissions.round_id = rounds.round_id
+// LEFT JOIN users ON submissions.participant_id = users.user_id
+// WHERE rounds.round_id IN (@round_ids)
+// AND submissions.round_id IN (@round_ids)
+// GROUP BY `submissions`.`participant_id`
+// ORDER BY rounds.round_id;
+func (r roundStatisticsDo) FetchUserStatisticsByRoundIDs(round_ids []string) (result []models.RoundStatisticsView, err error) {
+	var params []interface{}
+
+	var generateSQL strings.Builder
+	params = append(params, round_ids)
+	params = append(params, round_ids)
+	generateSQL.WriteString("SELECT users.username AS participant_name, rounds.name AS round_name, rounds.round_id AS round_id, submissions.participant_id AS participant_id, COUNT(submissions.submission_id) AS total_submissions, SUM(submissions.score) AS total_score FROM `submissions` LEFT JOIN rounds ON submissions.round_id = rounds.round_id LEFT JOIN users ON submissions.participant_id = users.user_id WHERE rounds.round_id IN (?) AND submissions.round_id IN (?) GROUP BY `submissions`.`participant_id` ORDER BY rounds.round_id; ")
+
+	var executeSQL *gorm.DB
+	executeSQL = r.UnderlyingDB().Raw(generateSQL.String(), params...).Find(&result) // ignore_security_alert
 	err = executeSQL.Error
 
 	return

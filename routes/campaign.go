@@ -292,3 +292,19 @@ func UpdateCampaignStatus(c *gin.Context, sess *cache.Session) {
 	}
 	c.JSON(200, models.ResponseSingle[*models.Campaign]{Data: campaign})
 }
+
+// FetchCampaignStatistics godoc
+// @Summary Fetch campaign statistics
+// @Description Fetch campaign statistics
+// @Produce  json
+// @Success 200 {object} models.ResponseSingle[models.CampaignStatistics]
+
+func FetchCampaignStatistics(c *gin.Context) {
+	c.JSON(200, models.ResponseSingle[models.CampaignLatestRoundStatistics]{Data: models.CampaignLatestRoundStatistics{
+		TotalSubmissions:          100,
+		TotalAssignments:          80,
+		TotalEvaluatedAssignments: 75,
+		TotalEvaluatedSubmissions: 70,
+		TotalScore:                85,
+	}})
+}

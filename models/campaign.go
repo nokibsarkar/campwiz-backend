@@ -103,3 +103,19 @@ func (t CampaignType) String() string {
 	}
 	return string(t)
 }
+
+type CampaignLatestRoundStatistics struct {
+	CampaignName              string      `json:"campaignName"`
+	CampaignId                IDType      `json:"campaignId"`
+	LatestRoundId             IDType      `json:"latestRoundId"`
+	LatestRoundName           string      `json:"latestRoundName"`
+	LatestRoundStartDate      string      `json:"latestRoundStartDate"`
+	LatestRoundEndDate        string      `json:"latestRoundEndDate"`
+	LatestRoundStatus         RoundStatus `json:"latestRoundStatus"`
+	CampaignStatus            RoundStatus `json:"campaignStatus"`
+	TotalSubmissions          int         `json:"totalSubmissions"`
+	TotalAssignments          int         `json:"totalAssignments"`
+	TotalEvaluatedAssignments int         `json:"totalEvaluatedAssignments"`
+	TotalEvaluatedSubmissions int         `json:"totalEvaluatedSubmissions"`
+	TotalScore                int         `json:"totalScore"`
+}

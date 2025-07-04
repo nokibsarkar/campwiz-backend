@@ -153,26 +153,3 @@ type RoundFilter struct {
 	Status     RoundStatus `form:"status"`
 	CommonFilter
 }
-type RoundResult struct {
-	AverageScore    float64 `json:"averageScore"`
-	SubmissionCount int     `json:"submissionCount"`
-}
-type RoundStatistics struct {
-	RoundID         IDType
-	AssignmentCount int
-	EvaluationCount int
-}
-type RoundStatisticsFetcher interface {
-	// SELECT SUM(`assignment_count`) AS `AssignmentCount`, SUM(`evaluation_count`) AS EvaluationCount, `round_id` AS `round_id` FROM `submissions` WHERE `round_id` = @round_id
-	FetchByRoundID(round_id string) ([]RoundStatistics, error)
-	// UPDATE rounds,
-	// (SELECT s.round_id, COUNT(*) AS TotalSubmissions, SUM(s.assignment_count) AS TotalAssignments,
-	// SUM(s.evaluation_count) AS TotalEvaluatedAssignments, SUM(CASE WHEN s.evaluation_count >= r.quorum THEN 1 ELSE 0 END)
-	// AS TotalEvaluatedSubmissions, SUM(s.score) AS TotalScore FROM submissions s FORCE INDEX (idx_submissions_round_id)
-	// JOIN rounds r ON s.round_id = r.round_id WHERE s.round_id = @round_id LIMIT 1) AS s_data
-	// SET rounds.total_submissions = s_data.TotalSubmissions,
-	// rounds.total_assignments = s_data.TotalAssignments, rounds.total_evaluated_assignments = s_data.TotalEvaluatedAssignments,
-	//  rounds.total_evaluated_submissions = s_data.TotalEvaluatedSubmissions, rounds.total_score = s_data.TotalScore
-	// WHERE rounds.round_id = @round_id;
-	UpdateByRoundID(round_id string) error
-}

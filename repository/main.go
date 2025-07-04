@@ -243,10 +243,19 @@ func InitDB(ctx context.Context, testing bool) {
 	err = db.AutoMigrate(&models.Project{}, &models.User{}, &models.Campaign{}, &models.Round{},
 		&models.Task{}, &models.Role{}, &models.Submission{},
 		&models.Evaluation{}, &models.TaskData{}, &models.Category{}, &models.Tag{})
+
 	if err != nil {
 		log.Printf("failed to migrate database %s", err.Error())
 		db.Rollback()
 		return
 	}
+	// err = models.MigrateViews(db, &models.RoundStatisticsView{})
+	// if err != nil {
+	// 	log.Printf("failed to migrate views %s", err.Error())
+	// 	db.Rollback()
+	// 	return
+	// }
+
 	db.Commit()
+	panic("Database initialized successfully, please run the query-generator to generate the queries")
 }

@@ -26,18 +26,21 @@ func MigrateViews(db *gorm.DB, views ...IView) error {
 		return fmt.Errorf("failed to get tables: %w", err)
 	}
 	for _, view := range views {
-
 		if !slices.Contains(tables, view.TableName()) {
-			m.CreateView(view.TableName(), gorm.ViewOption{
+			if err := m.CreateView(view.TableName(), gorm.ViewOption{
 				Query:   view.GetQuery(db),
 				Replace: true,
-			})
+			}); err != nil {
+				return err
+			}
 		} else {
 			fmt.Printf("Replacing view %s\n", view.TableName())
-			m.CreateView(view.TableName(), gorm.ViewOption{
+			if err := m.CreateView(view.TableName(), gorm.ViewOption{
 				Query:   view.GetQuery(db),
 				Replace: true,
-			})
+			}); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

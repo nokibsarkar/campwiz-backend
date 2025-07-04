@@ -230,7 +230,7 @@ func (service *CampaignService) UpdateCampaign(ctx context.Context, ID models.ID
 	}
 	defer close()
 	campaign_repo := repository.NewCampaignRepository()
-	campaign, err := campaign_repo.FindByID(conn, ID)
+	campaign, err := campaign_repo.FindByID(conn.Preload("CampaignTags"), ID)
 	if err != nil {
 		return nil, err
 	}
@@ -239,9 +239,25 @@ func (service *CampaignService) UpdateCampaign(ctx context.Context, ID models.ID
 	campaign.Description = campaignRequest.Description
 	campaign.StartDate = campaignRequest.StartDate
 	campaign.EndDate = campaignRequest.EndDate
-	// campaign.Language = campaignRequest.Language
+	campaign.Language = campaignRequest.Language
 	campaign.Rules = campaignRequest.Rules
 	campaign.Image = campaignRequest.Image
+	// Calculate Tag difference
+	if len(campaign.CampaignTags) == 0 {
+		campaign.CampaignTags = make([]models.Tag, 0, len(campaignRequest.Tags))
+	}
+	for _, tag := range campaignRequest.Tags {
+		campaign.CampaignTags = append(campaign.CampaignTags, models.Tag{
+			Name: tag,
+		})
+	}
+	for i := len(campaign.CampaignTags) - 1; i >= 0; i-- {
+		tag := campaign.CampaignTags[i]
+		if tag.CampaignID != campaign.CampaignID || tag.Name == "" {
+			campaign.CampaignTags = append(campaign.CampaignTags[:i], campaign.CampaignTags[i+1:]...)
+		}
+	}
+
 	tx := conn.Begin()
 	err = campaign_repo.Update(tx, campaign)
 	if err != nil {

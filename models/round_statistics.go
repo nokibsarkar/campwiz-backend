@@ -62,11 +62,10 @@ type RoundStatisticsFetcher interface {
 	// submissions.participant_id AS participant_id,
 	// COUNT(submissions.submission_id) AS total_submissions,
 	// SUM(submissions.score) AS total_score
-	// FROM `submissions`
+	// FROM `submissions` FORCE INDEX (idx_submissions_round_id)
 	// LEFT JOIN rounds ON submissions.round_id = rounds.round_id
 	// LEFT JOIN users ON submissions.participant_id = users.user_id
-	// WHERE rounds.round_id IN (@round_ids)
-	// AND submissions.round_id IN (@round_ids)
+	// WHERE submissions.round_id IN (@round_ids)
 	// GROUP BY `submissions`.`participant_id`
 	// ORDER BY total_score DESC, total_submissions DESC;
 	FetchUserStatisticsByRoundIDs(round_ids []string) ([]RoundStatisticsView, error)

@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"errors"
 	"nokib/campwiz/models"
 	"nokib/campwiz/repository/cache"
 	"nokib/campwiz/services"
@@ -9,29 +10,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ListAllCampaigns godoc
-// @Summary List all campaigns
-// @Description get all campaigns
-// @Produce  json
-// @Success 200 {object} models.ResponseList[models.Campaign]
-// @Router /campaign/ [get]
-// @param CampaignFilter query models.CampaignFilter false "Filter the campaigns"
-// @Tags Campaign
-// @Error 400 {object} models.ResponseError
-func ListAllCampaigns(c *gin.Context, sess *cache.Session) {
+func listAllCampaigns(c *gin.Context) ([]models.Campaign, error) {
 	qry := &models.CampaignFilter{}
 	err := c.ShouldBindQuery(qry)
 	if err != nil {
-		c.JSON(400, models.ResponseError{Detail: "Invalid request : " + err.Error()})
-		return
+		return nil, err
 	}
 	campaignService := services.NewCampaignService()
 	var campaignList []models.Campaign
 	if qry.IsHidden != nil && *qry.IsHidden {
 		sess := GetSession(c)
 		if sess == nil {
-			c.JSON(400, models.ResponseError{Detail: "Invalid request : User Must be logged in to get hidden campaigns"})
-			return
+			return nil, errors.New("errors.unAuthenticated")
 		}
 		// if !sess.Permission.HasPermission(consts.PermissionOtherProjectAccess) {
 		// 	// user is not an admin
@@ -82,6 +72,24 @@ func ListAllCampaigns(c *gin.Context, sess *cache.Session) {
 		campaignList = campaignService.ListPrivateCampaigns(c, sess, qry)
 	} else {
 		campaignList = campaignService.GetAllCampaigns(c, qry)
+	}
+	return campaignList, nil
+}
+
+// ListAllCampaigns godoc
+// @Summary List all campaigns
+// @Description get all campaigns
+// @Produce  json
+// @Success 200 {object} models.ResponseList[models.Campaign]
+// @Router /campaign/ [get]
+// @param CampaignFilter query models.CampaignFilter false "Filter the campaigns"
+// @Tags Campaign
+// @Error 400 {object} models.ResponseError
+func ListAllCampaigns(c *gin.Context) {
+	campaignList, err := listAllCampaigns(c)
+	if err != nil {
+		c.JSON(400, models.ResponseError{Detail: "Invalid request : " + err.Error()})
+		return
 	}
 	if len(campaignList) == 0 {
 		c.JSON(200, models.ResponseList[models.Campaign]{Data: []models.Campaign{}})
@@ -297,14 +305,33 @@ func UpdateCampaignStatus(c *gin.Context, sess *cache.Session) {
 // @Summary Fetch campaign statistics
 // @Description Fetch campaign statistics
 // @Produce  json
-// @Success 200 {object} models.ResponseSingle[models.CampaignStatistics]
-
+// @Success 200 {object} models.ResponseList[models.RoundStatisticsView]
+// @Router /campaign/statistics [get]
+// @Tags Campaign
+// @Param CampaignFilter query models.CampaignFilter false "Filter the campaigns"
+// @Security ApiKeyAuth
+// @Error 400 {object} models.ResponseError
+// @Error 403 {object} models.ResponseError
+// @Error 404 {object} models.ResponseError
 func FetchCampaignStatistics(c *gin.Context) {
-	c.JSON(200, models.ResponseSingle[models.CampaignLatestRoundStatistics]{Data: models.CampaignLatestRoundStatistics{
-		TotalSubmissions:          100,
-		TotalAssignments:          80,
-		TotalEvaluatedAssignments: 75,
-		TotalEvaluatedSubmissions: 70,
-		TotalScore:                85,
-	}})
+	campaignList, err := listAllCampaigns(c)
+	if err != nil {
+		c.JSON(400, models.ResponseError{Detail: "Invalid request : " + err.Error()})
+		return
+	}
+	if len(campaignList) == 0 {
+		c.JSON(200, models.ResponseList[models.RoundStatisticsView]{Data: []models.RoundStatisticsView{}})
+		return
+	}
+	roundIds := make([]string, 0, len(campaignList))
+	for _, campaign := range campaignList {
+		roundIds = append(roundIds, campaign.LatestRoundID.String())
+	}
+	campaignService := services.NewCampaignService()
+	statistics, err := campaignService.FetchCampaignStatistics(c, roundIds)
+	if err != nil {
+		c.JSON(400, models.ResponseError{Detail: "Failed to fetch campaign statistics : " + err.Error()})
+		return
+	}
+	c.JSON(200, models.ResponseList[models.RoundStatisticsView]{Data: statistics})
 }

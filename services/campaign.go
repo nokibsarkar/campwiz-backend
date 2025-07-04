@@ -349,3 +349,15 @@ func (service *CampaignService) UpdateCampaignStatus(ctx context.Context, usrId 
 	}
 	return campaign, nil
 }
+
+func (service *CampaignService) FetchCampaignStatistics(ctx context.Context, roundIds []string) ([]models.RoundStatisticsView, error) {
+	conn, close, err := repository.GetDB(ctx)
+	if err != nil {
+		log.Println("Error: ", err)
+		return nil, err
+	}
+	defer close()
+	q := query.Use(conn)
+	return q.RoundStatisticsView.FetchUserStatisticsByRoundIDs(roundIds)
+
+}

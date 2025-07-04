@@ -34,17 +34,18 @@ type CampaignWithWriteableFields struct {
 	IsPublic  bool        `json:"isPublic"`
 	ProjectID IDType      `json:"projectId"`
 	Status    RoundStatus `json:"status"`
-	Tags      []Tag       `json:"tags,omitempty" gorm:"null"`
+	Tags      []string    `json:"tags,omitempty" gorm:"-"`
 	// The type of the campaign, it should be one of the CampaignType constants
 	CampaignType CampaignType `json:"campaignType" gorm:"type:ENUM('commons', 'wikipedia', 'wikidata', 'categorization', 'reference');default:'commons';not null;index" binding:"required"`
 }
 type Campaign struct {
 	// A unique identifier for the campaign, it should be custom defined
-	CampaignID IDType `gorm:"primaryKey" json:"campaignId"`
+	CampaignID IDType `gorm:"primaryKey;column:campaign_id;type:varchar(255)" json:"campaignId"`
 	// The time the campaign was created, it would be set automatically
 	CreatedAt   *time.Time `json:"createdAt" gorm:"-<-:create"`
 	CreatedByID IDType     `json:"createdById" gorm:"index"`
 	CampaignWithWriteableFields
+	CampaignTags  []Tag           `json:"-"`
 	CreatedBy     *User           `json:"-" gorm:"foreignKey:CreatedByID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
 	Roles         []Role          `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	Rounds        []Round         `json:"rounds" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`

@@ -81,6 +81,14 @@ func (service *CampaignService) CreateCampaign(ctx context.Context, campaignRequ
 		tx.Rollback()
 		return nil, fmt.Errorf("user does not have permission to create campaign in other's project")
 	}
+	tags := []models.Tag{}
+	if len(campaignRequest.Tags) > 0 {
+		for _, tag := range campaignRequest.Tags {
+			tags = append(tags, models.Tag{
+				Name: tag,
+			})
+		}
+	}
 	campaign := &models.Campaign{
 		CampaignID: idgenerator.GenerateID("c"),
 		CampaignWithWriteableFields: models.CampaignWithWriteableFields{
@@ -95,7 +103,8 @@ func (service *CampaignService) CreateCampaign(ctx context.Context, campaignRequ
 			IsPublic:    campaignRequest.IsPublic,
 			Status:      models.RoundStatusActive,
 		},
-		CreatedByID: campaignRequest.CreatedByID,
+		CreatedByID:  campaignRequest.CreatedByID,
+		CampaignTags: tags,
 	}
 
 	err = campaign_repo.Create(tx.Preload("Roles"), campaign)
@@ -175,6 +184,7 @@ type SingleCampaignQuery struct {
 	IncludeRoles      bool `form:"includeRoles"`
 	IncludeProject    bool `form:"includeProject"`
 	IncludeRoundRoles bool `form:"includeRoundRoles"`
+	IncludeTags       bool `form:"includeTags"`
 }
 
 func (service *CampaignService) GetCampaignByID(ctx context.Context, id models.IDType, query *SingleCampaignQuery) (*models.Campaign, error) {
@@ -197,6 +207,10 @@ func (service *CampaignService) GetCampaignByID(ctx context.Context, id models.I
 		}
 		if query.IncludeProject {
 			conn = conn.Preload("Project")
+		}
+		if query.IncludeTags {
+			conn = conn.Preload("CampaignTags")
+			fmt.Println("Preloading tags")
 		}
 	}
 	campaign_repo := repository.NewCampaignRepository()

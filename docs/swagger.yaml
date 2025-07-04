@@ -1425,6 +1425,15 @@ paths:
         x-enum-varnames:
         - SortOrderAsc
         - SortOrderDesc
+      - collectionFormat: csv
+        description: |-
+          Tags are used to filter campaigns by tags
+          If tags are provided, then only campaigns with the given tags will be returned
+        in: query
+        items:
+          type: string
+        name: tags
+        type: array
       produces:
       - application/json
       responses:
@@ -1476,6 +1485,9 @@ paths:
         type: boolean
       - in: query
         name: includeRounds
+        type: boolean
+      - in: query
+        name: includeTags
         type: boolean
       produces:
       - application/json

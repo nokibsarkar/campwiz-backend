@@ -78,6 +78,9 @@ type CampaignFilter struct {
 	SortOrder SortOrder `form:"sortOrder"`
 	// Whether the campaign is closed (result have been finalized)
 	IsClosed *bool `form:"isClosed"`
+	// Tags are used to filter campaigns by tags
+	// If tags are provided, then only campaigns with the given tags will be returned
+	Tags []string `form:"tags,comma"` // Tags are used to filter campaigns by tags
 	CommonFilter
 }
 type SingleCampaignFilter struct {

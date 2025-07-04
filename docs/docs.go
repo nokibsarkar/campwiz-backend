@@ -83,6 +83,16 @@ const docTemplate = `{
                         ],
                         "name": "sortOrder",
                         "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Tags are used to filter campaigns by tags\nIf tags are provided, then only campaigns with the given tags will be returned",
+                        "name": "tags",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -170,6 +180,11 @@ const docTemplate = `{
                     {
                         "type": "boolean",
                         "name": "includeRounds",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "name": "includeTags",
                         "in": "query"
                     }
                 ],

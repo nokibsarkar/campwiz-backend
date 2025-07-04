@@ -20,6 +20,12 @@ func (c *CampaignRepository) Create(conn *gorm.DB, campaign *models.Campaign) er
 func (c *CampaignRepository) FindByID(conn *gorm.DB, id models.IDType) (*models.Campaign, error) {
 	q := query.Use(conn)
 	campaign, err := q.Campaign.Where(q.Campaign.CampaignID.Eq(id.String())).First()
+	if campaign != nil && len(campaign.CampaignTags) > 0 {
+		campaign.Tags = make([]string, 0, len(campaign.CampaignTags))
+		for _, tag := range campaign.CampaignTags {
+			campaign.Tags = append(campaign.Tags, tag.Name)
+		}
+	}
 	return campaign, err
 }
 func (c *CampaignRepository) ListAllCampaigns(conn *gorm.DB, qry *models.CampaignFilter) ([]models.Campaign, error) {

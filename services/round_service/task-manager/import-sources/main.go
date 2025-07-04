@@ -342,6 +342,7 @@ func (t *ImporterServer) importFrom(ctx context.Context, source IImportSource, t
 		task.Status = models.TaskStatusFailed
 	}
 	log.Printf("Round %s imported successfully\n", currentRound.RoundID)
+	defer t.importDescriptions(ctx, currentRound)
 	err = nil
 }
 func (t *ImporterServer) importDescriptions(ctx context.Context, round *models.Round) {

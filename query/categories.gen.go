@@ -93,7 +93,7 @@ func newCategory(db *gorm.DB, opts ...gen.DOOption) category {
 					}
 				}
 			}
-			Tags struct {
+			CampaignTags struct {
 				field.RelationField
 				Campaign struct {
 					field.RelationField
@@ -198,17 +198,17 @@ func newCategory(db *gorm.DB, opts ...gen.DOOption) category {
 					},
 				},
 			},
-			Tags: struct {
+			CampaignTags: struct {
 				field.RelationField
 				Campaign struct {
 					field.RelationField
 				}
 			}{
-				RelationField: field.NewRelation("Submission.Campaign.Tags", "models.Tag"),
+				RelationField: field.NewRelation("Submission.Campaign.CampaignTags", "models.Tag"),
 				Campaign: struct {
 					field.RelationField
 				}{
-					RelationField: field.NewRelation("Submission.Campaign.Tags.Campaign", "models.Campaign"),
+					RelationField: field.NewRelation("Submission.Campaign.CampaignTags.Campaign", "models.Campaign"),
 				},
 			},
 			Roles: struct {
@@ -476,7 +476,7 @@ type categoryBelongsToSubmission struct {
 				}
 			}
 		}
-		Tags struct {
+		CampaignTags struct {
 			field.RelationField
 			Campaign struct {
 				field.RelationField

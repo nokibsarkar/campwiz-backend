@@ -2262,7 +2262,7 @@ const docTemplate = `{
                 "tags": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/models.Tag"
+                        "type": "string"
                     }
                 }
             }
@@ -2351,7 +2351,7 @@ const docTemplate = `{
                 "tags": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/models.Tag"
+                        "type": "string"
                     }
                 }
             }
@@ -3316,17 +3316,6 @@ const docTemplate = `{
                 }
             }
         },
-        "models.Tag": {
-            "type": "object",
-            "properties": {
-                "campaignId": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
         "models.Task": {
             "type": "object",
             "properties": {
@@ -3593,7 +3582,7 @@ const docTemplate = `{
                 "tags": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/models.Tag"
+                        "type": "string"
                     }
                 }
             }
@@ -3662,7 +3651,7 @@ const docTemplate = `{
                 "tags": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/models.Tag"
+                        "type": "string"
                     }
                 }
             }

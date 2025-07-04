@@ -2255,7 +2255,7 @@
                 "tags": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/models.Tag"
+                        "type": "string"
                     }
                 }
             }
@@ -2344,7 +2344,7 @@
                 "tags": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/models.Tag"
+                        "type": "string"
                     }
                 }
             }
@@ -3309,17 +3309,6 @@
                 }
             }
         },
-        "models.Tag": {
-            "type": "object",
-            "properties": {
-                "campaignId": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
         "models.Task": {
             "type": "object",
             "properties": {
@@ -3586,7 +3575,7 @@
                 "tags": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/models.Tag"
+                        "type": "string"
                     }
                 }
             }
@@ -3655,7 +3644,7 @@
                 "tags": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/models.Tag"
+                        "type": "string"
                     }
                 }
             }

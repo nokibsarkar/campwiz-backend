@@ -250,7 +250,7 @@ definitions:
         $ref: '#/definitions/models.RoundStatus'
       tags:
         items:
-          $ref: '#/definitions/models.Tag'
+          type: string
         type: array
     required:
     - campaignType
@@ -311,7 +311,7 @@ definitions:
         $ref: '#/definitions/models.RoundStatus'
       tags:
         items:
-          $ref: '#/definitions/models.Tag'
+          type: string
         type: array
     required:
     - campaignType
@@ -973,13 +973,6 @@ definitions:
       width:
         type: integer
     type: object
-  models.Tag:
-    properties:
-      campaignId:
-        type: integer
-      name:
-        type: string
-    type: object
   models.Task:
     properties:
       campaignId:
@@ -1164,7 +1157,7 @@ definitions:
         $ref: '#/definitions/models.RoundStatus'
       tags:
         items:
-          $ref: '#/definitions/models.Tag'
+          type: string
         type: array
     required:
     - campaignType
@@ -1211,7 +1204,7 @@ definitions:
         $ref: '#/definitions/models.RoundStatus'
       tags:
         items:
-          $ref: '#/definitions/models.Tag'
+          type: string
         type: array
     required:
     - campaignType

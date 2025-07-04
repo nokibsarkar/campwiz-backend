@@ -44,10 +44,10 @@ func newCampaign(db *gorm.DB, opts ...gen.DOOption) campaign {
 	_campaign.CampaignType = field.NewString(tableName, "campaign_type")
 	_campaign.LatestRoundID = field.NewString(tableName, "latest_round_id")
 	_campaign.ArchivedAt = field.NewField(tableName, "archived_at")
-	_campaign.Tags = campaignHasManyTags{
+	_campaign.CampaignTags = campaignHasManyCampaignTags{
 		db: db.Session(&gorm.Session{}),
 
-		RelationField: field.NewRelation("Tags", "models.Tag"),
+		RelationField: field.NewRelation("CampaignTags", "models.Tag"),
 		Campaign: struct {
 			field.RelationField
 			CreatedBy struct {
@@ -86,7 +86,7 @@ func newCampaign(db *gorm.DB, opts ...gen.DOOption) campaign {
 					}
 				}
 			}
-			Tags struct {
+			CampaignTags struct {
 				field.RelationField
 			}
 			Roles struct {
@@ -96,24 +96,24 @@ func newCampaign(db *gorm.DB, opts ...gen.DOOption) campaign {
 				field.RelationField
 			}
 		}{
-			RelationField: field.NewRelation("Tags.Campaign", "models.Campaign"),
+			RelationField: field.NewRelation("CampaignTags.Campaign", "models.Campaign"),
 			CreatedBy: struct {
 				field.RelationField
 				LeadingProject struct {
 					field.RelationField
 				}
 			}{
-				RelationField: field.NewRelation("Tags.Campaign.CreatedBy", "models.User"),
+				RelationField: field.NewRelation("CampaignTags.Campaign.CreatedBy", "models.User"),
 				LeadingProject: struct {
 					field.RelationField
 				}{
-					RelationField: field.NewRelation("Tags.Campaign.CreatedBy.LeadingProject", "models.Project"),
+					RelationField: field.NewRelation("CampaignTags.Campaign.CreatedBy.LeadingProject", "models.Project"),
 				},
 			},
 			Project: struct {
 				field.RelationField
 			}{
-				RelationField: field.NewRelation("Tags.Campaign.Project", "models.Project"),
+				RelationField: field.NewRelation("CampaignTags.Campaign.Project", "models.Project"),
 			},
 			LatestRound: struct {
 				field.RelationField
@@ -142,21 +142,21 @@ func newCampaign(db *gorm.DB, opts ...gen.DOOption) campaign {
 					}
 				}
 			}{
-				RelationField: field.NewRelation("Tags.Campaign.LatestRound", "models.Round"),
+				RelationField: field.NewRelation("CampaignTags.Campaign.LatestRound", "models.Round"),
 				Campaign: struct {
 					field.RelationField
 				}{
-					RelationField: field.NewRelation("Tags.Campaign.LatestRound.Campaign", "models.Campaign"),
+					RelationField: field.NewRelation("CampaignTags.Campaign.LatestRound.Campaign", "models.Campaign"),
 				},
 				Creator: struct {
 					field.RelationField
 				}{
-					RelationField: field.NewRelation("Tags.Campaign.LatestRound.Creator", "models.User"),
+					RelationField: field.NewRelation("CampaignTags.Campaign.LatestRound.Creator", "models.User"),
 				},
 				DependsOnRound: struct {
 					field.RelationField
 				}{
-					RelationField: field.NewRelation("Tags.Campaign.LatestRound.DependsOnRound", "models.Round"),
+					RelationField: field.NewRelation("CampaignTags.Campaign.LatestRound.DependsOnRound", "models.Round"),
 				},
 				Roles: struct {
 					field.RelationField
@@ -173,43 +173,43 @@ func newCampaign(db *gorm.DB, opts ...gen.DOOption) campaign {
 						field.RelationField
 					}
 				}{
-					RelationField: field.NewRelation("Tags.Campaign.LatestRound.Roles", "models.Role"),
+					RelationField: field.NewRelation("CampaignTags.Campaign.LatestRound.Roles", "models.Role"),
 					Round: struct {
 						field.RelationField
 					}{
-						RelationField: field.NewRelation("Tags.Campaign.LatestRound.Roles.Round", "models.Round"),
+						RelationField: field.NewRelation("CampaignTags.Campaign.LatestRound.Roles.Round", "models.Round"),
 					},
 					Campaign: struct {
 						field.RelationField
 					}{
-						RelationField: field.NewRelation("Tags.Campaign.LatestRound.Roles.Campaign", "models.Campaign"),
+						RelationField: field.NewRelation("CampaignTags.Campaign.LatestRound.Roles.Campaign", "models.Campaign"),
 					},
 					User: struct {
 						field.RelationField
 					}{
-						RelationField: field.NewRelation("Tags.Campaign.LatestRound.Roles.User", "models.User"),
+						RelationField: field.NewRelation("CampaignTags.Campaign.LatestRound.Roles.User", "models.User"),
 					},
 					Project: struct {
 						field.RelationField
 					}{
-						RelationField: field.NewRelation("Tags.Campaign.LatestRound.Roles.Project", "models.Project"),
+						RelationField: field.NewRelation("CampaignTags.Campaign.LatestRound.Roles.Project", "models.Project"),
 					},
 				},
 			},
-			Tags: struct {
+			CampaignTags: struct {
 				field.RelationField
 			}{
-				RelationField: field.NewRelation("Tags.Campaign.Tags", "models.Tag"),
+				RelationField: field.NewRelation("CampaignTags.Campaign.CampaignTags", "models.Tag"),
 			},
 			Roles: struct {
 				field.RelationField
 			}{
-				RelationField: field.NewRelation("Tags.Campaign.Roles", "models.Role"),
+				RelationField: field.NewRelation("CampaignTags.Campaign.Roles", "models.Role"),
 			},
 			Rounds: struct {
 				field.RelationField
 			}{
-				RelationField: field.NewRelation("Tags.Campaign.Rounds", "models.Round"),
+				RelationField: field.NewRelation("CampaignTags.Campaign.Rounds", "models.Round"),
 			},
 		},
 	}
@@ -269,7 +269,7 @@ type campaign struct {
 	CampaignType  field.String
 	LatestRoundID field.String
 	ArchivedAt    field.Field
-	Tags          campaignHasManyTags
+	CampaignTags  campaignHasManyCampaignTags
 
 	Roles campaignHasManyRoles
 
@@ -350,8 +350,8 @@ func (c *campaign) fillFieldMap() {
 
 func (c campaign) clone(db *gorm.DB) campaign {
 	c.campaignDo.ReplaceConnPool(db.Statement.ConnPool)
-	c.Tags.db = db.Session(&gorm.Session{Initialized: true})
-	c.Tags.db.Statement.ConnPool = db.Statement.ConnPool
+	c.CampaignTags.db = db.Session(&gorm.Session{Initialized: true})
+	c.CampaignTags.db.Statement.ConnPool = db.Statement.ConnPool
 	c.Roles.db = db.Session(&gorm.Session{Initialized: true})
 	c.Roles.db.Statement.ConnPool = db.Statement.ConnPool
 	c.Rounds.db = db.Session(&gorm.Session{Initialized: true})
@@ -367,7 +367,7 @@ func (c campaign) clone(db *gorm.DB) campaign {
 
 func (c campaign) replaceDB(db *gorm.DB) campaign {
 	c.campaignDo.ReplaceDB(db)
-	c.Tags.db = db.Session(&gorm.Session{})
+	c.CampaignTags.db = db.Session(&gorm.Session{})
 	c.Roles.db = db.Session(&gorm.Session{})
 	c.Rounds.db = db.Session(&gorm.Session{})
 	c.CreatedBy.db = db.Session(&gorm.Session{})
@@ -376,7 +376,7 @@ func (c campaign) replaceDB(db *gorm.DB) campaign {
 	return c
 }
 
-type campaignHasManyTags struct {
+type campaignHasManyCampaignTags struct {
 	db *gorm.DB
 
 	field.RelationField
@@ -419,7 +419,7 @@ type campaignHasManyTags struct {
 				}
 			}
 		}
-		Tags struct {
+		CampaignTags struct {
 			field.RelationField
 		}
 		Roles struct {
@@ -431,7 +431,7 @@ type campaignHasManyTags struct {
 	}
 }
 
-func (a campaignHasManyTags) Where(conds ...field.Expr) *campaignHasManyTags {
+func (a campaignHasManyCampaignTags) Where(conds ...field.Expr) *campaignHasManyCampaignTags {
 	if len(conds) == 0 {
 		return &a
 	}
@@ -444,32 +444,32 @@ func (a campaignHasManyTags) Where(conds ...field.Expr) *campaignHasManyTags {
 	return &a
 }
 
-func (a campaignHasManyTags) WithContext(ctx context.Context) *campaignHasManyTags {
+func (a campaignHasManyCampaignTags) WithContext(ctx context.Context) *campaignHasManyCampaignTags {
 	a.db = a.db.WithContext(ctx)
 	return &a
 }
 
-func (a campaignHasManyTags) Session(session *gorm.Session) *campaignHasManyTags {
+func (a campaignHasManyCampaignTags) Session(session *gorm.Session) *campaignHasManyCampaignTags {
 	a.db = a.db.Session(session)
 	return &a
 }
 
-func (a campaignHasManyTags) Model(m *models.Campaign) *campaignHasManyTagsTx {
-	return &campaignHasManyTagsTx{a.db.Model(m).Association(a.Name())}
+func (a campaignHasManyCampaignTags) Model(m *models.Campaign) *campaignHasManyCampaignTagsTx {
+	return &campaignHasManyCampaignTagsTx{a.db.Model(m).Association(a.Name())}
 }
 
-func (a campaignHasManyTags) Unscoped() *campaignHasManyTags {
+func (a campaignHasManyCampaignTags) Unscoped() *campaignHasManyCampaignTags {
 	a.db = a.db.Unscoped()
 	return &a
 }
 
-type campaignHasManyTagsTx struct{ tx *gorm.Association }
+type campaignHasManyCampaignTagsTx struct{ tx *gorm.Association }
 
-func (a campaignHasManyTagsTx) Find() (result []*models.Tag, err error) {
+func (a campaignHasManyCampaignTagsTx) Find() (result []*models.Tag, err error) {
 	return result, a.tx.Find(&result)
 }
 
-func (a campaignHasManyTagsTx) Append(values ...*models.Tag) (err error) {
+func (a campaignHasManyCampaignTagsTx) Append(values ...*models.Tag) (err error) {
 	targetValues := make([]interface{}, len(values))
 	for i, v := range values {
 		targetValues[i] = v
@@ -477,7 +477,7 @@ func (a campaignHasManyTagsTx) Append(values ...*models.Tag) (err error) {
 	return a.tx.Append(targetValues...)
 }
 
-func (a campaignHasManyTagsTx) Replace(values ...*models.Tag) (err error) {
+func (a campaignHasManyCampaignTagsTx) Replace(values ...*models.Tag) (err error) {
 	targetValues := make([]interface{}, len(values))
 	for i, v := range values {
 		targetValues[i] = v
@@ -485,7 +485,7 @@ func (a campaignHasManyTagsTx) Replace(values ...*models.Tag) (err error) {
 	return a.tx.Replace(targetValues...)
 }
 
-func (a campaignHasManyTagsTx) Delete(values ...*models.Tag) (err error) {
+func (a campaignHasManyCampaignTagsTx) Delete(values ...*models.Tag) (err error) {
 	targetValues := make([]interface{}, len(values))
 	for i, v := range values {
 		targetValues[i] = v
@@ -493,15 +493,15 @@ func (a campaignHasManyTagsTx) Delete(values ...*models.Tag) (err error) {
 	return a.tx.Delete(targetValues...)
 }
 
-func (a campaignHasManyTagsTx) Clear() error {
+func (a campaignHasManyCampaignTagsTx) Clear() error {
 	return a.tx.Clear()
 }
 
-func (a campaignHasManyTagsTx) Count() int64 {
+func (a campaignHasManyCampaignTagsTx) Count() int64 {
 	return a.tx.Count()
 }
 
-func (a campaignHasManyTagsTx) Unscoped() *campaignHasManyTagsTx {
+func (a campaignHasManyCampaignTagsTx) Unscoped() *campaignHasManyCampaignTagsTx {
 	a.tx = a.tx.Unscoped()
 	return &a
 }

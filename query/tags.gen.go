@@ -29,7 +29,7 @@ func newTag(db *gorm.DB, opts ...gen.DOOption) tag {
 	tableName := _tag.tagDo.TableName()
 	_tag.ALL = field.NewAsterisk(tableName)
 	_tag.Name = field.NewString(tableName, "name")
-	_tag.CampaignId = field.NewInt(tableName, "campaign_id")
+	_tag.CampaignID = field.NewString(tableName, "campaign_id")
 	_tag.Campaign = tagBelongsToCampaign{
 		db: db.Session(&gorm.Session{}),
 
@@ -133,17 +133,17 @@ func newTag(db *gorm.DB, opts ...gen.DOOption) tag {
 				},
 			},
 		},
-		Tags: struct {
+		CampaignTags: struct {
 			field.RelationField
 			Campaign struct {
 				field.RelationField
 			}
 		}{
-			RelationField: field.NewRelation("Campaign.Tags", "models.Tag"),
+			RelationField: field.NewRelation("Campaign.CampaignTags", "models.Tag"),
 			Campaign: struct {
 				field.RelationField
 			}{
-				RelationField: field.NewRelation("Campaign.Tags.Campaign", "models.Campaign"),
+				RelationField: field.NewRelation("Campaign.CampaignTags.Campaign", "models.Campaign"),
 			},
 		},
 		Roles: struct {
@@ -168,7 +168,7 @@ type tag struct {
 
 	ALL        field.Asterisk
 	Name       field.String
-	CampaignId field.Int
+	CampaignID field.String
 	Campaign   tagBelongsToCampaign
 
 	fieldMap map[string]field.Expr
@@ -187,7 +187,7 @@ func (t tag) As(alias string) *tag {
 func (t *tag) updateTableName(table string) *tag {
 	t.ALL = field.NewAsterisk(table)
 	t.Name = field.NewString(table, "name")
-	t.CampaignId = field.NewInt(table, "campaign_id")
+	t.CampaignID = field.NewString(table, "campaign_id")
 
 	t.fillFieldMap()
 
@@ -206,7 +206,7 @@ func (t *tag) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 func (t *tag) fillFieldMap() {
 	t.fieldMap = make(map[string]field.Expr, 3)
 	t.fieldMap["name"] = t.Name
-	t.fieldMap["campaign_id"] = t.CampaignId
+	t.fieldMap["campaign_id"] = t.CampaignID
 
 }
 
@@ -264,7 +264,7 @@ type tagBelongsToCampaign struct {
 			}
 		}
 	}
-	Tags struct {
+	CampaignTags struct {
 		field.RelationField
 		Campaign struct {
 			field.RelationField

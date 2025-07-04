@@ -26,6 +26,7 @@ var (
 	Role                   *role
 	Round                  *round
 	RoundStatistics        *roundStatistics
+	RoundStatisticsView    *roundStatisticsView
 	Submission             *submission
 	SubmissionResult       *submissionResult
 	SubmissionStatistics   *submissionStatistics
@@ -46,6 +47,7 @@ func SetDefault(db *gorm.DB, opts ...gen.DOOption) {
 	Role = &Q.Role
 	Round = &Q.Round
 	RoundStatistics = &Q.RoundStatistics
+	RoundStatisticsView = &Q.RoundStatisticsView
 	Submission = &Q.Submission
 	SubmissionResult = &Q.SubmissionResult
 	SubmissionStatistics = &Q.SubmissionStatistics
@@ -67,6 +69,7 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 		Role:                   newRole(db, opts...),
 		Round:                  newRound(db, opts...),
 		RoundStatistics:        newRoundStatistics(db, opts...),
+		RoundStatisticsView:    newRoundStatisticsView(db, opts...),
 		Submission:             newSubmission(db, opts...),
 		SubmissionResult:       newSubmissionResult(db, opts...),
 		SubmissionStatistics:   newSubmissionStatistics(db, opts...),
@@ -89,6 +92,7 @@ type Query struct {
 	Role                   role
 	Round                  round
 	RoundStatistics        roundStatistics
+	RoundStatisticsView    roundStatisticsView
 	Submission             submission
 	SubmissionResult       submissionResult
 	SubmissionStatistics   submissionStatistics
@@ -112,6 +116,7 @@ func (q *Query) clone(db *gorm.DB) *Query {
 		Role:                   q.Role.clone(db),
 		Round:                  q.Round.clone(db),
 		RoundStatistics:        q.RoundStatistics.clone(db),
+		RoundStatisticsView:    q.RoundStatisticsView.clone(db),
 		Submission:             q.Submission.clone(db),
 		SubmissionResult:       q.SubmissionResult.clone(db),
 		SubmissionStatistics:   q.SubmissionStatistics.clone(db),
@@ -142,6 +147,7 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 		Role:                   q.Role.replaceDB(db),
 		Round:                  q.Round.replaceDB(db),
 		RoundStatistics:        q.RoundStatistics.replaceDB(db),
+		RoundStatisticsView:    q.RoundStatisticsView.replaceDB(db),
 		Submission:             q.Submission.replaceDB(db),
 		SubmissionResult:       q.SubmissionResult.replaceDB(db),
 		SubmissionStatistics:   q.SubmissionStatistics.replaceDB(db),
@@ -162,6 +168,7 @@ type queryCtx struct {
 	Role                   IRoleDo
 	Round                  IRoundDo
 	RoundStatistics        IRoundStatisticsDo
+	RoundStatisticsView    IRoundStatisticsViewDo
 	Submission             ISubmissionDo
 	SubmissionResult       ISubmissionResultDo
 	SubmissionStatistics   ISubmissionStatisticsDo
@@ -182,6 +189,7 @@ func (q *Query) WithContext(ctx context.Context) *queryCtx {
 		Role:                   q.Role.WithContext(ctx),
 		Round:                  q.Round.WithContext(ctx),
 		RoundStatistics:        q.RoundStatistics.WithContext(ctx),
+		RoundStatisticsView:    q.RoundStatisticsView.WithContext(ctx),
 		Submission:             q.Submission.WithContext(ctx),
 		SubmissionResult:       q.SubmissionResult.WithContext(ctx),
 		SubmissionStatistics:   q.SubmissionStatistics.WithContext(ctx),

@@ -18,7 +18,7 @@ func main() {
 	g.ApplyInterface(func(cache.Dirtributor) {}, cache.Evaluation{})
 	g.ApplyInterface(func(models.SubmissionStatisticsFetcher) {}, models.SubmissionStatistics{})
 	g.ApplyInterface(func(models.JuryStatisticsUpdater) {}, models.JuryStatistics{})
-	g.ApplyInterface(func(models.RoundStatisticsFetcher) {}, models.RoundStatistics{})
+	g.ApplyInterface(func(models.RoundStatisticsFetcher) {}, models.RoundStatistics{}, models.RoundStatisticsView{})
 	g.ApplyInterface(func(models.Evaluator) {}, models.Evaluation{})
 	g.ApplyInterface(func(models.SubmissionFetcher) {}, models.CommonsSubmissionEntry{})
 	g.Execute()

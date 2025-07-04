@@ -68,6 +68,6 @@ type RoundStatisticsFetcher interface {
 	// WHERE rounds.round_id IN (@round_ids)
 	// AND submissions.round_id IN (@round_ids)
 	// GROUP BY `submissions`.`participant_id`
-	// ORDER BY rounds.round_id;
+	// ORDER BY total_score DESC, total_submissions DESC;
 	FetchUserStatisticsByRoundIDs(round_ids []string) ([]RoundStatisticsView, error)
 }

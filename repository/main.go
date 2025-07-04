@@ -255,7 +255,7 @@ func InitDB(ctx context.Context, testing bool) {
 	// 	db.Rollback()
 	// 	return
 	// }
-
+	q := query.Use(db.WithContext(ctx))
+	q.RoundStatisticsView.FetchUserStatisticsByRoundIDs([]string{"r2inkvdorw5q8", "r2inkv4wqqmtc"})
 	db.Commit()
-	panic("Database initialized successfully, please run the query-generator to generate the queries")
 }

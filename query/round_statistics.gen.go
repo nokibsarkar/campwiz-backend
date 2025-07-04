@@ -217,14 +217,14 @@ func (r roundStatisticsDo) UpdateByRoundID(round_id string) (err error) {
 // WHERE rounds.round_id IN (@round_ids)
 // AND submissions.round_id IN (@round_ids)
 // GROUP BY `submissions`.`participant_id`
-// ORDER BY rounds.round_id;
+// ORDER BY total_score DESC, total_submissions DESC;
 func (r roundStatisticsDo) FetchUserStatisticsByRoundIDs(round_ids []string) (result []models.RoundStatisticsView, err error) {
 	var params []interface{}
 
 	var generateSQL strings.Builder
 	params = append(params, round_ids)
 	params = append(params, round_ids)
-	generateSQL.WriteString("SELECT users.username AS participant_name, rounds.name AS round_name, rounds.round_id AS round_id, submissions.participant_id AS participant_id, COUNT(submissions.submission_id) AS total_submissions, SUM(submissions.score) AS total_score FROM `submissions` LEFT JOIN rounds ON submissions.round_id = rounds.round_id LEFT JOIN users ON submissions.participant_id = users.user_id WHERE rounds.round_id IN (?) AND submissions.round_id IN (?) GROUP BY `submissions`.`participant_id` ORDER BY rounds.round_id; ")
+	generateSQL.WriteString("SELECT users.username AS participant_name, rounds.name AS round_name, rounds.round_id AS round_id, submissions.participant_id AS participant_id, COUNT(submissions.submission_id) AS total_submissions, SUM(submissions.score) AS total_score FROM `submissions` LEFT JOIN rounds ON submissions.round_id = rounds.round_id LEFT JOIN users ON submissions.participant_id = users.user_id WHERE rounds.round_id IN (?) AND submissions.round_id IN (?) GROUP BY `submissions`.`participant_id` ORDER BY total_score DESC, total_submissions DESC; ")
 
 	var executeSQL *gorm.DB
 	executeSQL = r.UnderlyingDB().Raw(generateSQL.String(), params...).Find(&result) // ignore_security_alert

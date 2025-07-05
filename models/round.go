@@ -134,7 +134,7 @@ type Round struct {
 	TotalAssignments          int         `json:"totalAssignments" gorm:"default:0"`
 	TotalEvaluatedAssignments int         `json:"totalEvaluatedAssignments" gorm:"default:0"`
 	TotalEvaluatedSubmissions int         `json:"totalEvaluatedSubmissions" gorm:"default:0"`
-	TotalScore                ScoreType   `json:"totalScore" gorm:"default:0"`
+	TotalScore                float64     `json:"totalScore" gorm:"default:0"`
 	Status                    RoundStatus `json:"status"`
 	Campaign                  *Campaign   `json:"-"  gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	Creator                   *User       `json:"-" gorm:"foreignKey:CreatedByID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`

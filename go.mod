@@ -4,7 +4,6 @@ go 1.24.0
 
 require (
 	github.com/dimail777/snowflake-go v0.0.0-20240111153750-b698a70b85ca
-	github.com/fatih/color v1.18.0
 	github.com/getsentry/sentry-go v0.34.0
 	github.com/getsentry/sentry-go/gin v0.34.0
 	github.com/gin-gonic/gin v1.10.1
@@ -19,7 +18,7 @@ require (
 	golang.org/x/net v0.41.0
 	golang.org/x/oauth2 v0.30.0
 	google.golang.org/grpc v1.73.0
-	gorm.io/datatypes v1.2.5
+	gorm.io/datatypes v1.2.6
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/driver/sqlite v1.6.0
 	gorm.io/gen v0.3.27
@@ -30,7 +29,6 @@ require (
 
 require (
 	github.com/go-viper/mapstructure/v2 v2.3.0 // indirect
-	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/smartystreets/goconvey v1.8.1 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250519155744-55703ea1f237 // indirect
 )

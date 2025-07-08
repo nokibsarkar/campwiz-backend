@@ -1,13 +1,11 @@
 package distributionstrategy
 
 import (
-	"bufio"
 	"context"
 	"log"
 	"nokib/campwiz/models"
 	"nokib/campwiz/query"
 	"nokib/campwiz/repository"
-	"os"
 
 	"fmt"
 
@@ -229,7 +227,7 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries2(ctx context.Contex
 		parentSpan.SetData("already_assigned_workflow_map", alreadyAssignedToTargetJury)
 		// for each of the target roles, we would be distributing the evaluations
 		errorMargin := 0
-		scanner := bufio.NewScanner(os.Stdin)
+		// scanner := bufio.NewScanner(os.Stdin)
 		for i := range targetRoleCount {
 			// select locked
 			b := JurorV3{}
@@ -314,8 +312,8 @@ func (strategy *RoundRobinDistributionStrategy) AssignJuries2(ctx context.Contex
 			}
 			// wait for confirmation
 			childSpan.SetData("target_judge_locked_evaluations", locked)
-			log.Printf("Press Enter to continue for target judge %s", targetJudgeId)
-			scanner.Scan()
+			// log.Printf("Press Enter to continue for target judge %s", targetJudgeId)
+			// scanner.Scan()
 		}
 	}
 	err = strategy.triggerStatisticsUpdateByRoundID(tx, round)

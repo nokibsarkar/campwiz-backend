@@ -198,8 +198,12 @@ func (t *ImporterServer) importFrom(ctx context.Context, source IImportSource, t
 		task.SuccessCount = successCount
 		participants := map[models.WikimediaUsernameType]models.IDType{}
 		for _, image := range images {
-			participants[image.CreatedByUsername] = idgenerator.GenerateID("u")
-			participants[image.SubmittedByUsername] = idgenerator.GenerateID("u")
+			if image.CreatedByUsername != "" {
+				participants[image.CreatedByUsername] = idgenerator.GenerateID("u")
+			}
+			if image.SubmittedByUsername != "" {
+				participants[image.SubmittedByUsername] = idgenerator.GenerateID("u")
+			}
 		}
 		username2IdMap, err = user_repo.EnsureExists(tx, participants)
 		if err != nil {

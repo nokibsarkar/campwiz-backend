@@ -8,3 +8,4 @@ coverage*
 taskmanager
 *.db
 network-tester
+*.sql

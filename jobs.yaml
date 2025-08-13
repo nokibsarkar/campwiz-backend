@@ -35,5 +35,5 @@
   retry: 3
 - name: snapshot-database
   image: mariadb
-  command: umask o-r; ( mariadb-dump --defaults-file=~/replica.my.cnf --host=tools-readonly.db.svc.wikimedia.cloud ${TOOL_TOOLSDB_USER}__campwiz > ~/-$(date -I).sql )
+  command: umask o-r; ( mariadb-dump --defaults-file=~/replica.my.cnf --host=tools-readonly.db.svc.wikimedia.cloud ${TOOL_TOOLSDB_USER}__campwiz > ~/campwiz-$(date -I).sql )
   mount: all

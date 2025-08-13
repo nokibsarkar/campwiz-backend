@@ -9,3 +9,5 @@ taskmanager
 *.db
 network-tester
 *.sql
+*.php
+output.txt

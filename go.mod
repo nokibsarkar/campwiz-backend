@@ -24,7 +24,7 @@ require (
 	gorm.io/gen v0.3.27
 	gorm.io/gorm v1.30.1
 	gorm.io/plugin/dbresolver v1.6.2
-	k8s.io/apimachinery v0.33.2
+	k8s.io/apimachinery v0.33.4
 )
 
 require (

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"nokib/campwiz/consts"
 	"nokib/campwiz/models"
@@ -250,6 +251,7 @@ func InitDB(ctx context.Context, testing bool) {
 		db.Rollback()
 		return
 	}
+
 	// err = models.MigrateViews(db, &models.RoundStatisticsView{})
 	// if err != nil {
 	// 	log.Printf("failed to migrate views %s", err.Error())
@@ -257,4 +259,5 @@ func InitDB(ctx context.Context, testing bool) {
 	// 	return
 	// }
 	db.Commit()
+	fmt.Printf("Migrated database successfully\n")
 }

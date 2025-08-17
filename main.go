@@ -70,6 +70,7 @@ func SetupRouter(ctx context.Context, testing bool, readOnly bool) *gin.Engine {
 }
 func init() {
 	consts.LoadConfig()
+	fmt.Printf("Loaded configuration: %+v\n", consts.Config)
 }
 
 // @title Campwiz API

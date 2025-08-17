@@ -3127,7 +3127,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "totalScore": {
-                    "$ref": "#/definitions/models.ScoreType"
+                    "type": "number"
                 },
                 "totalSubmissions": {
                     "type": "integer"

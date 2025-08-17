@@ -95,7 +95,6 @@ func init() {
 // @contact.url https://github.com/nokibsarkar
 // @query.collection.format multi
 func main() {
-
 	ctx := context.Background()
 	preRun()
 	portVal := 8081 // default port fallback
@@ -107,6 +106,7 @@ func main() {
 	flag.Parse()
 	r := SetupRouter(ctx, false, *readOnly)
 	fmt.Printf("Port: %d\n", *port)
+	gin.SetMode(consts.Release)
 	if err := r.Run(fmt.Sprintf("0.0.0.0:%d", *port)); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}

@@ -112,8 +112,7 @@ func LoadConfig() {
 	} else {
 		log.Printf("Error reading config file: %s", err)
 	}
-
-	fmt.Printf("Loaded configuration: %+v\n", Config)
+	// Print the loaded configuration
 
 }
 

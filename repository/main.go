@@ -20,8 +20,14 @@ import (
 )
 
 // var memoryCache = &cache.MemoryCacher{}
+func getLogMode(debug bool) logger.LogLevel {
+	if debug {
+		return logger.Info
+	}
+	return logger.Error
+}
 
-var sentrylogger = logger.Default.LogMode(logger.Info) // cache.NewSentryGinLogger(logger.Default.LogMode(getLogMode(consts.Config.Database.Main.Debug || consts.Config.Server.Mode == "debug")))
+var sentrylogger = cache.NewSentryGinLogger(logger.Default.LogMode(getLogMode(consts.Config.Database.Main.Debug || consts.Config.Server.Mode == "debug")))
 
 func GetDB(ctx context.Context) (db *gorm.DB, close func(), err error) {
 	dsn := consts.Config.Database.Main.DSN

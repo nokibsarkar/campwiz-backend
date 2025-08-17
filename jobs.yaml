@@ -3,8 +3,9 @@
   image: tool-campwiz-backend/tool-campwiz-backend:latest
   command: launcher campwiz -port 8080
   continuous: true
-  filelog: .log/campwiz-backend.log
+  filelog: true
   filelog-stderr: .log/campwiz-backend.err
+  filelog-stdout: .log/campwiz-backend.log
   emails: onfailure
   port: 8080
   cpu: 1

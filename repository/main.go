@@ -219,8 +219,9 @@ func InitDB(ctx context.Context, testing bool) {
 	}
 
 	db := conn.WithContext(ctx).Begin()
+
 	// set character set to utf8mb4
-	db.Exec("ALTER DATABASE campwiz CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin;")
+	db.Exec("ALTER DATABASE IF EXISTS campwiz CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin;")
 	err = db.AutoMigrate(&models.Project{}, &models.User{}, &models.Campaign{}, &models.Round{},
 		&models.Task{}, &models.Role{}, &models.Submission{},
 		&models.Evaluation{}, &models.TaskData{}, &models.Category{}, &models.Tag{})

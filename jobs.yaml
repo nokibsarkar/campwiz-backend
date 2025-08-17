@@ -11,7 +11,6 @@
   mem: 1Gi
   mount: all
   retry: 3
-
 # Continuous job for NOT doing that shit
 - name: campwiz-backend-readonly
   image: tool-campwiz-backend/tool-campwiz-backend:latest

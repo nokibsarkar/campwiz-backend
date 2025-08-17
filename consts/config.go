@@ -97,7 +97,7 @@ func LoadConfig() {
 	}
 	Config = &ApplicationConfiguration{}
 	fmt.Printf("Adding %s to the path", os.Getenv("TOOL_DATA_DIR"))
-	// viper.AddConfigPath(".")
+	viper.AddConfigPath(".")
 	viper.AddConfigPath(os.Getenv("TOOL_DATA_DIR"))
 	viper.SetConfigName(".env")
 	viper.SetConfigType("yaml")

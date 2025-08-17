@@ -103,6 +103,7 @@ func LoadConfig() {
 	viper.SetConfigType("yaml")
 	viper.AutomaticEnv()
 	err := viper.ReadInConfig()
+	fmt.Printf("Error reading config file: %+v", err)
 	if err == nil {
 		err = viper.Unmarshal(Config)
 		if err != nil {

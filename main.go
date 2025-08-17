@@ -105,7 +105,7 @@ func main() {
 	readOnly := flag.Bool("readonly", false, "Run the server in read-only mode")
 	flag.Parse()
 	r := SetupRouter(ctx, false, *readOnly)
-	fmt.Printf("Version: %s\n", consts.Version)
+	fmt.Printf("Port: %d\n", *port)
 	if err := r.Run(fmt.Sprintf("0.0.0.0:%d", *port)); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}

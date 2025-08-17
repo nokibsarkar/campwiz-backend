@@ -6,7 +6,7 @@
   filelog: true
   filelog-stderr: .log/campwiz-backend.err
   filelog-stdout: .log/campwiz-backend.log
-  emails: onfailure
+  # emails: onfailure
   port: 8080
   cpu: 1
   mem: 1Gi

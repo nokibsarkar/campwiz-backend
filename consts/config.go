@@ -112,6 +112,8 @@ func LoadConfig() {
 		log.Printf("Error reading config file: %s", err)
 	}
 
+	fmt.Printf("Loaded configuration: %+v\n", Config)
+
 }
 
 const META_OAUTH_AUTHORIZE_URL = "https://meta.wikimedia.org/w/rest.php/oauth2/authorize"

@@ -4,8 +4,8 @@
   command: launcher campwiz --port 8080
   continuous: true
   filelog: true
-  filelog-stderr: .log/campwiz-backend.err
-  filelog-stdout: .log/campwiz-backend.log
+  filelog-stderr: /data/project/campwiz-backend/.log/campwiz-backend.err
+  filelog-stdout: /data/project/campwiz-backend/.log/campwiz-backend.log
   # emails: onfailure
   port: 8080
   cpu: 1

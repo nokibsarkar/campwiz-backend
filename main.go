@@ -7,6 +7,8 @@ import (
 	"log"
 	"nokib/campwiz/consts"
 	"nokib/campwiz/models"
+	"nokib/campwiz/repository"
+	"nokib/campwiz/repository/cache"
 	"nokib/campwiz/routes"
 	"time"
 
@@ -29,8 +31,8 @@ func preRun() {
 func postRun() {
 }
 func beforeSetupRouter(ctx context.Context, testing bool) {
-	// repository.InitDB(ctx, testing)
-	// cache.InitCacheDB(ctx, testing)
+	repository.InitDB(ctx, testing)
+	cache.InitCacheDB(ctx, testing)
 
 }
 func afterSetupRouter(ctx context.Context, testing bool) {

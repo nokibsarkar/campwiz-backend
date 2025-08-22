@@ -1,7 +1,7 @@
 # Continuous job for doing that shit
 - name: campwiz-backend-thing
   image: tool-campwiz-backend/tool-campwiz-backend:latest
-  command: launcher campwiz -port 8080
+  command: launcher campwiz --port 8080
   continuous: true
   filelog: true
   filelog-stderr: .log/campwiz-backend.err
@@ -15,7 +15,7 @@
 # Continuous job for NOT doing that shit
 - name: campwiz-backend-readonly
   image: tool-campwiz-backend/tool-campwiz-backend:latest
-  command: launcher campwiz -port 8081 -readonly
+  command: launcher campwiz --port 8081 --readonly
   continuous: true
   emails: onfailure
   port: 8081

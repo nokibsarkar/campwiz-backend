@@ -39,6 +39,7 @@ lint:
       toolforge jobs restart campwiz-task-manager
       toolforge jobs restart campwiz-backend-readonly
       toolforge jobs restart campwiz-backend-thing
+      toolforge webservice restart
       exit
       exit
       EOF

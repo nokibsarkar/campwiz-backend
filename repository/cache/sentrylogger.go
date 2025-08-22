@@ -16,7 +16,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"gorm.io/gorm/logger"
-	"gorm.io/gorm/utils"
 )
 
 type SentryGinLogger struct {
@@ -46,7 +45,6 @@ func (s *SentryGinLogger) Error(ctx context.Context, msg string, data ...any) {
 	s.Logger.Error(ctx, msg, data...)
 }
 func (s *SentryGinLogger) Trace(ctx context.Context, begin time.Time, fc func() (string, int64), err error) {
-	fmt.Print("\nSentryGinLogger.Trace called: ", utils.FileWithLineNum())
 	ctxGin, ok := ctx.(*gin.Context)
 	if ok {
 		parentSpan := sentrygin.GetHubFromContext(ctxGin).Scope().GetSpan()

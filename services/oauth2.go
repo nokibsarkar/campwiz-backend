@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"net/http"
 	"nokib/campwiz/consts"
 	"nokib/campwiz/models"
 	"nokib/campwiz/repository"
@@ -16,6 +17,26 @@ import (
 	"golang.org/x/oauth2"
 	"gorm.io/gorm"
 )
+
+const campwizUserAgent = "CampWiz/1.0 (https://campwiz.toolforge.org) go-oauth2"
+
+// wikimediaTransport adds the required User-Agent header to all Wikimedia requests.
+type wikimediaTransport struct {
+	base http.RoundTripper
+}
+
+func (t *wikimediaTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	req = req.Clone(req.Context())
+	req.Header.Set("User-Agent", campwizUserAgent)
+	return t.base.RoundTrip(req)
+}
+
+var wikimediaClient = &http.Client{Transport: &wikimediaTransport{base: http.DefaultTransport}}
+
+func wikimediaHTTPClient() *http.Client {
+	return wikimediaClient
+}
+
 
 const META_PROFILE_URL = "https://meta.wikimedia.org/w/rest.php/oauth2/resource/profile"
 const DATETIMEFORMAT = "20060102150405"
@@ -43,7 +64,8 @@ func (o *OAuth2Service) GetToken(code string, redirectURL string) (*oauth2.Token
 		o.Config.RedirectURL = previousRedirectURL
 	}()
 	o.Config.RedirectURL = redirectURL
-	token, err := o.Config.Exchange(o.ctx, code)
+	ctxWithClient := context.WithValue(o.ctx, oauth2.HTTPClient, wikimediaHTTPClient())
+	token, err := o.Config.Exchange(ctxWithClient, code)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +99,7 @@ type WikipediaProfileFull struct {
 }
 
 func (o *OAuth2Service) GetUser(token *oauth2.Token) (*WikipediaProfileFull, error) {
-	client := o.Config.Client(context.Background(), token)
+	client := o.Config.Client(context.WithValue(context.Background(), oauth2.HTTPClient, wikimediaHTTPClient()), token)
 	resp, err := client.Get(META_PROFILE_URL)
 	if err != nil {
 		return nil, err
@@ -145,7 +167,7 @@ func (s *OAuth2Service) FetchTokenFromWikimediaServer() (db_user *models.User, s
 				return
 			}
 			log.Println("User created: ", trx.RowsAffected)
-
+			err = nil
 		} else {
 			return
 		}

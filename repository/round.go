@@ -20,18 +20,27 @@ func (r *RoundRepository) Create(conn *gorm.DB, round *models.Round) (*models.Ro
 	return round, nil
 }
 func (r *RoundRepository) Update(conn *gorm.DB, round *models.Round) (*models.Round, error) {
-	IsPublic := round.IsPublicJury
-	result := conn.Updates(round)
-	if result.Error != nil {
-		return nil, result.Error
+	booleanColumns := []string{
+		"is_public_jury", "is_open", "allow_jury_to_participate",
+		"allow_multiple_judgement", "secret_ballot",
+		"article_allow_expansions", "article_allow_creations",
 	}
-	q := query.Use(conn)
-	res, err := q.Round.Where(q.Round.RoundID.Eq(round.RoundID.String())).Update(q.Round.IsPublicJury, IsPublic)
-	if err != nil {
+	if err := conn.Omit(booleanColumns...).Updates(round).Error; err != nil {
 		return nil, err
 	}
-	if res.Error != nil {
-		return nil, res.Error
+	// GORM's Updates skips zero-value fields; for booleans false is the zero
+	// value, so we must force-update every boolean column explicitly.
+	booleans := map[string]interface{}{
+		"is_public_jury":            round.IsPublicJury,
+		"is_open":                   round.IsOpen,
+		"allow_jury_to_participate": round.AllowJuryToParticipate,
+		"allow_multiple_judgement":  round.AllowMultipleJudgement,
+		"secret_ballot":             round.SecretBallot,
+		"article_allow_expansions":  round.ArticleAllowExpansions,
+		"article_allow_creations":   round.ArticleAllowCreations,
+	}
+	if err := conn.Model(round).Updates(booleans).Error; err != nil {
+		return nil, err
 	}
 	return round, nil
 }
